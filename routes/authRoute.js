@@ -10,11 +10,11 @@ import {
 
 const router = express.Router();
 
-// router.post(
-//   "/register",
-//   validate(registerValidator),
-//   controller.register
-// );
+router.post(
+  "/register",
+  validate(registerValidator),
+  controller.register
+);
 
 router.post(
   "/login",

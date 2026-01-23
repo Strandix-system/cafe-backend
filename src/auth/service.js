@@ -26,30 +26,41 @@ const authService = {
     };
   },
 
-  login: async (data) => {
-    const { email, password } = data;
+ login: async (data) => {
+  const { email, phoneNumber, password } = data;
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      throw new Error("Invalid credentials");
-    }
+  if ((!email && !phoneNumber) || !password) {
+    throw new Error("Email or phoneNumber and password are required");
+  }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      throw new Error("Invalid credentials");
-    }
+  const user = await User.findOne({
+    $or: [
+      email ? { email } : null,
+      phoneNumber ? { phoneNumber } : null,
+    ].filter(Boolean),
+  });
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+  if (!user) {
+    throw new Error("Invalid credentials");
+  }
 
-    return {
-      token,
-      role: user.role
-    };
-  },
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    throw new Error("Invalid credentials");
+  }
+
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  return {
+    token,
+    role: user.role,
+  };
+},
+
   
   logout: async (userId) => {
   const user = await User.findById(userId);

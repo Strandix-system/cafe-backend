@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Warm Welcome To Our New Rider</title>
+    <style>
+      /* Styles for body */
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+      }
+
+      /* Styles for container */
+      .container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Styles for button */
+      .button {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 5px;
+      }
+
+      /* Styles for footer */
+      .footer {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 12px;
+        color: black;
+      }
+
+      a {
+        color: black;
+      }
+
+      ul {
+        padding: 0 18px;
+        list-style: square;
+      }
+
+      li {
+        margin-bottom: 7px;
+      }
+
+      .logo-container img {
+        margin: 10px auto;
+      }
+
+      .logo-container {
+        display: flex;
+        justify-content: center;
+      }
+      .app-icon-div {
+        display: flex;
+        align-items: center;
+        width: fit-content;
+      }
+      .app-icon-div img {
+        width: 170px;
+      }
+
+      /* Media queries for responsive design */
+      @media only screen and (max-width: 600px) {
+        .container {
+          width: 90%;
+          margin: 20px auto;
+          padding: 10px;
+        }
+        .app-icon-div img {
+          width: 140px;
+        }
+
+        .button {
+          padding: 8px 16px;
+        }
+      }
+
+      @media only screen and (max-width: 400px) {
+        .button {
+          padding: 6px 12px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="logo-container">
+        <img
+          src="https://paxappimages.s3.ap-south-1.amazonaws.com/logo-dark.png"
+          alt="Pax"
+          width="150"
+        />
+      </div>
+      <h2>Welcome to Pax!</h2>
+      <p>Dear {firstName},</p>
+      <p>
+        Thank you for joining us as a rider. We're thrilled to have you on board
+        and can't wait to help you get where you need to go with our reliable
+        service.
+      </p>
+      <h4>Here are your account details:</h4>
+      <ul>
+        <li>Login Email Id: {email}</li>
+      </ul>
+      <!-- <p>To get started, simply download the app from here.</p>
+        <center>
+            <div class="app-icon-div">
+              <a href="#"
+                ><img
+                  alt="app-store-logo"
+                  style="margin-top: -5px"
+                  src="https://wildecare.s3.ap-south-1.amazonaws.com/images/app-store.png"
+              /></a>
+              <a href="#"
+                ><img
+                  alt="play-store-logo"
+                  src="https://wildecare.s3.ap-south-1.amazonaws.com/images/play-store.png"
+              /></a>
+            </div>
+        </center> -->
+      <p>
+        If you have any questions or need assistance, please feel free to
+        contact our support team from
+        <a href="mailto:jennifer@jwildecare.com">here</a>.
+      </p>
+      <!-- <p>Welcome again and we look forward to serving you!</p> -->
+      <!-- <p>Phoenix, Arizona</p> -->
+      <hr />
+      <div class="footer">
+        <p><a>© 2025 PAX App</a></p>
+      </div>
+    </div>
+  </body>
+</html>

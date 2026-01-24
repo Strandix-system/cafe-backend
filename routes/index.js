@@ -10,12 +10,10 @@ const defaultRoutes = [
     path: "/auth",
     route: authRoute,
   },
-
   {
     path: "/admin",
     route: adminUserRoute,
   },
-
   {
     path: "/get-states",
     route: stateRoute,

@@ -6,41 +6,36 @@ import { allowRoles } from "../../middleware/permission.js";
 import {
   createAdminValidator,
   updateAdminValidator,
-  deleteAdminValidator,
-  listAdminsValidator,
+  deleteAdminValidator
 } from "../../validations/createValidation.js";
 
 const router = express.Router();
 
 router.post(
-  "/create-admin",
+  "/create",
   tokenVerification,
   allowRoles("superadmin"),
   validate(createAdminValidator),
   controller.createAdmin
 );
-
-router.put(
-  "/update-admin/:id",
+router.patch(
+  "/update/:id",
   tokenVerification,
   allowRoles("superadmin"),
   validate(updateAdminValidator),
   controller.updateAdmin
 );
-
 router.delete(
-  "/delete-admin/:id",
+  "/delete/:id",
   tokenVerification,
   allowRoles("superadmin"),
   validate(deleteAdminValidator),
   controller.deleteAdmin
 );
-
 router.get(
   "/get-users",
   tokenVerification,
   allowRoles("superadmin"),
-  validate(listAdminsValidator),
   controller.listAdmins
 );
 

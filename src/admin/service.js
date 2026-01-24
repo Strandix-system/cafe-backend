@@ -2,108 +2,69 @@ import bcrypt from "bcrypt";
 import User from "../../model/user.js";
 
 const adminService = {
-  createAdmin: async (data) => {
-    const { firstName, lastName, cafeName, email, password } = data;
 
-    if (!firstName || !lastName || !cafeName || !email || !password) {
-      const err = new Error(
-        "firstName, lastName, cafeName, email and password are required"
-      );
-      err.statusCode = 400;
-      throw err;
-    }
-
-    const exists = await User.findOne({ email });
+  createAdmin: async (body) => {
+    const exists = await User.findOne({ email:body.email });
     if (exists) {
       const err = new Error("User already exists");
       err.statusCode = 409;
       throw err;
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
+    const password = await bcrypt.hash(body.password, 10);
     const admin = await User.create({
-      firstName,
-      lastName,
-      cafeName,
-      email,
-      password: hashedPassword,
-      role: "admin",
+  ...body,password,role:"admin"
     });
-
-    return {
-      id: admin._id,
-      firstName: admin.firstName,
-      lastName: admin.lastName,
-      cafeName: admin.cafeName,
-      email: admin.email,
-      role: admin.role,
-    };
+ const result =admin;
+    return result;
   },
-
-  updateAdmin: async (id, data) => {
-    const { firstName, lastName, cafeName, email, password } = data;
-
-    const admin = await User.findById(id);
-    if (!admin || admin.role !== "admin") {
-      const err = new Error("Admin not found");
-      err.statusCode = 404;
-      throw err;
+  updateAdmin: async (_id, data) => {
+    const updatedAdmin = await User.findOneAndUpdate(
+      { _id },        
+      { $set: data }, 
+      { new: true }   
+    );
+    if(!updatedAdmin){
+      throw new Error("Internal server Error", 500)
     }
-
-    if (email && email !== admin.email) {
-      const exists = await User.findOne({ email });
-      if (exists) {
-        const err = new Error("Email already in use");
-        err.statusCode = 409;
-        throw err;
-      }
-    }
-
-    if (firstName) admin.firstName = firstName;
-    if (lastName) admin.lastName = lastName;
-    if (cafeName) admin.cafeName = cafeName;
-    if (email) admin.email = email;
-    if (password) admin.password = await bcrypt.hash(password, 10);
-
-    await admin.save();
-
-    return {
-      id: admin._id,
-      firstName: admin.firstName,
-      lastName: admin.lastName,
-      cafeName: admin.cafeName,
-      email: admin.email,
-      role: admin.role,
-    };
+    return updatedAdmin;
   },
-
   deleteAdmin: async (id) => {
     const admin = await User.findOneAndDelete({
       _id: id,
       role: "admin",
     });
-
     if (!admin) {
       const err = new Error("Admin not found");
       err.statusCode = 404;
       throw err;
     }
-
     return true;
   },
-
-  listAdmins: async (query) => {
-    const filter = { role: "admin" };
-
-    const options = {
-      page: query.page || 0,
-      limit: query.limit || 10,
-      sortBy: query.sortBy || "createdAt:desc",
-    };
-
-    return await User.paginate(filter, options);
-  },
+listAdmins: async (options) => {
+  const filter = { role: "admin" };
+   if (filter.search) {
+    const search = filter.search;
+    const searchFilter = {
+      $or: [
+        { firstName: { $regex: search, $options: "i" } },
+        { lastName: { $regex: search, $options: "i" } },
+        { cafeName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { city: { $regex: search, $options: "i" } },
+        { state: { $regex: search, $options: "i" } },
+        {
+          phoneNumber: !isNaN(search)
+            ? Number(search)
+            : undefined,
+        },
+      ].filter(Boolean),
+    }
+    delete filter.search;
+    filter = { ...filter, ...searchFilter };
+  }
+  const result = await User.paginate(filter, options);
+  return result;
+},
 };
 
 export default adminService;

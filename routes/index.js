@@ -1,7 +1,7 @@
 import express from "express";
 import authRoute from "./authRoute.js";
-// import userRoute from "./userRoute.js";
 import adminUserRoute from "./admin/adminRoute.js";
+import stateRoute from "./stateRoute.js"
 
 const router = express.Router();
 
@@ -10,13 +10,13 @@ const defaultRoutes = [
     path: "/auth",
     route: authRoute,
   },
-  // {
-  //   path: "/user",
-  //   route: userRoute,
-  // },
   {
     path: "/admin",
     route: adminUserRoute,
+  },
+  {
+    path: "/get-states",
+    route: stateRoute,
   },
 ];
 

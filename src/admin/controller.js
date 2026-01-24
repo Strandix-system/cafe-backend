@@ -1,5 +1,6 @@
 import service from "./service.js";
 import { sendSuccessResponse } from "../../utils/response.js";
+import {pick} from "../../utils/pick.js"
 
 export default {
   createAdmin: async (req, res, next) => {
@@ -10,7 +11,6 @@ export default {
       next(error);
     }
   },
-
   updateAdmin: async (req, res, next) => {
     try {
       const admin = await service.updateAdmin(req.params.id, req.body);
@@ -19,7 +19,6 @@ export default {
       next(error);
     }
   },
-
   deleteAdmin: async (req, res, next) => {
     try {
       await service.deleteAdmin(req.params.id);
@@ -28,10 +27,11 @@ export default {
       next(error);
     }
   },
-
   listAdmins: async (req, res, next) => {
     try {
-      const result = await service.listAdmins(req.query);
+      const filter = pick(req.query,["search"]);
+      const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
+      const result = await service.listAdmins(filter,options,req.query);
       sendSuccessResponse(res, 200, "Admins fetched successfully", result);
     } catch (error) {
       next(error);

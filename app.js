@@ -1,7 +1,7 @@
 import express from "express";
 import env from "dotenv";
 import http from "http";
-// import cors from "cors";
+import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import errorHandler from "./middleware/errorHandler.js";
@@ -17,35 +17,29 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use((req, res, next) => {
-  const allowedOrigins = [
-    "https://main.d13qtkfj0o1mlk.amplifyapp.com",
-    "https://d1d2jk7siuhc65.cloudfront.net"
-  ];
+const allowedOrigins = [
+  "https://main.d13qtkfj0o1mlk.amplifyapp.com",
+  "https://d1d2jk7siuhc65.cloudfront.net"
+];
 
-  const origin = req.headers.origin;
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow Postman / server-to-server
+      if (!origin) return callback(null, true);
 
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-
-  // IMPORTANT: Handle preflight
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
-  next();
-});
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  })
+);
+app.options("*", cors());
 
 app.use(compression());
 

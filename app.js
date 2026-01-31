@@ -14,32 +14,19 @@ env.config();
 const port = process.env.PORT || 8080;
 const app = express();
 
-app.use(helmet());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-const allowedOrigins = [
-  "https://main.d13qtkfj0o1mlk.amplifyapp.com",
-  "https://d1d2jk7siuhc65.cloudfront.net"
-];
+app.use(cors({
+  origin: [
+    "https://main.d13qtkfj0o1mlk.amplifyapp.com",
+    "https://d1d2jk7siuhc65.cloudfront.net"
+  ],
+  credentials: true,
+}));
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow Postman / server-to-server
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-  })
-);
 app.options("*", cors());
+app.use(helmet());
 
 app.use(compression());
 

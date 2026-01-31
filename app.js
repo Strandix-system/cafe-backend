@@ -17,30 +17,35 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-const allowedOrigins = [
-  "https://main.d13qtkfjo01mlk.amplifyapp.com",
-  "https://d1d2jk7siuhc65.cloudfront.net"
-];
+app.use((req, res, next) => {
+  const allowedOrigins = [
+    "https://main.d13qtkfj0o1mlk.amplifyapp.com",
+    "https://d1d2jk7siuhc65.cloudfront.net",
+  ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
+  const origin = req.headers.origin;
 
-      // Allow Postman / server requests
-      if (!origin) return callback(null, true);
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
 
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
-app.options("*", cors());
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+
 
 app.use(compression());
 

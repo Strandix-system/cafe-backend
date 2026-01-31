@@ -5,7 +5,7 @@ import {pick} from "../../utils/pick.js"
 export default {
   createAdmin: async (req, res, next) => {
     try {
-      const admin = await service.createAdmin(req.body);
+      const admin = await service.createAdmin(req.body,req.file);
       sendSuccessResponse(res, 201, "Admin created", admin);
     } catch (error) {
       next(error);
@@ -13,7 +13,7 @@ export default {
   },
   updateAdmin: async (req, res, next) => {
     try {
-      const admin = await service.updateAdmin(req.params.id, req.body);
+      const admin = await service.updateAdmin(req.params.id, req.body,req.file);
       sendSuccessResponse(res, 200, "Admin updated successfully", admin);
     } catch (error) {
       next(error);
@@ -29,13 +29,27 @@ export default {
   },
   listAdmins: async (req, res, next) => {
     try {
-      const filter = pick(req.query,["search"]);
+      const filter = pick(req.query,["search","isActive"]);
       const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
+      if (filter.isActive !== undefined) {
+        filter.isActive = filter.isActive === "true";
+      }
       const result = await service.listAdmins(filter,options,req.query);
       sendSuccessResponse(res, 200, "Admins fetched successfully", result);
     } catch (error) {
       next(error);
     }
   },
+ getByAdmin: async (req, res, next) => {
+  try {
+    const admins = await service.getByAdmin(req.params.id);
+
+    sendSuccessResponse(res, 200,"Admins fetched successfully",admins
+    );
+  } catch (error) {
+    next(error);
+  }
+},
+
 };
 

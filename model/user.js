@@ -1,18 +1,18 @@
 import mongoose from "mongoose";
 import { paginate } from "../model/plugin/paginate.plugin.js"
 import indiaStates from "../config/indiaStates.js";
+import bcrypt from "bcryptjs";
+
 const userSchema = new mongoose.Schema(
   {
     firstName: {
       type: String,
       required: true,
-      unique: true,
       trim: true
     },
     lastName: {
       type: String,
       required: true,
-      unique: true,
       trim: true
     },
     cafeName: {
@@ -28,7 +28,8 @@ const userSchema = new mongoose.Schema(
     },
     phoneNumber: {
       type: Number,
-      trim: true
+      trim: true,
+      unique: true
     },
     password: {
       type: String,
@@ -56,14 +57,33 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true
     },
+    profileImage: {
+      type: String,
+      trim: true,
+      default: null
+    },
+    logo: {
+      type: String,
+      default: null
+    },
     role: {
       type: String,
       enum: ["superadmin", "admin"],
       default: "admin", required: true
-    },
+    }
 
   },
   { timestamps: true }
 );
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+
+  try {
+    this.password = await bcrypt.hash(this.password, 10);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 userSchema.plugin(paginate)
 export default mongoose.model("User", userSchema);

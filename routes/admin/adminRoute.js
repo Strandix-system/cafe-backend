@@ -8,6 +8,7 @@ import {
   updateAdminValidator,
   deleteAdminValidator
 } from "../../validations/createValidation.js";
+import { uploadprofile, uploadlogo } from "../../middleware/upload.js";
 
 const router = express.Router();
 
@@ -15,6 +16,8 @@ router.post(
   "/create",
   tokenVerification,
   allowRoles("superadmin"),
+  uploadprofile.single("profileImage"),
+  uploadlogo.single("logo"),
   validate(createAdminValidator),
   controller.createAdmin
 );
@@ -37,6 +40,12 @@ router.get(
   tokenVerification,
   allowRoles("superadmin"),
   controller.listAdmins
+);
+router.get(
+  "/get-user/:id",
+  tokenVerification,
+  allowRoles("superadmin"),
+  controller.getByAdmin
 );
 
 export default router;

@@ -43,7 +43,6 @@ const authService = {
   if (!user) {
     throw new Error("Invalid credentials");
   }
-
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
     throw new Error("Invalid credentials");

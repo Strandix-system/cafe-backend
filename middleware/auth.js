@@ -31,7 +31,11 @@ export const tokenVerification = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({ message: "User not found" });
     }
-
+      if (!user.isActive) {
+      return res.status(403).json({
+        message: "Your account is inactive. Please purchase subscription",
+      });
+    }
     req.user = user;
     next();
   } catch (error) {

@@ -11,13 +11,33 @@ import { notFoundError } from "./middleware/errorHandler.js";
 
 env.config();
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080;
 const app = express();
 
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+const allowedOrigins = [
+  "https://main.d13qtkfjo01mlk.amplifyapp.com",
+  "http://localhost:5173",
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
+
 app.use(compression());
 
 const server = http.createServer(app);

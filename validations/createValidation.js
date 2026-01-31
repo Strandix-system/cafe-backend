@@ -16,7 +16,7 @@ const pincodeRule = Joi.number().integer().min(100000).max(999999);
 const createAdminValidator = {
     body: Joi.object({
         firstName: nameRule.required(),
-        lastName: nameRule.required(),
+        lastName: Joi.string().trim().min(5).max(200).required(),
         cafeName: Joi.string().trim().min(2).max(100).required(),
         email: emailRule.required(),
         phoneNumber: phoneRule.required(),
@@ -25,6 +25,7 @@ const createAdminValidator = {
         state: Joi.string().trim().min(2).max(50).required(),
         city: Joi.string().trim().min(2).max(50).required(),
         pincode: pincodeRule.required(),
+          selectedLayout:  Joi.string().trim().required(),
     }).required(),
 };
 const updateAdminValidator = {

@@ -19,13 +19,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const allowedOrigins = [
   "https://main.d13qtkfjo01mlk.amplifyapp.com",
-  "https://d1d2jk7siuhc65.cloudfront.net",
-  "http://localhost:5173",
+  "https://d1d2jk7siuhc65.cloudfront.net"
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
+
+      // Allow Postman / server requests
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
@@ -34,12 +35,11 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
-
 app.options("*", cors());
 
 app.use(compression());

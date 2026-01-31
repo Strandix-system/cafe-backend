@@ -23,10 +23,16 @@ app.use(cors({
     "https://d1d2jk7siuhc65.cloudfront.net"
   ],
   credentials: true,
+  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
+  allowedHeaders: ["Content-Type","Authorization"]
 }));
 
 app.options("*", cors());
-app.use(helmet());
+
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+  crossOriginOpenerPolicy: false
+}));
 
 app.use(compression());
 

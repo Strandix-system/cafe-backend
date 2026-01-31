@@ -1,7 +1,7 @@
 import express from "express";
 import env from "dotenv";
 import http from "http";
-import cors from "cors";
+// import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import errorHandler from "./middleware/errorHandler.js";
@@ -20,7 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
   const allowedOrigins = [
     "https://main.d13qtkfj0o1mlk.amplifyapp.com",
-    "https://d1d2jk7siuhc65.cloudfront.net",
+    "https://d1d2jk7siuhc65.cloudfront.net"
   ];
 
   const origin = req.headers.origin;
@@ -39,13 +39,13 @@ app.use((req, res, next) => {
     "GET, POST, PUT, DELETE, OPTIONS"
   );
 
+  // IMPORTANT: Handle preflight
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }
 
   next();
 });
-
 
 app.use(compression());
 

@@ -18,13 +18,13 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
-  cors({
-    origin: [
-      "https://main.d13qtkfj0o1mlk.amplifyapp.com",
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  })
+  // cors({
+  //   origin: [
+  //     "https://main.d13qtkfj0o1mlk.amplifyapp.com",
+  //   ],
+  //   methods: ["GET", "POST", "PUT", "DELETE"],
+  //   credentials: true,
+  // })
 );
 app.use(compression());
 

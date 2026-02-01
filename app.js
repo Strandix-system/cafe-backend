@@ -25,10 +25,19 @@ app.use(cors({
 
 app.options("*", cors()); 
 
-app.use(helmet({
-  crossOriginResourcePolicy: false,
-  crossOriginOpenerPolicy: false,
-}));
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+    crossOriginOpenerPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-eval'"],
+      },
+    },
+  })
+);
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

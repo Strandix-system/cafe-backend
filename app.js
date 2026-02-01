@@ -1,6 +1,5 @@
 import express from "express";
 import env from "dotenv";
-import http from "http";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
@@ -20,7 +19,6 @@ app.use(cors({
   origin: [
     "https://main.d13qtkfj0o1mlk.amplifyapp.com"
   ],
-  credentials: true,
   methods: ["GET","POST","PUT","DELETE","OPTIONS"],
   allowedHeaders: ["Content-Type","Authorization"]
 }));
@@ -37,8 +35,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(compression());
 
-const server = http.createServer(app);
-
 app.get("/", (req, res) => {
   res.status(200).send("Cafe Backend running");
 });
@@ -51,6 +47,7 @@ app.use(notFoundError);
 connectDB();
 
 app.use(errorHandler);
-server.listen(port, () => {
+app.listen(port, "0.0.0.0", () => {
   console.log(`Server is running on port ${port}`);
 });
+

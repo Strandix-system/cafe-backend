@@ -16,11 +16,10 @@ const app = express();
 app.set("trust proxy", 1);
 
 app.use(cors({
-  origin: [
-    "https://main.d13qtkfj0o1mlk.amplifyapp.com"
-  ],
-  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
-  allowedHeaders: ["Content-Type","Authorization"]
+   origin: "https://main.d13qtkfj0o1mlk.amplifyapp.com",
+  methods: "GET,POST,PUT,DELETE,OPTIONS",
+  allowedHeaders: "Content-Type,Authorization",
+  credentials: false
 }));
 
 app.options("*", cors()); 

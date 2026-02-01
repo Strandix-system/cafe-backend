@@ -14,12 +14,11 @@ env.config();
 const port = process.env.PORT || 8080;
 const app = express();
 
+app.set("trust proxy", 1); // Important for CloudFront
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(cors({
   origin: [
-    "https://main.d13qtkfj0o1mlk.amplifyapp.com",
+    "https://main.d13qtkfjo01mk.amplifyapp.com",
     "https://d1d2jk7siuhc65.cloudfront.net"
   ],
   credentials: true,
@@ -27,12 +26,20 @@ app.use(cors({
   allowedHeaders: ["Content-Type","Authorization"]
 }));
 
-app.options("*", cors());
+app.options("*", cors()); // handle preflight
+
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
 
 app.use(helmet({
   crossOriginResourcePolicy: false,
   crossOriginOpenerPolicy: false
 }));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use(compression());
 

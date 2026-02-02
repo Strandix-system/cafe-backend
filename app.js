@@ -1,5 +1,6 @@
 import express from "express";
 import env from "dotenv";
+import http from "http";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
@@ -10,37 +11,16 @@ import { notFoundError } from "./middleware/errorHandler.js";
 
 env.config();
 
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 3000;
 const app = express();
 
-app.set("trust proxy", 1);
-
-app.use(
-  cors({
-    origin: "https://main.d13qtkfj0o1mlk.amplifyapp.com",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: false,
-  })
-);
-
-app.use(
-  helmet({
-    crossOriginResourcePolicy: false,
-    crossOriginOpenerPolicy: false,
-    contentSecurityPolicy: false,
-  })
-);
-
-
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use(cors());
 app.use(compression());
 
-app.get("/", (req, res) => {
-  res.status(200).send("Cafe Backend running");
-});
+const server = http.createServer(app);
 
 app.use("/api", routes);
 
@@ -50,7 +30,6 @@ app.use(notFoundError);
 connectDB();
 
 app.use(errorHandler);
-app.listen(port, "0.0.0.0", () => {
+server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
-

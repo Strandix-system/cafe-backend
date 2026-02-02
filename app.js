@@ -21,6 +21,9 @@ app.use(cors());
 app.use(compression());
 
 const server = http.createServer(app);
+app.get("/", (req, res) => {
+  res.status(200).send("Cafe Backend running");
+});
 
 app.use("/api", routes);
 

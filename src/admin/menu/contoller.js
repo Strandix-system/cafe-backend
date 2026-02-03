@@ -11,7 +11,6 @@ const menuController = {
         req.user._id,
         req.body,
         req.file // 
-
       );
 
       sendSuccessResponse(res, 201, "Menu created successfully", result);

@@ -1,17 +1,20 @@
 import Joi from "joi";
 
-export const createTemplateValidator = {
-  body: Joi.object({
-    noOfImage: Joi.number().min(1).max(10).required(),
-    cafeTitleLabel: Joi.string().min(2).max(100).required(),
-    descriptionLabel: Joi.string().min(2).max(300).required()
-  })
-};
+export const createCafeLayoutValidator = Joi.object({
 
-export const createCafeLayoutValidator = {
-  body: Joi.object({
-    layoutTemplateId: Joi.string().required(),
-    cafeTitle: Joi.string().min(2).max(100).required(),
-    description: Joi.string().min(2).max(500).required()
-  })
-};
+  homeImage: Joi.string().required(),
+  aboutImage: Joi.string().required(),
+
+  menuTitle: Joi.string().trim().required(),
+
+  categories: Joi.array()
+    .items(Joi.string())
+    .min(1)
+    .required(),
+
+  aboutTitle: Joi.string().trim().required(),
+  aboutDescription: Joi.string().trim().required(),
+  cafeDescription: Joi.string().trim().required(),
+
+  defaultLayout: Joi.boolean().optional(),
+});

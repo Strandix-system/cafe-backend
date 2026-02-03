@@ -3,13 +3,16 @@ import { sendSuccessResponse } from "../../utils/response.js";
 import {pick} from "../../utils/pick.js"
 
 export default {
-  createAdmin: async (req, res, next) => {
-    try {
-      const admin = await service.createAdmin(req.body);
-      sendSuccessResponse(res, 201, "Admin created", admin);
-    } catch (error) {
-      next(error);
-    }
+createAdmin: async (req, res, next) => {
+  try {
+    const result = await service.createAdmin(req.body, req.files);
+    res.status(201).json({
+      success: true,
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
   },
   updateAdmin: async (req, res, next) => {
     try {

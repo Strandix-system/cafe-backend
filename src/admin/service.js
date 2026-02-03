@@ -1,36 +1,35 @@
-import bcrypt from "bcrypt";
 import User from "../../model/user.js";
 
 const adminService = {
+createAdmin: async (body, files) => {
+  const exists = await User.findOne({ email: body.email });
+  if (exists) {
+    throw Object.assign(new Error("User already exists"), { statusCode: 409 });
+  }
 
-  createAdmin: async (body) => {
-    const exists = await User.findOne({ email: body.email });
-    if (exists) {
-      const err = new Error("User already exists");
-      err.statusCode = 409;
-      throw err;
-    }
-    const isexists = await User.findOne({ phoneNumber: body.phoneNumber });
-    if (isexists) {
-      const err = new Error("PhoneNumber is already exist");
-      err.statusCode = 409;
-      throw err;
-    }
-    // const password = await bcrypt.hash(body.password, 10);
-    const admin = await User.create({
-      ...body,role: "admin"
-    });
-    const result = admin;
-    return result;
-  },
-  updateAdmin: async (id, data) => {
-    const updatedAdmin = await User.findOneAndUpdate(
-      { _id: id },
-      { $set: data },
-      { new: true }
-    );
-    if (!updatedAdmin) {
-      throw new Error("Internal server Error", 500)
+  const phoneExists = await User.findOne({ phoneNumber: body.phoneNumber });
+  if (phoneExists) {
+    throw Object.assign(new Error("PhoneNumber already exists"), { statusCode: 409 });
+  }
+
+  // ✅ Logo validation ONLY here
+  if (!files || !files.logo || files.logo.length === 0) {
+    throw Object.assign(new Error("Logo is required"), { statusCode: 400 });
+  }
+
+  const admin = await User.create({
+    ...body,
+    role: "admin",
+    logo: files.logo[0].location,
+    profileImage: files?.profileImage?.[0]?.location || null
+  });
+
+  return admin;
+},
+  updateAdmin: async (id, body, files) => {
+    const admin = await User.findById(id);
+    if (!admin) {
+      throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
     }
     return updatedAdmin;
   },
@@ -48,7 +47,9 @@ const adminService = {
   },
   listAdmins: async (filter, options) => {
     const query = { role: "admin" };
-
+      if (filter.isActive !== undefined) {
+    query.isActive = filter.isActive;
+  }
     if (filter.search) {
       query.$or = [
         { firstName: { $regex: filter.search, $options: "i" } },

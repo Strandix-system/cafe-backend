@@ -1,34 +1,80 @@
-import LayoutTemplate from "../../../model/layoutTemplate.js";
-import CafeLayout from "../../../model/adminLayout.js";
+import CafeLayout from"../../../model/layout.js";
 import { deleteUploadedFiles } from "../../../utils/s3utils.js";
 
 const layoutService = {
-  // 🟦 Superadmin creates template
-  createTemplate: async (body) => {
-    return await LayoutTemplate.create(body);
-  },
-  // 🟩 Admin fills cafe layout
-
+  // Superadmin creates template
+    // ✅ CREATE
   createCafeLayout: async (adminId, body, files) => {
-    const template = await LayoutTemplate.findById(body.layoutTemplateId);
-    if (!template) {
-      await deleteUploadedFiles(files);
-      throw new Error("Template not found");
+    if (!files?.homeImage || !files?.aboutImage) {
+      const err = new Error("Home image and About image are required");
+      err.statusCode = 400;
+      throw err;
     }
-    if (!files || files.length !== template.noOfImage) {
-      await deleteUploadedFiles(files);
-      throw new Error(`Upload exactly ${template.noOfImage} images`);
-    }
-    const images = files.map((f) => f.location);
 
-    return await CafeLayout.create({
+    const {
+      menuTitle,
+      categories,
+      aboutTitle,
+      aboutDescription,
+      cafeDescription,
+      defaultLayout,
+    } = body;
+
+    const layout = await CafeLayout.create({
       adminId,
-      layoutTemplateId: body.layoutTemplateId,
-      cafeTitle: body.cafeTitle,
-      description: body.description,
-      images,
+      homeImage: files.homeImage[0].location,
+      aboutImage: files.aboutImage[0].location,
+      menuTitle,
+      categories,
+      aboutTitle,
+      aboutDescription,
+      cafeDescription,
+      defaultLayout: defaultLayout || false,
     });
+
+    return layout;
+  },
+
+  // ✅ UPDATE
+  updateCafeLayout: async (id, body, files) => {
+    const layout = await CafeLayout.findById(id);
+    if (!layout) {
+      const err = new Error("Cafe layout not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    if (files?.homeImage) {
+      layout.homeImage = files.homeImage[0].location;
+    }
+
+    if (files?.aboutImage) {
+      layout.aboutImage = files.aboutImage[0].location;
+    }
+
+    Object.assign(layout, body);
+
+    await layout.save();
+    return layout;
+  },
+
+  // ✅ GET (ADMIN WISE)
+  getCafeLayout: async (adminId) => {
+    return await CafeLayout.findOne({ adminId });
+  },
+
+  // ✅ DELETE
+  deleteCafeLayout: async (id) => {
+    const deleted = await CafeLayout.findByIdAndDelete(id);
+    if (!deleted) {
+      const err = new Error("Cafe layout not found");
+      err.statusCode = 404;
+      throw err;
+    }
+    return true;
   },
 };
+
+
 
 export default layoutService;

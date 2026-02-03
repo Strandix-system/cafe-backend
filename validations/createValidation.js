@@ -9,7 +9,7 @@ const emailRule = Joi.string().trim().lowercase().max(100).custom((value, helper
         }
         return value;
     });
-const phoneRule = Joi.number().integer().min(6000000000).max(9999999999).strict();
+const phoneRule = Joi.number().integer().min(6000000000).max(9999999999);
 const passwordRule = Joi.string().min(8).max(32).pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/);
 const addressRule = Joi.string().trim().min(5).max(200);
 const pincodeRule = Joi.number().integer().min(100000).max(999999);
@@ -24,8 +24,7 @@ const createAdminValidator = {
         address: addressRule.required(),
         state: Joi.string().trim().min(2).max(50).required(),
         city: Joi.string().trim().min(2).max(50).required(),
-        pincode: pincodeRule.required(),
-          selectedLayout:  Joi.string().trim().required(),
+        pincode: pincodeRule.required(), 
     }).required(),
 };
 const updateAdminValidator = {
@@ -41,6 +40,7 @@ const updateAdminValidator = {
         state: Joi.string().trim().min(2).max(50),
         city: Joi.string().trim().min(2).max(50),
         pincode: pincodeRule,
+        isActive: Joi.boolean()
     }).min(1).required(),
 };
 const deleteAdminValidator = {

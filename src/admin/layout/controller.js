@@ -1,16 +1,8 @@
 import layoutService from "./service.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
 
-export default {
-  createTemplate: async (req, res, next) => {
-    try {
-      const result = await layoutService.createTemplate(req.body);
-      sendSuccessResponse(res, 201, "Template created", result);
-    } catch (err) {
-      next(err);
-    }
-  },
-
+const cafeLayoutController = {
+  // ✅ CREATE
   createCafeLayout: async (req, res, next) => {
     try {
       const result = await layoutService.createCafeLayout(
@@ -18,18 +10,47 @@ export default {
         req.body,
         req.files
       );
-      sendSuccessResponse(res, 201, "Layout saved", result);
+
+      sendSuccessResponse(res, 201, "Cafe layout created successfully", result);
     } catch (err) {
       next(err);
     }
   },
 
-  getAdminLayout: async (req, res, next) => {
+  // ✅ UPDATE
+  updateCafeLayout: async (req, res, next) => {
     try {
-      const result = await layoutService.getAdminLayout(req.user._id);
-      sendSuccessResponse(res, 200, "Layout fetched", result);
+      const result = await layoutService.updateCafeLayout(
+        req.params.id,
+        req.body,
+        req.files
+      );
+
+      sendSuccessResponse(res, 200, "Cafe layout updated successfully", result);
     } catch (err) {
       next(err);
     }
-  }
+  },
+
+  // ✅ GET
+  getCafeLayout: async (req, res, next) => {
+    try {
+      const result = await layoutService.getCafeLayout(req.user._id);
+      sendSuccessResponse(res, 200, "Cafe layout fetched successfully", result);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // ✅ DELETE
+  deleteCafeLayout: async (req, res, next) => {
+    try {
+      await layoutService.deleteCafeLayout(req.params.id);
+      sendSuccessResponse(res, 200, "Cafe layout deleted successfully");
+    } catch (err) {
+      next(err);
+    }
+  },
 };
+
+export default cafeLayoutController;

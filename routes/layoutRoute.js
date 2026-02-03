@@ -1,32 +1,40 @@
 import express from "express";
-import layoutController from "../src/admin/layout/controller.js";
+import cafeLayoutController from "../src/admin/layout/controller.js";
 import { tokenVerification } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/permission.js";
-import upload from "../middleware/upload.js"
-import { validate } from "../middleware/validate.js";
-import { createTemplateValidator, createCafeLayoutValidator} from "../validations/createTemplate.js";
+import {uploadLayoutImages }from "../middleware/upload.js";
 
 const router = express.Router();
-// SUPERADMIN
+
 router.post(
-  "/template",
-    tokenVerification,
-    allowRoles("superadmin"),
-  validate(createTemplateValidator),
-  layoutController.createTemplate
+  "/create",
+  tokenVerification,
+  allowRoles("superadmin", "admin"),
+  uploadLayoutImages,
+  cafeLayoutController.createCafeLayout
 );
 
-// ADMIN
-router.post(
-  "/cafe-layout",
-    tokenVerification,
-    allowRoles("admin"),
-  upload.array("images"),
-  validate(createCafeLayoutValidator),
-  layoutController.createCafeLayout
+router.put(
+  "/update/:id",
+  tokenVerification,
+  allowRoles("superadmin", "admin"),
+  uploadLayoutImages,
+  cafeLayoutController.updateCafeLayout
 );
 
-router.get("/cafe-layout", layoutController.getAdminLayout);
+router.get(
+  "/",
+  tokenVerification,
+  allowRoles("superadmin", "admin"),
+  cafeLayoutController.getCafeLayout
+);
+
+router.delete(
+  "/delete/:id",
+  tokenVerification,
+  allowRoles("superadmin"),
+  cafeLayoutController.deleteCafeLayout
+);
 
 export default router;
 

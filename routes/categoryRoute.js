@@ -1,0 +1,36 @@
+import express from "express";
+import { tokenVerification } from "../middleware/auth.js";
+import categoryController from "../src/admin/category/categoryController.js";
+import { allowRoles } from "../middleware/permission.js";
+
+const router = express.Router();
+
+// Only admin / superadmin
+router.post(
+  "/create",
+  tokenVerification,
+  allowRoles("superadmin"),
+  categoryController.createCategory
+);
+
+router.get(
+  "/",
+  tokenVerification,
+  categoryController.getCategories
+);
+
+router.put(
+  "/update/:categoryId",
+  tokenVerification,
+    allowRoles("superadmin"),
+  categoryController.updateCategory
+);
+
+router.delete(
+  "/delete/:categoryId",
+  tokenVerification,
+    allowRoles("superadmin"),
+  categoryController.deleteCategory
+);
+
+export default router;

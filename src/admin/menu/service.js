@@ -1,7 +1,16 @@
 import Menu from "../../../model/menu.js";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../../../config/s3.js";
-import { deleteUploadedFiles, getS3Key } from "../../../utils/s3utils.js";
+
+const getS3Key = (value) => {
+  if (!value) return null;
+
+  // If already a key (not URL)
+  if (!value.startsWith("http")) return value;
+
+  const url = new URL(value);
+  return url.pathname.substring(1); // remove leading slash
+};
 
 const menuService = {
   createMenu: async (adminId, body, file) => {
@@ -36,18 +45,6 @@ const menuService = {
   updateMenu: async (menuId, body, file) => {
     const menu = await Menu.findById(menuId);
     if (!menu) {
-      // cleanup newly uploaded image if menu doesn't exist
-      if (file?.location) {
-        const newKey = getS3Key(file.location);
-        if (newKey) {
-          await s3.send(
-            new DeleteObjectCommand({
-              Bucket: process.env.S3_BUCKET_NAME,
-              Key: newKey,
-            })
-          );
-        }
-      }
       throw Object.assign(new Error("Menu not found"), { statusCode: 404 });
     }
 
@@ -66,40 +63,28 @@ const menuService = {
       });
     }
 
-    const oldImage = menu.image;
-    const isReplacingImage = Boolean(file?.location);
+    // 🔥 UPDATE IMAGE (DELETE OLD FROM S3)
+   if (file?.location) {
+  if (menu.image) {
+    const oldKey = getS3Key(menu.image);
 
-    // set new image URL (S3 upload already happened in multer middleware)
-    if (isReplacingImage) {
-      menu.image = file.location;
+    if (oldKey) {
+      await s3.send(
+        new DeleteObjectCommand({
+          Bucket: process.env.S3_BUCKET_NAME,
+          Key: oldKey,
+        })
+      );
     }
+  }
+
+  menu.image = file.location; // save new image URL
+}
 
     if (price) menu.price = Number(price);
     if (discountPrice) menu.discountPrice = Number(discountPrice);
 
-    try {
-      await menu.save();
-    } catch (err) {
-      // if DB update fails, remove the newly uploaded image from S3
-      if (isReplacingImage) {
-        const newKey = getS3Key(file.location);
-        if (newKey) {
-          await s3.send(
-            new DeleteObjectCommand({
-              Bucket: process.env.S3_BUCKET_NAME,
-              Key: newKey,
-            })
-          );
-        }
-      }
-      throw err;
-    }
-
-    // after successful save, delete the old image from S3
-    if (isReplacingImage && oldImage && oldImage !== menu.image) {
-      await deleteUploadedFiles([{ location: oldImage }]);
-    }
-
+    await menu.save();
     return menu;
   },
 

@@ -3,8 +3,10 @@ import multerS3 from "multer-s3-v3";
 import { s3 } from "../config/s3.js";
 import dotenv from "dotenv";
 
-dotenv.config(); // 
-const upload = multer({
+dotenv.config();
+
+/* =======================
+   MENU IMAGE UPLOAD
   storage: multerS3({
     s3,
     bucket: process.env.S3_BUCKET_NAME,
@@ -15,35 +17,61 @@ const upload = multer({
   }),
 });
 
+/* =======================
+   TEMPLATE IMAGE UPLOAD
 const templateStorage = multerS3({
   s3,
   bucket: process.env.S3_BUCKET_NAME,
   contentType: multerS3.AUTO_CONTENT_TYPE,
   key: (req, file, cb) => {
-    cb(null, `template/${Date.now()}-${Math.random().toString(36).slice(2, 9)}-${file.originalname}`);
+    cb(
+      null,
+      `template/${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 9)}-${file.originalname}`
+    );
   },
 });
-const uploadprofile = multer({
+
+const uploadTemplateImages = multer({
+  storage: templateStorage,
+});
+
+/* =======================
+   ADMIN PROFILE & LOGO
   storage: multerS3({
     s3,
     bucket: process.env.S3_BUCKET_NAME,
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
-      cb(null, `profile/${Date.now()}-${file.originalname}`);
-    }
+      let folder = "misc";
+
+      if (file.fieldname === "logo") folder = "logo";
+      if (file.fieldname === "profileImage") folder = "profile";
+
+      cb(null, `${folder}/${Date.now()}-${file.originalname}`);
+    },
   }),
 });
-const uploadlogo = multer({
+
+/* =======================
+   CAFE LAYOUT IMAGES
   storage: multerS3({
     s3,
     bucket: process.env.S3_BUCKET_NAME,
     contentType: multerS3.AUTO_CONTENT_TYPE,
     key: (req, file, cb) => {
-      cb(null, `logo/${Date.now()}-${file.originalname}`);
-    }
+      let folder = "cafe-layout";
+
+      if (file.fieldname === "homeImage") folder = "cafe-layout/home";
+      if (file.fieldname === "aboutImage") folder = "cafe-layout/about";
+
+      cb(null, `${folder}/${Date.now()}-${file.originalname}`);
+    },
   }),
-});
-
-
-export const uploadTemplateImages = multer({ storage: templateStorage });
-export { upload,uploadlogo,uploadprofile};
+}).fields([
+  { name: "homeImage", maxCount: 1 },
+  { name: "aboutImage", maxCount: 1 },
+]);
+/* =======================
+   EXPORTS

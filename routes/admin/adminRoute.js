@@ -8,7 +8,7 @@ import {
   updateAdminValidator,
   deleteAdminValidator
 } from "../../validations/createValidation.js";
-import { uploadprofile, uploadlogo } from "../../middleware/upload.js";
+import { uploadAdminImages  } from "../../middleware/upload.js";
 
 const router = express.Router();
 
@@ -16,11 +16,14 @@ router.post(
   "/create",
   tokenVerification,
   allowRoles("superadmin"),
-  uploadprofile.single("profileImage"),
-  uploadlogo.single("logo"),
+  uploadAdminImages.fields([
+    { name: "logo", maxCount: 1 },
+    { name: "profileImage", maxCount: 1 }
+  ]),
   validate(createAdminValidator),
   controller.createAdmin
 );
+
 router.patch(
   "/update/:id",
   tokenVerification,

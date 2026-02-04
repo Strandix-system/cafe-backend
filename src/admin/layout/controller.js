@@ -1,17 +1,8 @@
 import layoutService from "./service.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
-import { pick } from "../../../utils/pick.js";
 
-export default {
-  createLayout: async (req, res, next) => {
-    try {
-      const result = await layoutService.createLayout(req.body, req.files || [], req.user);
-      sendSuccessResponse(res, 201, "Template created", result);
-    } catch (err) {
-      next(err);
-    }
-  },
-
+const cafeLayoutController = {
+  // ✅ CREATE
   createCafeLayout: async (req, res, next) => {
     try {
       const result = await layoutService.createCafeLayout(
@@ -19,28 +10,69 @@ export default {
         req.body,
         req.files
       );
-      sendSuccessResponse(res, 201, "Layout saved", result);
+
+      sendSuccessResponse(res, 201, "Cafe layout created successfully", result);
     } catch (err) {
       next(err);
     }
   },
 
-  getAdminLayout: async (req, res, next) => {
+  // ✅ UPDATE
+  updateCafeLayout: async (req, res, next) => {
     try {
-      const result = await layoutService.getAdminLayout(req.user._id);
-      sendSuccessResponse(res, 200, "Layout fetched", result);
+      const result = await layoutService.updateCafeLayout(
+        req.params.id,
+        req.body,
+        req.files
+      );
+
+      sendSuccessResponse(res, 200, "Cafe layout updated successfully", result);
     } catch (err) {
       next(err);
     }
   },
-   getAllLayoutTemplates: async (req, res, next) => {
-    try {
-      const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
-      const result = await layoutService.getAllTemplates(options, req.query);
 
-      sendSuccessResponse(res, 200, "Layout templates fetched successfully", result);
-    } catch (error) {
-      next(error);
+  // ✅ GET
+  getCafeLayout: async (req, res, next) => {
+    try {
+      const result = await layoutService.getCafeLayout(req.user._id);
+      sendSuccessResponse(res, 200, "Cafe layout fetched successfully", result);
+    } catch (err) {
+      next(err);
     }
+  },
+
+  // ✅ DELETE
+  deleteCafeLayout: async (req, res, next) => {
+    try {
+      await layoutService.deleteCafeLayout(req.params.id);
+      sendSuccessResponse(res, 200, "Cafe layout deleted successfully");
+    } catch (err) {
+      next(err);
+    }
+  },
+  // ✅ ADMIN DASHBOARD LOAD
+// If admin layout exists → return it
+// Else → return default layout
+getLayoutForAdminDashboard: async (req, res, next) => {
+  try {
+    let layout = await layoutService.getCafeLayout(req.user._id);
+
+    if (!layout) {
+      layout = await layoutService.getDefaultLayout();
+    }
+
+    sendSuccessResponse(
+      res,
+      200,
+      "Layout fetched for admin dashboard",
+      layout
+    );
+  } catch (err) {
+    next(err);
   }
+},
+
 };
+
+export default cafeLayoutController;

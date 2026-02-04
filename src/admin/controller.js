@@ -3,13 +3,16 @@ import { sendSuccessResponse } from "../../utils/response.js";
 import {pick} from "../../utils/pick.js"
 
 export default {
-  createAdmin: async (req, res, next) => {
-    try {
-      const admin = await service.createAdmin(req.body,req.file);
-      sendSuccessResponse(res, 201, "Admin created", admin);
-    } catch (error) {
-      next(error);
-    }
+createAdmin: async (req, res, next) => {
+  try {
+    const result = await service.createAdmin(req.body, req.files);
+    res.status(201).json({
+      success: true,
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
   },
   updateAdmin: async (req, res, next) => {
     try {
@@ -40,7 +43,7 @@ export default {
       next(error);
     }
   },
- getByAdmin: async (req, res, next) => {
+  getByAdmin: async (req, res, next) => {
   try {
     const admins = await service.getByAdmin(req.params.id);
 
@@ -49,7 +52,6 @@ export default {
   } catch (error) {
     next(error);
   }
-},
-
+}
 };
 

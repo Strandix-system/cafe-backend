@@ -1,31 +1,69 @@
 import express from "express";
-import layoutController from "../src/admin/layout/controller.js";
+import cafeLayoutController from "../src/admin/layout/controller.js";
 import { tokenVerification } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/permission.js";
-import { validateImageCountBeforeUpload, validateTemplateImageCountBeforeUpload } from "../middleware/validateImageCount.js";
-import { validate } from "../middleware/validate.js";
-import { createCafeLayoutValidator } from "../validations/createTemplate.js";
+import { uploadLayoutImages } from "../middleware/upload.js";
 
 const router = express.Router();
 
-// SUPERADMIN
+/**
+ * 🔹 SUPER ADMIN
+ * Create DEFAULT layout
+ */
 router.post(
-  "/create",
+  "/default",
   tokenVerification,
   allowRoles("superadmin"),
-  validateTemplateImageCountBeforeUpload,
-  layoutController.createLayout
+  uploadLayoutImages,
+  cafeLayoutController.createCafeLayout
 );
 
-router.get("/",layoutController.getAllLayoutTemplates);
-
-// ADMIN
-router.post("/cafe-layout", tokenVerification, allowRoles("admin"), validateImageCountBeforeUpload,
- validate(createCafeLayoutValidator),
- layoutController.createCafeLayout
+/**
+ * 🔹 ADMIN DASHBOARD
+ * Get layout:
+ * - Admin layout if exists
+ * - Else default layout
+ */
+router.get(
+  "/",
+  tokenVerification,
+  allowRoles("admin", "superadmin"),
+  cafeLayoutController.getLayoutForAdminDashboard
 );
 
-router.get("/cafe-layout", layoutController.getAdminLayout);
+/**
+ * 🔹 ADMIN
+ * Create own cafe layout (first time)
+ */
+router.post(
+  "/admin-create",
+  tokenVerification,
+  allowRoles("admin"),
+  uploadLayoutImages,
+  cafeLayoutController.createCafeLayout
+);
+
+/**
+ * 🔹 ADMIN
+ * Update own cafe layout
+ */
+router.put(
+  "/update/:id",
+  tokenVerification,
+  allowRoles("admin"),
+  uploadLayoutImages,
+  cafeLayoutController.updateCafeLayout
+);
+
+/**
+ * 🔹 SUPER ADMIN
+ * Delete DEFAULT layout
+ */
+router.delete(
+  "/delete/:id",
+  tokenVerification,
+  allowRoles("superadmin"),
+  cafeLayoutController.deleteCafeLayout
+);
 
 export default router;
-

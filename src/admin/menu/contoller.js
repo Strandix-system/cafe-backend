@@ -11,7 +11,6 @@ const menuController = {
         req.user._id,
         req.body,
         req.file // 
-
       );
 
       sendSuccessResponse(res, 201, "Menu created successfully", result);
@@ -25,8 +24,7 @@ const menuController = {
     try {
       const result = await menuService.updateMenu(
         req.params.id,
-        req.body,
-        req.file
+        req.body
       );
       sendSuccessResponse(res, 200, "Menu updated successfully", result);
     } catch (error) {

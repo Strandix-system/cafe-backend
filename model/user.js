@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema(
     phoneNumber: {
       type: Number,
       trim: true,
-      unique: true
+      unique:true
     },
     password: {
       type: String,
@@ -60,18 +60,25 @@ const userSchema = new mongoose.Schema(
     profileImage: {
       type: String,
       trim: true,
+      required:false,
       default: null
     },
     logo: {
       type: String,
-      default: null
+      default: null, required:false
     },
     role: {
       type: String,
       enum: ["superadmin", "admin"],
       default: "admin", required: true
-    }
-
+    },
+ selectedLayout: {
+     type:mongoose.Schema.Types.ObjectId,
+     ref:"Layout",
+     required: function(){
+      return this.role==="admin"
+     }
+    },
   },
   { timestamps: true }
 );

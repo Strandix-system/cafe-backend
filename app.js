@@ -16,15 +16,15 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-app.use((req, res, next) => {
-  if (req.secure) return next();
+// app.use((req, res, next) => {
+//   if (req.secure) return next();
 
-  if (req.headers["x-forwarded-proto"] !== "https") {
-    return res.redirect(301, "https://" + req.headers.host + req.url);
-  }
+//   if (req.headers["x-forwarded-proto"] !== "https") {
+//     return res.redirect(301, "https://" + req.headers.host + req.url);
+//   }
 
-  next();
-});
+//   next();
+// });
 
 
 app.use(helmet());

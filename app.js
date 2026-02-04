@@ -53,7 +53,7 @@ app.use("/api", routes);
 // 404
 app.use(notFoundError);
 
-connectDB();
+// connectDB();
 
 app.use(errorHandler);
 server.listen(port, "0.0.0.0", () => {

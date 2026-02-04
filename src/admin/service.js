@@ -31,7 +31,23 @@ createAdmin: async (body, files) => {
     if (!admin) {
       throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
     }
-    return updatedAdmin;
+
+    if (files?.logo) {
+      admin.logo = files.logo[0].location;
+    }
+
+    if (files?.profileImage) {
+      admin.profileImage = files.profileImage[0].location;
+    }
+
+    Object.assign(admin, body);
+
+    if (body.password) {
+      admin.password = await bcrypt.hash(body.password, 10);
+    }
+
+    await admin.save();
+    return admin;
   },
   deleteAdmin: async (id) => {
     const admin = await User.findOneAndDelete({

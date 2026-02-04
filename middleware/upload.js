@@ -7,8 +7,6 @@ dotenv.config();
 
 /* =======================
    MENU IMAGE UPLOAD
-======================= */
-const uploadMenu = multer({
   storage: multerS3({
     s3,
     bucket: process.env.S3_BUCKET_NAME,
@@ -21,7 +19,6 @@ const uploadMenu = multer({
 
 /* =======================
    TEMPLATE IMAGE UPLOAD
-======================= */
 const templateStorage = multerS3({
   s3,
   bucket: process.env.S3_BUCKET_NAME,
@@ -42,8 +39,6 @@ const uploadTemplateImages = multer({
 
 /* =======================
    ADMIN PROFILE & LOGO
-======================= */
-const uploadAdminImages = multer({
   storage: multerS3({
     s3,
     bucket: process.env.S3_BUCKET_NAME,
@@ -61,8 +56,6 @@ const uploadAdminImages = multer({
 
 /* =======================
    CAFE LAYOUT IMAGES
-======================= */
-const uploadLayoutImages = multer({
   storage: multerS3({
     s3,
     bucket: process.env.S3_BUCKET_NAME,
@@ -82,10 +75,3 @@ const uploadLayoutImages = multer({
 ]);
 /* =======================
    EXPORTS
-======================= */
-export {
-  uploadMenu,
-  uploadTemplateImages,
-  uploadAdminImages,
-  uploadLayoutImages,
-};

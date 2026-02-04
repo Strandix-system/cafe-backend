@@ -17,21 +17,13 @@ const app = express();
 app.set("trust proxy", 1);
 
 app.use((req, res, next) => {
-
-  // Allow health check
-  if (req.path === "/health") {
-    return res.status(200).send("OK");
-  }
-
-  if (req.secure) return next();
-
   if (req.headers["x-forwarded-proto"] !== "https") {
-    return res.redirect(301, "https://" + req.headers.host + req.url);
+    return res.redirect(
+      "https://" + req.headers.host + req.url
+    );
   }
-
   next();
 });
-
 
 app.use(helmet());
 app.use(express.json());

@@ -1,10 +1,16 @@
-import CafeLayout from"../../../model/layout.js";
+import CafeLayout from "../../../model/layout.js";
 import { deleteUploadedFiles } from "../../../utils/s3utils.js";
 
 const layoutService = {
   // Superadmin creates template
-    // ✅ CREATE
+  // ✅ CREATE
   createCafeLayout: async (adminId, body, files) => {
+    const existing = await CafeLayout.findOne({ adminId });
+    if (existing) {
+      const err = new Error("Layout already exists for this admin");
+      err.statusCode = 400;
+      throw err;
+    }
     if (!files?.homeImage || !files?.aboutImage) {
       const err = new Error("Home image and About image are required");
       err.statusCode = 400;
@@ -13,7 +19,7 @@ const layoutService = {
 
     const {
       menuTitle,
-      categories,
+      layoutTitle,
       aboutTitle,
       aboutDescription,
       cafeDescription,
@@ -25,13 +31,19 @@ const layoutService = {
       homeImage: files.homeImage[0].location,
       aboutImage: files.aboutImage[0].location,
       menuTitle,
-      categories,
+      layoutTitle,
       aboutTitle,
       aboutDescription,
       cafeDescription,
       defaultLayout: defaultLayout || false,
     });
-
+    if (!layout) {
+      await deleteUploadedFiles([
+        files.homeImage[0].location,
+        files.aboutImage[0].location,
+      ]);
+      throw new Error("Failed to create cafe layout");
+    }
     return layout;
   },
 
@@ -47,7 +59,6 @@ const layoutService = {
     if (files?.homeImage) {
       layout.homeImage = files.homeImage[0].location;
     }
-
     if (files?.aboutImage) {
       layout.aboutImage = files.aboutImage[0].location;
     }
@@ -73,8 +84,11 @@ const layoutService = {
     }
     return true;
   },
+  // ✅ GET DEFAULT LAYOUT (SUPER ADMIN CREATED)
+  getDefaultLayout: async () => {
+const result=await CafeLayout.findOne({ defaultLayout: true });
+  return result;
+},
+
 };
-
-
-
 export default layoutService;

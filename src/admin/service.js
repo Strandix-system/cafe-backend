@@ -63,7 +63,19 @@ createAdmin: async (body, files) => {
     delete filter.search;
     const result = await User.paginate(query, options);
     return result;
+  },
+  getByAdmin: async (adminId) => {
+  const admin = await User.findById({
+    _id: adminId,
+    role: "Admin",
+  }).select("-password");
+
+  if (!admin) {
+    throw new Error("Admin not found");
   }
+
+  return admin;
+}
 
 };
 

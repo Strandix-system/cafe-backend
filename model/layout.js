@@ -1,6 +1,4 @@
 import mongoose from "mongoose";
-import cafeItemCategories from "../config/category.js"
-import { allowRoles } from "../middleware/permission.js";
 
 const cafeLayoutSchema = new mongoose.Schema(
   {
@@ -13,11 +11,7 @@ const cafeLayoutSchema = new mongoose.Schema(
     homeImage: { type: String, required: true, trim: true },
     aboutImage: { type: String, required: true, trim: true },
     menuTitle: { type: String, required: true, trim: true },
-    categories: {
-      type: [String],          // ✅ array of strings
-      enum: cafeItemCategories, // ✅ allowed values
-      required: true,
-    },
+   layoutTitle: { type: String, required: true, trim: true },
     aboutTitle: { type: String, required: true, trim: true },
     aboutDescription: { type: String, required: true, trim: true },
     cafeDescription: { type: String, required: true, trim: true },

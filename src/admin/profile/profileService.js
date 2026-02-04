@@ -1,4 +1,4 @@
-import User from "../../model/user.js";
+import User from "../../../model/user.js";
 
 const profileService = {
   // ✅ GET MY PROFILE

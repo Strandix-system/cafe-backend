@@ -51,6 +51,28 @@ const cafeLayoutController = {
       next(err);
     }
   },
+  // ✅ ADMIN DASHBOARD LOAD
+// If admin layout exists → return it
+// Else → return default layout
+getLayoutForAdminDashboard: async (req, res, next) => {
+  try {
+    let layout = await layoutService.getCafeLayout(req.user._id);
+
+    if (!layout) {
+      layout = await layoutService.getDefaultLayout();
+    }
+
+    sendSuccessResponse(
+      res,
+      200,
+      "Layout fetched for admin dashboard",
+      layout
+    );
+  } catch (err) {
+    next(err);
+  }
+},
+
 };
 
 export default cafeLayoutController;

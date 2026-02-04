@@ -1,4 +1,4 @@
-import Customer from "../../model/customer.js";
+import Customer from "../../../model/customer.js";
 
 const customerService = {
   createCustomer: async (data) => {

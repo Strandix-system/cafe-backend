@@ -4,9 +4,9 @@ import adminUserRoute from "./admin/adminRoute.js";
 import stateRoute from "./stateRoute.js"
 import menuRoute from "./menuRoute.js"
 import layoutRoute from "./layoutRoute.js";
-import cafeItemCategories from "../config/category.js"
 import profileRoute from "./profileRoute.js";
 import customerRoute from "./customerRoute.js";
+import categoryRoute from "./categoryRoute.js";
 const router = express.Router();
 
 
@@ -38,20 +38,14 @@ const defaultRoutes = [
   {
   path: "/customer",
   route: customerRoute,
-}
+}, {
+    path: "/category",
+    route: categoryRoute,
+  },
 ];
 
 
 defaultRoutes.forEach((route) => {
   router.use(route.path, route.route);
 });
-
-// Proper GET route for categories
-router.get("/get-categories", (req, res) => {
-  res.json({
-    success: true,
-    data: cafeItemCategories,
-  });
-});
-
 export default router;

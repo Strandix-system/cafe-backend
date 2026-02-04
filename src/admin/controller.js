@@ -40,5 +40,15 @@ createAdmin: async (req, res, next) => {
       next(error);
     }
   },
+  getByAdmin: async (req, res, next) => {
+  try {
+    const admins = await service.getByAdmin(req.params.id);
+
+    sendSuccessResponse(res, 200,"Admins fetched successfully",admins
+    );
+  } catch (error) {
+    next(error);
+  }
+}
 };
 

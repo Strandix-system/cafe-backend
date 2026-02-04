@@ -1,5 +1,5 @@
 import customerService from "./customerServer.js";
-import { pick } from "../../utils/pick.js";
+import { pick } from "../../../utils/pick.js";
 const customerController = {
   createCustomer: async (req, res, next) => {
     try {

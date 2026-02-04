@@ -44,6 +44,12 @@ router.get(
   allowRoles("superadmin"),
   controller.listAdmins
 );
+router.get(
+  "/get-user/:id",
+  tokenVerification,
+  allowRoles("superadmin"),
+  controller.getByAdmin
+);
 
 export default router;
 

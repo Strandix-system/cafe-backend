@@ -1,5 +1,5 @@
 import profileService from "./profileService.js";
-import  sendSuccessResponse  from "../../utils/responseHandler.js";
+import  {sendSuccessResponse } from "../../../utils/response.js";
 
 const profileController = {
   // ✅ GET PROFILE

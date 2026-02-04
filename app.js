@@ -14,10 +14,33 @@ env.config();
 const port = process.env.PORT || 8080;
 const app = express();
 
+app.set("trust proxy", 1);
+
+app.use((req, res, next) => {
+  if (req.secure) return next();
+
+  if (req.headers["x-forwarded-proto"] !== "https") {
+    return res.redirect(301, "https://" + req.headers.host + req.url);
+  }
+
+  next();
+});
+
+
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+
+app.use(cors({
+  origin: [
+    "https://main.d13qtkfj0o1mlk.amplifyapp.com",
+    "http://localhost:3000"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+
+
 app.use(compression());
 
 const server = http.createServer(app);

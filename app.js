@@ -31,7 +31,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(cors({
   origin: [
-    "https://main.d13qtkfj0o1mlk.amplifyapp.com"
+    "https://main.d13qtkfj0o1mlk.amplifyapp.com",
+    "https://cafe.strandixsystem.com"
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true

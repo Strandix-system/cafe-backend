@@ -72,6 +72,26 @@ getLayoutForAdminDashboard: async (req, res, next) => {
     next(err);
   }
 },
+// 🌐 PUBLIC PORTFOLIO (NO LOGIN)
+  getLayoutForPortfolio: async (req, res, next) => {
+    try {
+      const { adminId } = req.params;
+
+      let layout = await layoutService.getCafeLayout(adminId);
+
+      if (!layout) {
+        layout = await layoutService.getDefaultLayout();
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Cafe portfolio layout fetched successfully",
+        result: layout,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
 
 };
 

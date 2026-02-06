@@ -72,13 +72,6 @@ const userSchema = new mongoose.Schema(
       enum: ["superadmin", "admin"],
       default: "admin", required: true
     },
- selectedLayout: {
-     type:mongoose.Schema.Types.ObjectId,
-     ref:"Layout",
-     required: function(){
-      return this.role==="admin"
-     }
-    },
   },
   { timestamps: true }
 );

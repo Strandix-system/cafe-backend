@@ -66,4 +66,9 @@ router.delete(
   cafeLayoutController.deleteCafeLayout
 );
 
+router.get(
+  "/portfolio/:adminId",
+  cafeLayoutController.getLayoutForPortfolio
+);
+
 export default router;

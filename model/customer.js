@@ -10,8 +10,16 @@ const customerSchema = new mongoose.Schema(
         phoneNumber: {
             type: Number,
             required: true,
-        }
-
+        },
+        tableNumber: {
+            type: Number,
+            required: true,
+        },
+        adminId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+        },
     },
     { timestamps: true }
 );

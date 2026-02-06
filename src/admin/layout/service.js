@@ -85,9 +85,12 @@ const layoutService = {
     return true;
   },
   // ✅ GET DEFAULT LAYOUT (SUPER ADMIN CREATED)
-  getDefaultLayout: async () => {
-const result=await CafeLayout.findOne({ defaultLayout: true });
-  return result;
+ getDefaultLayout: async () => {
+  return await CafeLayout.findOne({ defaultLayout: false })
+    .populate({
+      path: "adminId",
+      select: "logo address phoneNumber email",
+    });
 },
 
 };

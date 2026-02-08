@@ -26,13 +26,52 @@ createAdmin: async (body, files) => {
 
   return admin;
 },
-  updateAdmin: async (id, body, files) => {
-    const admin = await User.findById(id);
-    if (!admin) {
-      throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
+updateAdmin: async (id, body, files) => {
+  const admin = await User.findById(id);
+  if (!admin) throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
+
+  // 1. Dynamic Uniqueness Check (Email/Phone)
+  const uniqueFields = ['email', 'phoneNumber'];
+  for (const field of uniqueFields) {
+    if (body[field] && body[field] !== admin[field]) {
+      const exists = await User.findOne({ [field]: body[field] });
+      if (exists) throw Object.assign(new Error(`${field} already exists`), { statusCode: 409 });
     }
-    return updatedAdmin;
-  },
+  }
+
+  // 2. Map Files & Delete Old ones from S3
+  if (files) {
+    const fileFields = ['logo', 'profileImage'];
+    for (const key of fileFields) {
+      const newFile = files[key]?.[0];
+      const oldFileUrl = admin[key];
+
+      if (newFile?.location) {
+        // If an old image exists, delete it from S3
+        if (oldFileUrl) {
+          try {
+            await deleteSingleFile(oldFileUrl);
+            console.log(`✅ Old ${key} deleted successfully`);
+          } catch (err) {
+            console.error(`❌ Failed to delete old ${key}:`, err.message);
+          }
+        }
+        // Update body with new S3 URL
+        body[key] = newFile.location;
+      }
+    }
+  }
+
+  // 3. Hash Password if it exists
+  if (body.password) body.password = await bcrypt.hash(body.password, 10);
+
+  // 4. Update
+  return await User.findByIdAndUpdate(
+    id, 
+    { $set: body }, 
+    { new: true, runValidators: true }
+  );
+},
   deleteAdmin: async (id) => {
     const admin = await User.findOneAndDelete({
       _id: id,

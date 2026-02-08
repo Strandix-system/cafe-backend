@@ -1,29 +1,48 @@
 import mongoose from "mongoose";
-
+import { paginate } from "../model/plugin/paginate.plugin.js"
 const cafeLayoutSchema = new mongoose.Schema(
   {
     adminId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: true,
     },
-    // Admin can override template images/content for their cafe
-    homeImage: { type: String, required: true, trim: true },
-    aboutImage: { type: String, required: true, trim: true },
-    menuTitle: { type: String, required: true, trim: true },
-   layoutTitle: { type: String, required: true, trim: true },
-    aboutTitle: { type: String, required: true, trim: true },
-    aboutDescription: { type: String, required: true, trim: true },
-    cafeDescription: { type: String, required: true, trim: true },
+
+    homeImage: { type: String, required: true },
+    aboutImage: { type: String, required: true },
+
+    menuTitle: { type: String, required: true },
+    layoutTitle: { type: String, required: true },
+    aboutTitle: { type: String, required: true },
+    aboutDescription: { type: String, required: true },
+    cafeDescription: { type: String, required: true },
+
+    hours: {
+      weekdays: { type: String, required: true },
+      weekends: { type: String, required: true },
+    },
+
+    socialLinks: {
+      instagram: String,
+      facebook: String,
+      twitter: String,
+    },
+
+    // 🟢 Only TRUE for superadmin layouts
     defaultLayout: {
       type: Boolean,
       default: false,
-      required: function () {
-        return this.role === "superadmin";
-      },
+    },
+
+    // 🟡 Only filled for admin layouts
+    defaultLayoutId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CafeLayout",
+      default: null,
     },
   },
   { timestamps: true }
 );
+cafeLayoutSchema.plugin(paginate)
 
 export default mongoose.model("CafeLayout", cafeLayoutSchema);

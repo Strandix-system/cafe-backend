@@ -36,5 +36,18 @@ updateCategory : async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-}
+},
+getCategoriesForDropdown: async (req, res, next) => {
+  try {
+    const categories = await categoryService.getAllCategories();
+
+    res.status(200).json({
+      success: true,
+      message: "Categories fetched successfully",
+      result: categories,
+    });
+  } catch (err) {
+    next(err);
+  }
+},
 };

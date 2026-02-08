@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
-import User from "./user.js"
+import User from "./user.js";
+import Category from "./category.js";
 import { paginate } from "../model/plugin/paginate.plugin.js"
 
 const menuSchema = new mongoose.Schema(
@@ -7,6 +8,20 @@ const menuSchema = new mongoose.Schema(
         adminId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
+            required: true,
+        },
+        name: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        category : {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Category",
+            required: true,
+        },
+        description: {
+            type: String,
             required: true,
         },
         image: {

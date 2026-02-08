@@ -25,7 +25,12 @@ updateCategoryById : async (categoryId, data) => {
     throw new Error("Category not found");
   }
   return category;
-}
+},
+ getAllCategories : async () => {
+  return await Category.find()
+    .select("_id name")
+    .sort({ name: 1 });
+},
 };
 export default categoryService;
 

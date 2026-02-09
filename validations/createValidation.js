@@ -28,20 +28,24 @@ const createAdminValidator = {
     }).required(),
 };
 const updateAdminValidator = {
-    params: Joi.object({
-        id: objectId.required(),
-    }),
-    body: Joi.object({
-        firstName: nameRule,
-        lastName: nameRule,
-        cafeName: Joi.string().trim().min(2).max(100),
-        phoneNumber: phoneRule,
-        address: addressRule,
-        state: Joi.string().trim().min(2).max(50),
-        city: Joi.string().trim().min(2).max(50),
-        pincode: pincodeRule,
-        isActive: Joi.boolean()
-    }).min(1).required(),
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+  body: Joi.object({
+    firstName: nameRule,
+    lastName: nameRule,
+    email: Joi.string().email().lowercase(),
+    password: Joi.string().min(6),
+    cafeName: Joi.string().trim().min(2).max(100),
+    phoneNumber: phoneRule,
+    address: addressRule,
+    state: Joi.string().trim().min(2).max(50),
+    city: Joi.string().trim().min(2).max(50),
+    pincode: pincodeRule,
+    logo: Joi.any(), 
+    profileImage: Joi.any(),
+    isActive: Joi.boolean()
+  }).min(0) // 👈 Change this to 0 to allow updating ONLY an image
 };
 const deleteAdminValidator = {
     params: Joi.object().keys({
@@ -51,8 +55,13 @@ const deleteAdminValidator = {
             .required(),
     }),
 };
-export {
-    createAdminValidator,
-    updateAdminValidator,
-    deleteAdminValidator
+const updateProfileValidator = {
+  body: Joi.object({
+    firstName: nameRule,
+    lastName: nameRule,
+    email: Joi.string().email().lowercase(),
+    phoneNumber: phoneRule,
+    profileImage: Joi.any()
+  }).min(1) // Ensure they are actually trying to update something
 };
+export {createAdminValidator,updateAdminValidator,deleteAdminValidator,updateProfileValidator};

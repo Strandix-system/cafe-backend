@@ -28,6 +28,10 @@ router.patch(
   "/update/:id",
   tokenVerification,
   allowRoles("superadmin"),
+  uploadAdminImages.fields([
+    { name: "logo", maxCount: 1 },
+    { name: "profileImage", maxCount: 1 }
+  ]),
   validate(updateAdminValidator),
   controller.updateAdmin
 );

@@ -14,10 +14,11 @@ router.post(
 );
 
 router.get(
-  "/",
+  "/get-allcategories",
   tokenVerification,
   categoryController.getCategories
 );
+router.get("/categories", categoryController.getCategoriesForDropdown);
 
 router.put(
   "/update/:categoryId",

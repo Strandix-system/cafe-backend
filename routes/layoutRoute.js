@@ -5,36 +5,28 @@ import { allowRoles } from "../middleware/permission.js";
 import { uploadLayoutImages } from "../middleware/upload.js";
 
 const router = express.Router();
-
-/**
- * 🔹 SUPER ADMIN
- * Create DEFAULT layout
- */
 router.post(
-  "/default",
+  "/create",
   tokenVerification,
-  allowRoles("superadmin"),
+  allowRoles("superadmin", "admin"),
   uploadLayoutImages,
   cafeLayoutController.createCafeLayout
 );
-
-/**
- * 🔹 ADMIN DASHBOARD
- * Get layout:
- * - Admin layout if exists
- * - Else default layout
- */
 router.get(
-  "/",
+  "/get-layout/:id",
   tokenVerification,
-  allowRoles("admin", "superadmin"),
-  cafeLayoutController.getLayoutForAdminDashboard
+  allowRoles("superadmin", "admin"),
+  cafeLayoutController.getLayoutById)
+
+// Delete any layout
+router.delete(
+  "/delete/:id",
+  tokenVerification,
+  allowRoles("superadmin"),
+  cafeLayoutController.deleteCafeLayout
 );
 
-/**
- * 🔹 ADMIN
- * Create own cafe layout (first time)
- */
+// Admin creates own layout
 router.post(
   "/admin-create",
   tokenVerification,
@@ -43,27 +35,32 @@ router.post(
   cafeLayoutController.createCafeLayout
 );
 
-/**
- * 🔹 ADMIN
- * Update own cafe layout
- */
-router.put(
+// Admin updates own layout
+router.patch(
   "/update/:id",
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles("admin"," superadmin"),
   uploadLayoutImages,
   cafeLayoutController.updateCafeLayout
 );
 
-/**
- * 🔹 SUPER ADMIN
- * Delete DEFAULT layout
- */
-router.delete(
-  "/delete/:id",
+// Admin dashboard (own layout OR default)
+router.get(
+  "/admin-layout",
   tokenVerification,
-  allowRoles("superadmin"),
-  cafeLayoutController.deleteCafeLayout
+  allowRoles("admin"),
+  cafeLayoutController.getCafeLayoutByAdmin
 );
 
+router.get(
+  "/portfolio/:id",
+  cafeLayoutController.getLayoutForPortfolio
+);
+// Superadmin listing (all layouts)
+router.get(
+  "/all-layouts", 
+  tokenVerification,
+  allowRoles("superadmin", "admin"),
+  cafeLayoutController.getCafeLayoutByAdmin
+);
 export default router;

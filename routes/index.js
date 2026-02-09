@@ -7,6 +7,7 @@ import layoutRoute from "./layoutRoute.js";
 import profileRoute from "./profileRoute.js";
 import customerRoute from "./customerRoute.js";
 import categoryRoute from "./categoryRoute.js";
+import orderRoute from "./orderRoute.js";
 const router = express.Router();
 
 
@@ -41,6 +42,10 @@ const defaultRoutes = [
 }, {
     path: "/category",
     route: categoryRoute,
+  },
+  {
+    path: "/order",
+    route: orderRoute,
   },
 ];
 

@@ -36,7 +36,6 @@ const uploadAdminImages = multer({
     },
   }),
 });
-
 const uploadLayoutImages = multer({
   storage: multerS3({
     ...commonOptions,

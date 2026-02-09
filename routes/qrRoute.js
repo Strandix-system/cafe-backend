@@ -23,5 +23,15 @@ router.delete(
   allowRoles("admin"),
   qrController.deleteQr
 );
+router.get(
+  "/verify",
+  qrController.verifyScan
+);
+router.get(
+  "/get-all",
+  tokenVerification,
+  allowRoles("admin"),
+  qrController.getAllQr
+);
 
 export default router;

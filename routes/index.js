@@ -8,10 +8,8 @@ import profileRoute from "./profileRoute.js";
 import customerRoute from "./customerRoute.js";
 import categoryRoute from "./categoryRoute.js";
 import qrRoute from "./qrRoute.js";
-import scanRoute from "./scanRoute.js";
 
 const router = express.Router();
-
 
 const defaultRoutes = [
   {
@@ -49,14 +47,7 @@ const defaultRoutes = [
     path: "/qr",
     route: qrRoute,
   },
-  {
-    path: "/scan",
-    route: scanRoute,
-  },
-
-
 ];
-
 
 defaultRoutes.forEach((route) => {
   router.use(route.path, route.route);

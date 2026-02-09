@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-
+import { paginate } from "./plugin/paginate.plugin.js";
 const qrSchema = new mongoose.Schema(
     {
         adminId: {
@@ -22,4 +22,5 @@ const qrSchema = new mongoose.Schema(
     },
     { timestamps: true }
 );
+qrSchema.plugin(paginate);
 export default mongoose.model("Qr", qrSchema);

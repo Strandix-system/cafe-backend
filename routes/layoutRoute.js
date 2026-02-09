@@ -60,7 +60,7 @@ router.get(
 router.get(
   "/all-layouts", 
   tokenVerification,
-  allowRoles("superadmin"),
-  cafeLayoutController.getAllLayout
+  allowRoles("superadmin", "admin"),
+  cafeLayoutController.getCafeLayoutByAdmin
 );
 export default router;

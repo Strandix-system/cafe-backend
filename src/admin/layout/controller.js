@@ -2,33 +2,35 @@ import layoutService from "./service.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
 import { pick } from "../../../utils/pick.js";
 import { get } from "http";
+import { send } from "process";
 
 const cafeLayoutController = {
-  // ✅ CREATE (Admin / Superadmin)
- createCafeLayout: async (req, res, next) => {
-  try {
-    const result = await layoutService.createCafeLayout(
-      req.user._id,
-      req.body,
-      req.files,
-      req.user.role // 🔥 pass role
-    );
-
-    sendSuccessResponse(res, 201, "Cafe layout created successfully", result);
-  } catch (err) {
-    next(err);
-  }
-},
-
-  // ✅ UPDATE
+  createCafeLayout: async (req, res, next) => {
+    try {
+      if (typeof req.body.hours === 'string') {
+        req.body.hours = JSON.parse(req.body.hours);
+      }
+      const result = await layoutService.createCafeLayout(
+        req.user._id,
+        req.body,
+        req.files,
+        req.user.role // 🔥 pass role
+      );
+      sendSuccessResponse(res, 201, "Cafe layout created successfully", result);
+    } catch (err) {
+      next(err);
+    }
+  },
   updateCafeLayout: async (req, res, next) => {
     try {
+      if (typeof req.body.hours === 'string') {
+        req.body.hours = JSON.parse(req.body.hours);
+      }
       const result = await layoutService.updateCafeLayout(
         req.params.id,
-        req.body,      // supports partial update for hours & socialLinks
+        req.body,
         req.files
       );
-
       sendSuccessResponse(res, 200, "Cafe layout updated successfully", result);
     } catch (err) {
       next(err);
@@ -37,11 +39,13 @@ const cafeLayoutController = {
   getAllLayout: async (req, res, next) => {
     try {
       const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
-      const filter = pick(req.query, ["adminId", "search", "defaultLayout"]);
-
+      // Hardcode defaultLayout to true to restrict results 
+      const filter = {
+        ...pick(req.query, ["adminId"]), // keep other allowed filters
+        defaultLayout: true
+      };
       const layout = await layoutService.getAllLayout(filter, options);
-
-      sendSuccessResponse(res, 200, "Layout fetched by ID", layout);
+      sendSuccessResponse(res, 200, "Default layouts fetched successfully", layout);
     } catch (err) {
       next(err);
     }
@@ -54,16 +58,13 @@ const cafeLayoutController = {
       next(err);
     }
   },
-  // ✅ GET ALL (S Admin listing)
   getCafeLayoutByAdmin: async (req, res, next) => {
     try {
       const options = pick(req.query, ["page", "limit", "populate"]);
       const filter = pick(req.query, ["adminId", "search", "defaultLayout"]);
-
       if (filter.defaultLayout) {
         filter.defaultLayout = filter.defaultLayout === "true";
       }
-
       if (req.user.role === "admin") {
         filter.adminId = req.user._id;
       }
@@ -73,19 +74,6 @@ const cafeLayoutController = {
       next(error);
     }
   },
-
-  // ✅ GET OWN LAYOUT (Admin)
-  // getCafeLayout: async (req, res, next) => {
-  //   try {
-  //     const result = await layoutService.getCafeLayout(req.user._id);
-
-  //     sendSuccessResponse(res, 200, "Cafe layout fetched successfully", result);
-  //   } catch (err) {
-  //     next(err);
-  //   }
-  // },
-
-  // ✅ DELETE
   deleteCafeLayout: async (req, res, next) => {
     try {
       await layoutService.deleteCafeLayout(req.params.id);
@@ -95,66 +83,15 @@ const cafeLayoutController = {
       next(err);
     }
   },
-  // 🌐 PUBLIC PORTFOLIO (NO LOGIN)
   getLayoutForPortfolio: async (req, res, next) => {
     try {
       const { id } = req.params;
       const layout = await layoutService.getDefaultLayout(id);
-      res.status(200).json({
-        success: true,
-        message: "Cafe portfolio layout fetched successfully",
-        result: layout,
-      });
+      sendSuccessResponse(res, 200, "Layout fetched for portfolio successfully", layout);
     } catch (err) {
       next(err);
     }
   },
-  // // 🌐 PREVIEW LAYOUT
-  // previewToken: async (req, res, next) => {
-  //   try {
-  //     const result = await layoutService.previewToken(req.params.id);
-  //     sendSuccessResponse(res, 200, "Preview layout fetched successfully", result);
-  //   } catch (err) {
-  //     next(err);
-  //   }
-  // },
-  // 🔐 GENERATE PREVIEW TOKEN (SUPERADMIN ONLY)
-  // generatePreviewTokenForDefault: async (req, res, next) => {
-  //   try {
-  //     const result = await layoutService.generatePreviewTokenForDefault();
-
-  //     sendSuccessResponse(
-  //       res,
-  //       200,
-  //       "Preview token generated for default layout",
-  //       result
-  //     );
-  //   } catch (err) {
-  //     next(err);
-  //   }
-  // },
-
-  // // 🌐 PREVIEW USING TOKEN (NO LOGIN)
-  // previewByToken: async (req, res, next) => {
-  //   try {
-  //     const { token } = req.params;
-
-  //     if (!token) {
-  //       return next(new ApiError(400, "Preview token is required"));
-  //     }
-
-  //     const result = await layoutService.getLayoutByPreviewToken(token);
-
-  //     sendSuccessResponse(
-  //       res,
-  //       200,
-  //       "Preview layout fetched successfully",
-  //       result
-  //     );
-  //   } catch (err) {
-  //     next(err);
-  //   }
-  // },
 };
 
 export default cafeLayoutController;

@@ -1,6 +1,6 @@
 import express from "express";
 import env from "dotenv";
-import http from "http";
+// import http from "http";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
@@ -17,51 +17,32 @@ const app = express();
 app.set("trust proxy", 1);
 
 app.use((req, res, next) => {
-
-  // Allow health check
-  if (req.path === "/health") {
-    return res.status(200).send("OK");
+if (
+  req.headers["x-forwarded-proto"] &&
+  req.headers["x-forwarded-proto"] !== "https"
+) {
+    return res.redirect(
+      "https://" + req.headers.host + req.url
+    );
   }
-
-  if (req.secure) return next();
-
-  if (req.headers["x-forwarded-proto"] !== "https") {
-    return res.redirect(301, "https://" + req.headers.host + req.url);
-  }
-
   next();
 });
-
 
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(cors({
-  origin: [
-    "https://main.d13qtkfj0o1mlk.amplifyapp.com"
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
-
-
+app.use(cors());
 
 app.use(compression());
 
-const server = http.createServer(app);
-app.get("/", (req, res) => {
-  res.status(200).send("Cafe Backend running");
-});
-
 app.use("/api", routes);
 
-// 404
 app.use(notFoundError);
 
 connectDB();
 
 app.use(errorHandler);
-server.listen(port, "0.0.0.0", () => {
+app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

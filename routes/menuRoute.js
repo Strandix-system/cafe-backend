@@ -11,7 +11,7 @@ const router = express.Router();
 router.post(
   "/create",
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles("admin","superadmin"),
   uploadMenu.single("image"),
   validate(menuSchema),
   menuController.createMenu
@@ -33,7 +33,7 @@ router.delete(
 router.get(
   "/all-menu",
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles("admin","superadmin"),
   menuController.getAllMenus
 );
 router.get(

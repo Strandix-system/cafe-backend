@@ -9,16 +9,13 @@ const categoryService = {
 
   return result;
 },
-
  getAllCategories :async (filter) => {
     const result = await Category.find(filter).sort({ createdAt: -1 });
     return result;
 },
-
 updateCategoryById : async (categoryId, data) => {
  return await Category.findByIdAndUpdate(categoryId, data, { new: true });
 },
-
  deleteCategoryById : async (categoryId) => {
   const category = await Category.findByIdAndDelete(categoryId);
   if (!category) {

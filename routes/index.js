@@ -7,9 +7,8 @@ import layoutRoute from "./layoutRoute.js";
 import profileRoute from "./profileRoute.js";
 import customerRoute from "./customerRoute.js";
 import categoryRoute from "./categoryRoute.js";
-import orderRoute from "./orderRoute.js";
-const router = express.Router();
 
+const router = express.Router();
 
 const defaultRoutes = [
   {
@@ -43,13 +42,7 @@ const defaultRoutes = [
     path: "/category",
     route: categoryRoute,
   },
-  {
-    path: "/order",
-    route: orderRoute,
-  },
 ];
-
-
 defaultRoutes.forEach((route) => {
   router.use(route.path, route.route);
 });

@@ -1,77 +1,62 @@
 import User from "../../model/user.js";
 
 const adminService = {
-createAdmin: async (body, files) => {
-  const exists = await User.findOne({ email: body.email });
-  if (exists) {
-    throw Object.assign(new Error("User already exists"), { statusCode: 409 });
-  }
-
-  const phoneExists = await User.findOne({ phoneNumber: body.phoneNumber });
-  if (phoneExists) {
-    throw Object.assign(new Error("PhoneNumber already exists"), { statusCode: 409 });
-  }
-
-  // ✅ Logo validation ONLY here
-  if (!files || !files.logo || files.logo.length === 0) {
-    throw Object.assign(new Error("Logo is required"), { statusCode: 400 });
-  }
-
-  const admin = await User.create({
-    ...body,
-    role: "admin",
-    logo: files.logo[0].location,
-    profileImage: files?.profileImage?.[0]?.location || null
-  });
-
-  return admin;
-},
-updateAdmin: async (id, body, files) => {
-  const admin = await User.findById(id);
-  if (!admin) throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
-
-  // 1. Dynamic Uniqueness Check (Email/Phone)
-  const uniqueFields = ['email', 'phoneNumber'];
-  for (const field of uniqueFields) {
-    if (body[field] && body[field] !== admin[field]) {
-      const exists = await User.findOne({ [field]: body[field] });
-      if (exists) throw Object.assign(new Error(`${field} already exists`), { statusCode: 409 });
+  createAdmin: async (body, files) => {
+    const exists = await User.findOne({ email: body.email });
+    if (exists) {
+      throw Object.assign(new Error("User already exists"), { statusCode: 409 });
     }
-  }
 
-  // 2. Map Files & Delete Old ones from S3
-  if (files) {
-    const fileFields = ['logo', 'profileImage'];
-    for (const key of fileFields) {
-      const newFile = files[key]?.[0];
-      const oldFileUrl = admin[key];
-
-      if (newFile?.location) {
-        // If an old image exists, delete it from S3
-        if (oldFileUrl) {
-          try {
-            await deleteSingleFile(oldFileUrl);
-            console.log(`✅ Old ${key} deleted successfully`);
-          } catch (err) {
-            console.error(`❌ Failed to delete old ${key}:`, err.message);
-          }
-        }
-        // Update body with new S3 URL
-        body[key] = newFile.location;
+    const phoneExists = await User.findOne({ phoneNumber: body.phoneNumber });
+    if (phoneExists) {
+      throw Object.assign(new Error("PhoneNumber already exists"), { statusCode: 409 });
+    }
+    if (!files || !files.logo || files.logo.length === 0) {
+      throw Object.assign(new Error("Logo is required"), { statusCode: 400 });
+    }
+    const admin = await User.create({
+      ...body,
+      role: "admin",
+      logo: files.logo[0].location,
+      profileImage: files?.profileImage?.[0]?.location || null
+    });
+    return admin;
+  },
+  updateAdmin: async (id, body, files) => {
+    const admin = await User.findById(id);
+    if (!admin) throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
+    const uniqueFields = ['email', 'phoneNumber'];
+    for (const field of uniqueFields) {
+      if (body[field] && body[field] !== admin[field]) {
+        const exists = await User.findOne({ [field]: body[field] });
+        if (exists) throw Object.assign(new Error(`${field} already exists`), { statusCode: 409 });
       }
     }
-  }
-
-  // 3. Hash Password if it exists
-  if (body.password) body.password = await bcrypt.hash(body.password, 10);
-
-  // 4. Update
-  return await User.findByIdAndUpdate(
-    id, 
-    { $set: body }, 
-    { new: true, runValidators: true }
-  );
-},
+    if (files) {
+      const fileFields = ['logo', 'profileImage'];
+      for (const key of fileFields) {
+        const newFile = files[key]?.[0];
+        const oldFileUrl = admin[key];
+        if (newFile?.location) {
+          if (oldFileUrl) {
+            try {
+              await deleteSingleFile(oldFileUrl);
+              console.log(`✅ Old ${key} deleted successfully`);
+            } catch (err) {
+              console.error(`❌ Failed to delete old ${key}:`, err.message);
+            }
+          }
+          body[key] = newFile.location;
+        }
+      }
+    }
+    if (body.password) body.password = await bcrypt.hash(body.password, 10);
+    return await User.findByIdAndUpdate(
+      id,
+      { $set: body },
+      { new: true, runValidators: true }
+    );
+  },
   deleteAdmin: async (id) => {
     const admin = await User.findOneAndDelete({
       _id: id,
@@ -86,9 +71,9 @@ updateAdmin: async (id, body, files) => {
   },
   listAdmins: async (filter, options) => {
     const query = { role: "admin" };
-      if (filter.isActive !== undefined) {
-    query.isActive = filter.isActive;
-  }
+    if (filter.isActive !== undefined) {
+      query.isActive = filter.isActive;
+    }
     if (filter.search) {
       query.$or = [
         { firstName: { $regex: filter.search, $options: "i" } },
@@ -104,18 +89,15 @@ updateAdmin: async (id, body, files) => {
     return result;
   },
   getByAdmin: async (adminId) => {
-  const admin = await User.findById({
-    _id: adminId,
-    role: "Admin",
-  }).select("-password");
-
-  if (!admin) {
-    throw new Error("Admin not found");
+    const admin = await User.findById({
+      _id: adminId,
+      role: "admin",
+    }).select("-password");
+    if (!admin) {
+      throw new Error("Admin not found");
+    }
+    return admin;
   }
-
-  return admin;
-}
-
 };
 
 export default adminService;

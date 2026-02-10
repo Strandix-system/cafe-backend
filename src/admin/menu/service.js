@@ -1,28 +1,39 @@
 import Menu from "../../../model/menu.js";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../../../config/s3.js";
+import Category from "../../../model/category.js";
+import { deleteSingleFile } from "../../../utils/s3Utils.js";
 
 const getS3Key = (value) => {
   if (!value) return null;
   if (!value.startsWith("http")) return value;
-
   const url = new URL(value);
   return url.pathname.substring(1);
 };
+
 const menuService = {
-  createMenu: async (adminId, body, file) => {
-    if (!file) {
-      throw Object.assign(new Error("Image is required"), { statusCode: 400 });
-    }
-    return await Menu.create({
-      ...body,
-      adminId,
-      image: file.location, // S3 URL
-      price: Number(body.price),
-      discountPrice: body.discountPrice ? Number(body.discountPrice) : undefined,
+createMenu: async (adminId, body, file) => {
+  if (!file) {
+    throw Object.assign(new Error("Image is required"), { statusCode: 400 });
+  }
+  const categoryExists = await Category.findOne({ 
+    name: { $regex: new RegExp(`^${body.category}$`, "i") } 
+  });
+  if (!categoryExists) {
+    throw Object.assign(new Error(`Category '${body.category}' does not exist`), { 
+      statusCode: 404 
     });
-  },
-  // ✅ UPDATE MENU
+  }
+const menu = await Menu.create({
+    ...body,
+    adminId,
+    category: categoryExists.name, 
+    image: file.location,
+    price: Number(body.price),
+    discountPrice: body.discountPrice ? Number(body.discountPrice) : undefined,
+  });
+  return menu;
+},
   updateMenu: async (menuId, body, file) => {
     const menu = await Menu.findById(menuId);
     if (!menu) {

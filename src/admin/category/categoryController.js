@@ -40,12 +40,7 @@ updateCategory : async (req, res, next) => {
 getCategoriesForDropdown: async (req, res, next) => {
   try {
     const categories = await categoryService.getAllCategories();
-
-    res.status(200).json({
-      success: true,
-      message: "Categories fetched successfully",
-      result: categories,
-    });
+    sendSuccessResponse(res, 200, "Categories fetched successfully", categories);
   } catch (err) {
     next(err);
   }

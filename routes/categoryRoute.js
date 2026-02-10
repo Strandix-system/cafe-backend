@@ -19,14 +19,12 @@ router.get(
   categoryController.getCategories
 );
 router.get("/categories", categoryController.getCategoriesForDropdown);
-
 router.put(
   "/update/:categoryId",
   tokenVerification,
     allowRoles("superadmin"),
   categoryController.updateCategory
 );
-
 router.delete(
   "/delete/:categoryId",
   tokenVerification,

@@ -7,19 +7,15 @@ const menuController = {
   createMenu: async (req, res, next) => {
     try {
       const result = await menuService.createMenu(
-
         req.user._id,
         req.body,
-        req.file // 
+        req.file
       );
-
       sendSuccessResponse(res, 201, "Menu created successfully", result);
     } catch (error) {
       next(error);
     }
   },
-
-  // ✅ UPDATE MENU
   updateMenu: async (req, res, next) => {
     try {
       const result = await menuService.updateMenu(
@@ -31,7 +27,6 @@ const menuController = {
       next(error);
     }
   },
-  // ✅ DELETE MENU (HARD DELETE)
   deleteMenu: async (req, res, next) => {
     try {
       await menuService.deleteMenu(req.params.id);
@@ -40,7 +35,6 @@ const menuController = {
       next(error);
     }
   },
-  // ✅ GET ALL MENUS (ADMIN WISE)
   getAllMenus: async (req, res, next) => {
     try {
       const filter = pick(req.query, ["adminId", "search", "category"]);
@@ -62,18 +56,13 @@ const menuController = {
       next(error);
     }
   },
-
-
-  // 🌍 GET PUBLIC MENUS (Portfolio)
   getPublicMenus: async (req, res, next) => {
     try {
       const { adminId } = req.params;
-
       const result = await menuService.getPublicMenus(
         adminId,
         req.query
       );
-
       sendSuccessResponse(res, 200, "Public menu fetched successfully", result);
     } catch (error) {
       next(error);

@@ -8,7 +8,7 @@ const customerSchema = new mongoose.Schema(
             required: true,
         },
         phoneNumber: {
-            type: Number,
+            type: String,
             required: true,
         },
         tableNumber: {
@@ -20,8 +20,17 @@ const customerSchema = new mongoose.Schema(
             ref: "User",
             required: true,
         },
+        qrId: {                
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Qr",
+        },
     },
     { timestamps: true }
 );
-customerSchema.plugin(paginate)
+customerSchema.plugin(paginate);
+customerSchema.index(
+    { adminId: 1, phoneNumber: 1 },
+    { unique: true }
+);
+
 export default mongoose.model("Customer", customerSchema);

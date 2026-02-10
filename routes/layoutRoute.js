@@ -17,13 +17,6 @@ router.get(
   tokenVerification,
   allowRoles("superadmin", "admin"),
   cafeLayoutController.getLayoutById)
-// Get ALL layouts (for superadmin dashboard)
-router.get(
-  "/all-layouts",
-  tokenVerification,
-  allowRoles( "admin"),
-  cafeLayoutController.getAllCafeLayout
-);
 
 // Delete any layout
 router.delete(
@@ -55,34 +48,19 @@ router.patch(
 router.get(
   "/admin-layout",
   tokenVerification,
-  allowRoles("admin", "superadmin"),
-  cafeLayoutController.getLayoutForAdminDashboard
+  allowRoles("admin"),
+  cafeLayoutController.getCafeLayoutByAdmin
 );
 
 router.get(
   "/portfolio/:id",
   cafeLayoutController.getLayoutForPortfolio
 );
-// router.get(
-//   "/preview/:id",
-//   tokenVerification,
-//   allowRoles("admin"),
-//   cafeLayoutController.previewToken
-// );
-// generate preview token
-// router.post(
-//   "/default/preview-token",
-//   tokenVerification,
-//   allowRoles("admin"),
-//   cafeLayoutController.generatePreviewTokenForDefault
-// );
-
-// // preview layout using token (public)
-// router.get(
-//   "/preview/:token",
-//    tokenVerification,
-//   allowRoles("admin"),
-//   cafeLayoutController.previewByToken
-// );
-
+// Superadmin listing (all layouts)
+router.get(
+  "/all-layouts", 
+  tokenVerification,
+  allowRoles("superadmin", "admin"),
+  cafeLayoutController.getCafeLayoutByAdmin
+);
 export default router;

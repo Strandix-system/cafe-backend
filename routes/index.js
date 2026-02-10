@@ -7,6 +7,7 @@ import layoutRoute from "./layoutRoute.js";
 import profileRoute from "./profileRoute.js";
 import customerRoute from "./customerRoute.js";
 import categoryRoute from "./categoryRoute.js";
+import orderRoute from "./orderRoute.js";
 import qrRoute from "./qrRoute.js";
 
 const router = express.Router();
@@ -46,6 +47,10 @@ const defaultRoutes = [
   {
     path: "/qr",
     route: qrRoute,
+  },
+  { 
+    path: "/order",
+    route: orderRoute,
   },
 ];
 

@@ -25,6 +25,15 @@ const profileController = {
       next(error);
     }
   },
+   deleteProfileImage: async (req, res, next) => {
+    try {
+      const result = await profileService.deleteProfileImage(req.user._id);
+      sendSuccessResponse(res, 200, result.message);
+    } catch (error) {
+      next(error);
+    }
+  },
 };
+
 
 export default profileController;

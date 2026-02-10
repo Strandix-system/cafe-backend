@@ -5,28 +5,27 @@ import { allowRoles } from "../middleware/permission.js";
 
 const router = express.Router();
 
+// Admin create QR
 router.post(
   "/create",
   tokenVerification,
   allowRoles("admin"),
   qrController.createQr
 );
+
+/* Customer: Scan QR (Public) */
 router.get(
-  "/",
-  tokenVerification,
-  allowRoles("admin"),
-  qrController.getMyQrs
+  "/scan/:qrId",      // ✅ Make it unique
+  qrController.scanQr
 );
-router.delete(
-  "/:id",
-  tokenVerification,
-  allowRoles("admin"),
-  qrController.deleteQr
-);
-router.get(
-  "/verify",
-  qrController.verifyScan
-);
+
+/* Admin: Get QR Details */
+// router.get(
+//   "/details/:id",     // ✅ Make it unique
+//   tokenVerification,
+//   allowRoles("admin"),
+//   qrController.getQrDetails
+// );
 router.get(
   "/get-all",
   tokenVerification,

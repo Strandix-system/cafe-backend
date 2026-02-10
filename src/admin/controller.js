@@ -15,13 +15,13 @@ createAdmin: async (req, res, next) => {
   }
   },
   updateAdmin: async (req, res, next) => {
-    try {
-      const admin = await service.updateAdmin(req.params.id, req.body,req.file);
-      sendSuccessResponse(res, 200, "Admin updated successfully", admin);
-    } catch (error) {
-      next(error);
-    }
-  },
+  try {
+    const result = await service.updateAdmin(req.params.id, req.body, req.files);
+    sendSuccessResponse(res, 200, "Admin updated successfully", result);
+  } catch (error) {
+    next(error);
+  }
+},
   deleteAdmin: async (req, res, next) => {
     try {
       await service.deleteAdmin(req.params.id);

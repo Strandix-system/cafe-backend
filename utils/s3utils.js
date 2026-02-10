@@ -56,8 +56,6 @@ export const deleteUploadedFiles = async (files) => {
     })
   );
 };
-
-// New utility function to delete a single file
 export const deleteSingleFile = async (fileUrl) => {
   if (!fileUrl) return;
 

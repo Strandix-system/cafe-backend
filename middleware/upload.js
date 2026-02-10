@@ -4,11 +4,20 @@ import { s3 } from "../config/s3.js";
 import dotenv from "dotenv";
 dotenv.config();
 
+const commonOptions = {
+  s3,
+  bucket: process.env.S3_BUCKET_NAME,
+  contentType: multerS3.AUTO_CONTENT_TYPE, // ✅ auto image/jpeg, png, etc
+  metadata: (req, file, cb) => {
+    cb(null, {
+      "Content-Disposition": "inline", // ✅ force open in browser
+    });
+  },
+};
+
 const uploadMenu = multer({
   storage: multerS3({
-    s3,
-    bucket: process.env.S3_BUCKET_NAME,
-    contentType: multerS3.AUTO_CONTENT_TYPE,
+    ...commonOptions,
     key: (req, file, cb) => {
       cb(null, `menu/${Date.now()}-${file.originalname}`);
     },
@@ -16,9 +25,7 @@ const uploadMenu = multer({
 });
 const uploadAdminImages = multer({
   storage: multerS3({
-    s3,
-    bucket: process.env.S3_BUCKET_NAME,
-    contentType: multerS3.AUTO_CONTENT_TYPE,
+    ...commonOptions,
     key: (req, file, cb) => {
       let folder = "misc";
 
@@ -31,9 +38,7 @@ const uploadAdminImages = multer({
 });
 const uploadLayoutImages = multer({
   storage: multerS3({
-    s3,
-    bucket: process.env.S3_BUCKET_NAME,
-    contentType: multerS3.AUTO_CONTENT_TYPE,
+    ...commonOptions,
     key: (req, file, cb) => {
       let folder = "cafe-layout";
 

@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import User from "./user.js"
 import { paginate } from "../model/plugin/paginate.plugin.js"
 
 const menuSchema = new mongoose.Schema(
@@ -9,8 +8,22 @@ const menuSchema = new mongoose.Schema(
             ref: "User",
             required: true,
         },
-        image: {
+        name: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        category: {
             type: String, 
+            required: true,
+            trim: true,
+        },
+        description: {
+            type: String,
+            required: true,
+        },
+        image: {
+            type: String,
             required: true,
         },
         price: {
@@ -20,6 +33,10 @@ const menuSchema = new mongoose.Schema(
         discountPrice: {
             type: Number,
         },
+        isPopular: {
+            type: Boolean,
+            default: false,
+        }
     },
     { timestamps: true }
 );

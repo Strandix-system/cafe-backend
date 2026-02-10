@@ -55,9 +55,9 @@ const cafeLayoutController = {
     }
   },
   // ✅ GET ALL (S Admin listing)
-  getAllCafeLayout: async (req, res, next) => {
+  getCafeLayoutByAdmin: async (req, res, next) => {
     try {
-      const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
+      const options = pick(req.query, ["page", "limit", "populate"]);
       const filter = pick(req.query, ["adminId", "search", "defaultLayout"]);
 
       if (filter.defaultLayout) {
@@ -67,7 +67,7 @@ const cafeLayoutController = {
       if (req.user.role === "admin") {
         filter.adminId = req.user._id;
       }
-      const result = await layoutService.getAllCafeLayouts(filter, options);
+      const result = await layoutService.getCafeLayoutByAdmin(filter, options);
       sendSuccessResponse(res, 200, "Cafe layouts fetched successfully", result);
     } catch (error) {
       next(error);
@@ -95,28 +95,10 @@ const cafeLayoutController = {
       next(err);
     }
   },
-
-  // ✅ ADMIN DASHBOARD (Own layout OR default)
-  getLayoutForAdminDashboard: async (req, res, next) => {
-    try {
-      let layout = await layoutService.getCafeLayout(req.user._id);
-
-      if (!layout) {
-        layout = await layoutService.getDefaultLayout();
-      }
-
-      sendSuccessResponse(res, 200, "Layout fetched for admin dashboard", layout);
-    } catch (err) {
-      next(err);
-    }
-  },
-
   // 🌐 PUBLIC PORTFOLIO (NO LOGIN)
   getLayoutForPortfolio: async (req, res, next) => {
     try {
       const { id } = req.params;
-
-      // let layout = await layoutService.getCafeLayout(adminId);
       const layout = await layoutService.getDefaultLayout(id);
       res.status(200).json({
         success: true,

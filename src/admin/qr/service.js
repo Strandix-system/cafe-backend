@@ -1,88 +1,77 @@
-import QRCode from "qrcode";
-import jwt from "jsonwebtoken";
 import Qr from "../../../model/qr.js";
-import { verifyQrToken } from "../../../utils/qrToken.js";
-
+import QRCode from "qrcode";
 
 const qrService = {
-  createBulkQr: async (adminId, totalTables, layoutId) => {
 
-    const createdQrs = [];
+  createQr: async (adminId, totalTables, layoutId) => {
 
-    const lastQr = await Qr.findOne({ adminId })
-      .sort({ tableNumber: -1 });
+    if (!totalTables || totalTables < 1) {
+      throw new Error("Invalid totalTables");
+    }
 
-    let start = lastQr ? lastQr.tableNumber + 1 : 1;
+    if (!process.env.FRONTEND_URL) {
+      throw new Error("FRONTEND_URL not set");
+    }
 
-    for (let i = 0; i < totalTables; i++) {
+    const qrList = [];
 
-      const tableNumber = start + i;
-
-      const exists = await Qr.findOne({ adminId, tableNumber });
-      if (exists) continue;
-      
-      const token = jwt.sign(
-        { adminId, tableNumber, layoutId },
-        process.env.JWT_SECRET,
-        { expiresIn: "1y" }
-      );
-
-      const encodedToken = encodeURIComponent(token);
-
-      const scanUrl =
-        `${process.env.FRONTEND_URL}/form?token=${encodedToken}`;
-
-      const qrCodeUrl = await QRCode.toDataURL(scanUrl);
-
-      const qr = await Qr.create({
+    for (let i = 1; i <= totalTables; i++) {
+      qrList.push({
         adminId,
-        tableNumber,
-        qrCodeUrl,
-        token,
+        tableNumber: i,
+        layoutId,
+        qrCodeUrl: "",
       });
+    }
+    // 2. Insert all at once
+    const createdQrs = await Qr.insertMany(qrList);
+    // 3. Generate QR images
+    for (const qr of createdQrs) {
 
-      createdQrs.push(qr);
+      const frontendUrl =
+        `${process.env.FRONTEND_URL}?qr=${qr._id}`;
+
+      const qrImage =
+        await QRCode.toDataURL(frontendUrl);
+
+      qr.qrCodeUrl = qrImage;
+
+      await qr.save();
     }
 
     return createdQrs;
   },
-  getMyQrs: async (adminId) => {
-    return await Qr.find({ adminId }).sort({ tableNumber: 1 });
-  },
-  deleteQr: async (id, adminId) => {
-    const qr = await Qr.findOneAndDelete({
-      _id: id,
-      adminId,
-    });
+  scanQr: async (qrId) => {
 
-    if (!qr) throw new Error("QR not found");
+    const qr = await Qr.findById(qrId).populate("layoutId");
 
-    return true;
-  },
-  verifyScan: async (token) => {
+    if (!qr) throw new Error("Invalid QR");
 
-    const decoded = verifyQrToken(token);
-
-    const qr = await Qr.findOne({ token });
-    if (!qr) {
-      throw new ApiError(400, "Invalid QR code");
-    }
     return {
-      tableNumber: decoded.tableNumber,
-      adminId: decoded.adminId,
-      layoutId: decoded.layoutId,
-      valid: true,
+      qrId: qr._id,
+      tableNumber: qr.tableNumber,
+      adminId: qr.adminId,
+      layoutId: qr.layoutId, // ✅ SEND THIS
     };
   },
-  getAllQr: async (adminId, filter, options) => {
+  // getQrDetails: async (qrId) => {
+  //   const qr = await Qr.findById(qrId);
 
-  filter.adminId = adminId;
-  options.sortBy = "tableNumber:asc"; 
+  //   if (!qr) {
+  //     throw new Error("Invalid QR");
+  //   }
 
-  const result = await Qr.paginate(filter, options);
-
-  return result;
-},
+  //   return {
+  //     qrId: qr._id,
+  //     adminId: qr.adminId,
+  //     layoutId: qr.layoutId,
+  //     tableNumber: qr.tableNumber,
+  //   };
+  // },
+  getAllQr: async (filter, options) => {
+    const result = await Qr.paginate(filter, options);
+    return result;
+  },
 };
 
 export default qrService;

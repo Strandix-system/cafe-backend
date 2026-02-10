@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { paginate } from "./plugin/paginate.plugin.js";
+
 const qrSchema = new mongoose.Schema(
     {
         adminId: {
@@ -10,17 +11,21 @@ const qrSchema = new mongoose.Schema(
         tableNumber: {
             type: Number,
             required: true,
+            min: 1,
+        },
+        layoutId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "CafeLayout",
+            required: true,
         },
         qrCodeUrl: {
             type: String,
-            required: true,
-        },
-        token: {
-            type: String,
-            required: true,
+            default: "",
         },
     },
     { timestamps: true }
 );
+
 qrSchema.plugin(paginate);
+qrSchema.index({ adminId: 1, tableNumber: 1 }, { unique: true });
 export default mongoose.model("Qr", qrSchema);

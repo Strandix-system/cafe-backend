@@ -9,6 +9,7 @@ import {
   deleteAdminValidator
 } from "../../validations/createValidation.js";
 import { uploadAdminImages  } from "../../middleware/upload.js";
+import dashboardRoute from "../dashboardRoute.js";
 
 const router = express.Router();
 
@@ -54,6 +55,7 @@ router.get(
   allowRoles("superadmin"),
   controller.getByAdmin
 );
+router.use("/dashboard", dashboardRoute);
 
 export default router;
 

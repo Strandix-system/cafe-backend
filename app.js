@@ -3,6 +3,7 @@ import env from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
+
 import errorHandler from "./middleware/errorHandler.js";
 import connectDB from "./database/dbConnect.js";
 import routes from "./routes/index.js";

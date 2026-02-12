@@ -5,8 +5,31 @@ dotenv.config();
 
 export const getS3Key = (url) => {
   if (!url) return null;
-  const u = new URL(url);
-  return u.pathname.substring(1);
+  
+  try {
+    const u = new URL(url);
+    const bucketName = process.env.S3_BUCKET_NAME;
+    
+    // Handle different S3 URL formats:
+    // Format 1: https://bucket-name.s3.region.amazonaws.com/folder/file.jpg
+    if (u.hostname.startsWith(`${bucketName}.s3`)) {
+      return u.pathname.substring(1); // Remove leading '/'
+    }
+    
+    if (u.hostname.includes('s3') && u.pathname.includes(bucketName)) {
+      const pathParts = u.pathname.split('/').filter(Boolean);
+      const bucketIndex = pathParts.indexOf(bucketName);
+      if (bucketIndex !== -1) {
+        return pathParts.slice(bucketIndex + 1).join('/');
+      }
+    }
+    
+    // Fallback: assume everything after first '/' is the key
+    return u.pathname.substring(1);
+  } catch (error) {
+    console.error('❌ Error parsing S3 URL:', url, error.message);
+    return null;
+  }
 };
 
 export const deleteUploadedFiles = async (files) => {
@@ -15,14 +38,20 @@ export const deleteUploadedFiles = async (files) => {
   await Promise.all(
     files.map((file) => {
       const key = getS3Key(file.location);
-      if (!key) return;
+      if (!key) {
+        console.warn('⚠️ Could not extract S3 key from:', file.location);
+        return Promise.resolve(); // Return resolved promise instead of undefined
+      }
 
       return s3.send(
         new DeleteObjectCommand({
           Bucket: process.env.S3_BUCKET_NAME,
           Key: key,
         })
-      );
+      ).catch(error => {
+        console.error('❌ Failed to delete file from S3:', key, error.message);
+        // Don't throw - continue with other deletions
+      });
     })
   );
 };

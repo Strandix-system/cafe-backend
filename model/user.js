@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema(
     phoneNumber: {
       type: Number,
       trim: true,
-      unique:true
+      unique: true
     },
     password: {
       type: String,
@@ -60,12 +60,12 @@ const userSchema = new mongoose.Schema(
     profileImage: {
       type: String,
       trim: true,
-      required:false,
+      required: false,
       default: null
     },
     logo: {
       type: String,
-      default: null, required:false
+      default: null, required: false
     },
     gst:{
      type: Number,
@@ -75,7 +75,13 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: ["superadmin", "admin"],
-      default: "admin", required: true
+      default: "admin",
+      required: true
+    },
+    gst: {
+      type: Number, // percentage
+      default: 5,
+      required: true
     },
   },
   { timestamps: true }

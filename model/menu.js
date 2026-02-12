@@ -36,7 +36,11 @@ const menuSchema = new mongoose.Schema(
         isPopular: {
             type: Boolean,
             default: false,
+<<<<<<< feat/onboard
+        },
+=======
         }
+>>>>>>> main
     },
     { timestamps: true }
 );

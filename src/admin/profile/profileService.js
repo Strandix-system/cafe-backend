@@ -1,12 +1,10 @@
 import User from "../../../model/user.js";
 
 const profileService = {
-  // ✅ GET MY PROFILE
   getMyProfile: async (userId) => {
     const user = await User.findById(userId).select(
       "firstName lastName email phoneNumber profileImage role"
     );
-
     if (!user) {
       const err = new Error("User not found");
       err.statusCode = 404;
@@ -14,8 +12,6 @@ const profileService = {
     }
     return user;
   },
-
-  // ✅ UPDATE MY PROFILE
   updateMyProfile: async (userId, body, file) => {
     const user = await User.findById(userId);
     if (!user) throw Object.assign(new Error("User not found"), { statusCode: 404 });
@@ -23,6 +19,18 @@ const profileService = {
       if (body[field] && body[field] !== user[field]) {
         const exists = await User.findOne({ [field]: body[field] });
         if (exists) throw Object.assign(new Error(`${field} already in use`), { statusCode: 409 });
+      }
+    }
+    if (body.email && body.email !== user.email) {
+      const emailExists = await User.findOne({ email: body.email });
+      if (emailExists) {
+        throw Object.assign(new Error("Email already in use"), { statusCode: 409 });
+      }
+    }
+    if (body.phoneNumber && body.phoneNumber !== user.phoneNumber) {
+      const phoneExists = await User.findOne({ phoneNumber: body.phoneNumber });
+      if (phoneExists) {
+        throw Object.assign(new Error("Phone number already in use"), { statusCode: 409 });
       }
     }
     if (file?.location) {

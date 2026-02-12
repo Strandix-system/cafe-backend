@@ -1,3 +1,4 @@
+import { get } from "http";
 import Category from "../../../model/category.js";
 const categoryService = {
  createCategory : async (data) => {
@@ -9,16 +10,18 @@ const categoryService = {
 
   return result;
 },
-
- getAllCategories :async (filter) => {
-    const result = await Category.find(filter).sort({ createdAt: -1 });
+ getAllCategories :async (filter, options) => {
+    const result = await Category.paginate(filter, options);
+    if(filter.search){
+      result.docs = result.docs.filter(category =>
+        category.name.toLowerCase().includes(filter.search.toLowerCase())
+      );
+    }
     return result;
 },
-
 updateCategoryById : async (categoryId, data) => {
  return await Category.findByIdAndUpdate(categoryId, data, { new: true });
 },
-
  deleteCategoryById : async (categoryId) => {
   const category = await Category.findByIdAndDelete(categoryId);
   if (!category) {
@@ -26,7 +29,14 @@ updateCategoryById : async (categoryId, data) => {
   }
   return category;
 },
- getAllCategories : async () => {
+getCategoryById : async (categoryId) => {
+  const category = await Category.findById(categoryId);
+  if (!category) {
+    throw new Error("Category not found");
+  } 
+  return category;
+},
+getCategoriesForDropdown : async () => {
   return await Category.find()
     .select("_id name")
     .sort({ name: 1 });

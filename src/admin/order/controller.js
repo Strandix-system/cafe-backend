@@ -20,9 +20,15 @@ const orderController = {
 
       const adminId = req.user.id;
 
-      const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
+      const options = pick(
+        req.query,
+        ["page", "limit", "sortBy", "populate"]
+      );
 
-      const filter = pick(req.query, ["orderStatus", "tableNumber", "paymentStatus"]);
+      const filter = pick(
+        req.query,
+        ["orderStatus", "tableNumber", "paymentStatus"]
+      );
 
       const result =
         await orderService.getOrders(
@@ -48,6 +54,7 @@ const orderController = {
   updateStatus: async (req, res, next) => {
     try {
 
+      // accept either { status } or { orderStatus } from client
       const status = req.body.status ?? req.body.orderStatus;
       const result =
         await orderService.updateStatus(

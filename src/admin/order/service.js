@@ -20,8 +20,10 @@ const orderService = {
 
     const adminId = customer.adminId;
 
+   console.log("Admin ID for order:", adminId);
     const admin = await User.findOne({ _id: adminId, role: "admin" })
       .select("gst");
+
 
     if (!admin) {
       throw new Error("Admin not found");
@@ -45,10 +47,7 @@ const orderService = {
         m => m._id.toString() === item.menuId
       );
 
-      const price = menu.discountPrice && menu.discountPrice > 0
-        ? menu.discountPrice
-        : menu.price;
-
+      const price = menu.price;
 
       subTotal += price * item.quantity;
 
@@ -81,11 +80,9 @@ const orderService = {
       .populate("userId", "name email phoneNumber")
       .populate("items.menuId");
 
-    io.to(adminId.toString()).emit("newOrder", populatedOrder);
-
-    io.to(adminId.toString()).emit("order:new", populatedOrder);
-
-    io.to(`customer-${customer._id}`).emit("order:new", populatedOrder);
+    // Emit to all admin clients for that adminId
+    io.to(adminId.toString()).emit("newOrder", populatedOrder); // legacy
+    io.to(adminId.toString()).emit("order:new", populatedOrder); // preferred
 
     return order;
   },
@@ -113,6 +110,7 @@ const orderService = {
       if (!status) {
         throw new Error("Order status is required");
       }
+      // Normalize status
       status = status.trim().toLowerCase();
 
       const allowed = ["pending", "accepted", "completed"];
@@ -121,9 +119,10 @@ const orderService = {
         throw new Error("Invalid order status");
       }
 
+      // Update + Populate
       const updatedOrder = await Order.findOneAndUpdate(
-        { _id: orderId, adminId },
-        { orderStatus: status },
+        { _id: orderId, adminId },                // ✅ Secure by admin
+        { orderStatus: status },            // ✅ Update
         {
           new: true,
           runValidators: true,
@@ -147,7 +146,8 @@ const orderService = {
         const io = getIO();
         const customerId = updatedOrder.userId._id.toString();
 
-        io.to(adminId.toString()).emit("orderStatusUpdate", {
+        // Emit to admin
+        io.to(adminId.toString()).emit("orderStatusUpdate", { // legacy
           orderId: updatedOrder._id,
           status: status,
           order: updatedOrder,
@@ -158,7 +158,8 @@ const orderService = {
           order: updatedOrder,
         });
 
-        io.to(`customer-${customerId}`).emit("orderStatusUpdate", {
+        // Emit to customer
+        io.to(`customer-${customerId}`).emit("orderStatusUpdate", { // legacy
           orderId: updatedOrder._id,
           status: status,
           order: updatedOrder,
@@ -169,6 +170,7 @@ const orderService = {
           order: updatedOrder,
         });
 
+        // Keep legacy events for backward compatibility if needed
         if (status === "accepted") {
           io.to(adminId.toString()).emit("orderAccepted", {
             orderId: updatedOrder._id,
@@ -181,6 +183,7 @@ const orderService = {
         }
       } catch (socketError) {
         console.error("Socket emission error:", socketError);
+        // Don't throw - order was updated successfully
       }
 
       return updatedOrder;
@@ -202,6 +205,17 @@ const orderService = {
     return await Order.find({ orderId })
       .populate("menuId");
   },
+  getMyOrders: async (customerId, filter, options) => {
+    if (!customerId) {
+      throw new Error("Customer ID is required to fetch orders");
+    }
+    const result = await Order.paginate(
+      { userId: customerId, ...filter },
+      options
+    );
+    return result;
+},
+
 };
 
 export default orderService;

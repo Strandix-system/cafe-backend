@@ -3,12 +3,9 @@ export const allowRoles = (...roles) => {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-
-    // superadmin can access any role-protected route by default
     if (req.user.role === "superadmin") {
       return next();
     }
-
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({ message: "Access denied" });
     }

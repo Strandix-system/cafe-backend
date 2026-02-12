@@ -8,7 +8,6 @@ const registerValidator = {
     role: Joi.string().valid("superadmin").default("superadmin"),
   }).unknown(true),
 };
-
 const loginValidator = {
   body: Joi.object().keys({
     email: Joi.string().email().min(5).max(2000).trim(),
@@ -17,15 +16,12 @@ const loginValidator = {
   })
     .or("email", "phoneNumber")
     .unknown(true),
-
 };
-
 const logoutValidator = {
   headers: Joi.object({
     authorization: Joi.string().required(),
   }).unknown(true),
 };
-
 
 export {
   registerValidator,

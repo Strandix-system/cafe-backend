@@ -1,5 +1,7 @@
 import categoryService from "./categoryService.js";
 import {sendSuccessResponse} from "../../../utils/response.js";
+import { pick } from "../../../utils/pick.js";
+import { get } from "http";
 
 export default{
  createCategory :async (req, res, next) => {
@@ -10,9 +12,11 @@ export default{
     next(error);
   }
 },
- getCategories : async (req, res, next) => {
+ getAllCategories : async (req, res, next) => {
   try {
-    const categories = await categoryService.getAllCategories();
+    const filter = pick(req.query, ["search"]);
+    const options = pick(req.query, ["page", "limit", "sortBy"]);
+    const categories = await categoryService.getAllCategories(filter, options);
     sendSuccessResponse(res, 200, "Categories fetched successfully", categories);
   } catch (error) {
     next(error);
@@ -39,13 +43,16 @@ updateCategory : async (req, res, next) => {
 },
 getCategoriesForDropdown: async (req, res, next) => {
   try {
-    const categories = await categoryService.getAllCategories();
-
-    res.status(200).json({
-      success: true,
-      message: "Categories fetched successfully",
-      result: categories,
-    });
+    const categories = await categoryService.getCategoriesForDropdown();
+    sendSuccessResponse(res, 200, "Categories fetched successfully", categories);
+  } catch (err) {
+    next(err);
+  }
+},
+getCategoryById: async (req, res, next) => {
+  try {
+    const category = await categoryService.getCategoryById(req.params.id);
+    sendSuccessResponse(res, 200, "Category fetched successfully", category);
   } catch (err) {
     next(err);
   }

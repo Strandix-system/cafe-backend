@@ -45,9 +45,8 @@ const updateAdminValidator = {
     pincode: pincodeRule,
     logo: Joi.any(),
     profileImage: Joi.any(),
-    isActive: Joi.boolean(),
-    gst: Joi.string().trim().min(5).max(18).required(),
-
+    gst: Joi.string().trim().min(5).max(18),
+    isActive: Joi.boolean()
   }).min(0) // 👈 Change this to 0 to allow updating ONLY an image
 };
 const deleteAdminValidator = {

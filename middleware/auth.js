@@ -1,15 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../model/user.js";
 
-
-// const getJwtSecret = () => {
-//   const secret = process.env.JWT_SECRET ;
-//   if (!secret) {
-//     throw new Error("JWT secret is not configured");
-//   }
-//   return secret;
-// };
-
 export const generateToken = (id) => {
   return jwt.sign(
     { id },

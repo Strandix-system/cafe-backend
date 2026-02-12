@@ -67,6 +67,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null, required: false
     },
+    gst:{
+     type: Number,
+     required: true,
+     default:5,
+    },
     role: {
       type: String,
       enum: ["superadmin", "admin"],

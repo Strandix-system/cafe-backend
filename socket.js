@@ -16,13 +16,8 @@ export const initSocket = (server) => {
             socket.join(adminId);
             console.log("Admin joined:", adminId);
         });
-        
-        socket.on("join-admin", (adminId) => {
-            socket.join(adminId);
 
-            console.log("Admin joined:", adminId);
-            console.log("Rooms:", socket.rooms);
-        });
+        // ADD THIS - for customers to join their own room
         socket.on("join-customer", (customerId) => {
             socket.join(`customer-${customerId}`);
             console.log("Customer joined:", customerId);

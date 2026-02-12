@@ -52,6 +52,10 @@ const defaultRoutes = [
     path: "/order",
     route: orderRoute,
   },
+  {
+    path: "/dashboard",
+    route: adminUserRoute,
+  },
 ];
 
 defaultRoutes.forEach((route) => {

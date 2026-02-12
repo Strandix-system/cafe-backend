@@ -6,10 +6,7 @@ export default {
 createAdmin: async (req, res, next) => {
   try {
     const result = await service.createAdmin(req.body, req.files);
-    res.status(201).json({
-      success: true,
-      data: result
-    });
+  sendSuccessResponse(res, 201, "Admin created successfully", result);
   } catch (err) {
     next(err);
   }
@@ -46,9 +43,7 @@ createAdmin: async (req, res, next) => {
   getByAdmin: async (req, res, next) => {
   try {
     const admins = await service.getByAdmin(req.params.id);
-
-    sendSuccessResponse(res, 200,"Admins fetched successfully",admins
-    );
+    sendSuccessResponse(res, 200,"Admins fetched successfully",admins);
   } catch (error) {
     next(error);
   }

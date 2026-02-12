@@ -15,13 +15,11 @@ router.post(
   validate(registerValidator),
   controller.register
 );
-
 router.post(
   "/login",
   validate(loginValidator),
   controller.login
 );
-
 router.post(
   "/logout",
   tokenVerification,

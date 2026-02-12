@@ -14,24 +14,28 @@ router.post(
 );
 
 router.get(
-  "/get-allcategories",
+  "/get-all-categories",
   tokenVerification,
-  categoryController.getCategories
+  categoryController.getAllCategories
 );
 router.get("/categories", categoryController.getCategoriesForDropdown);
-
 router.put(
   "/update/:categoryId",
   tokenVerification,
     allowRoles("superadmin"),
   categoryController.updateCategory
 );
-
 router.delete(
   "/delete/:categoryId",
   tokenVerification,
     allowRoles("superadmin"),
   categoryController.deleteCategory
+);
+router.get(
+  "/get-by-id/:id",
+  tokenVerification,
+    allowRoles( "superadmin"),
+  categoryController.getCategoryById
 );
 
 export default router;

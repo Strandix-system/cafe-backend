@@ -9,11 +9,9 @@ const menuSchema = {
     discountPrice: Joi.number().min(0).less(Joi.ref('price')).messages({
       'number.less': 'Discount price must be less than the original price'
     }),
-    isPopular: Joi.boolean()
-
+    isPopular: Joi.boolean(),
   })
 };
-
 const updateMenuSchema = {
   params: Joi.object({
     id: Joi.string().hex().length(24).required() // Validates MongoDB ObjectId
@@ -24,8 +22,9 @@ const updateMenuSchema = {
     description: Joi.string().trim().min(10).max(500),
     price: Joi.number().positive(),
     discountPrice: Joi.number().min(0).less(Joi.ref('price')),
-    isPopular: Joi.boolean()
-  }).min(0) // Allows updating just the image
+    image: Joi.any(),
+    isPopular: Joi.boolean(),
+  }).min(0) 
 };
 
 export { menuSchema, updateMenuSchema };

@@ -2,7 +2,6 @@ import profileService from "./profileService.js";
 import  {sendSuccessResponse } from "../../../utils/response.js";
 
 const profileController = {
-  // ✅ GET PROFILE
   getMyProfile: async (req, res, next) => {
     try {
       const result = await profileService.getMyProfile(req.user._id);
@@ -11,8 +10,6 @@ const profileController = {
       next(error);
     }
   },
-
-  // ✅ UPDATE PROFILE
   updateMyProfile: async (req, res, next) => {
     try {
       const result = await profileService.updateMyProfile(

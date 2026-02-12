@@ -11,7 +11,7 @@ const router = express.Router();
 router.post(
   "/create",
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles("admin","superadmin"),
   uploadMenu.single("image"),
   validate(menuSchema),
   menuController.createMenu
@@ -33,7 +33,7 @@ router.delete(
 router.get(
   "/all-menu",
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles("admin","superadmin"),
   menuController.getAllMenus
 );
 router.get(
@@ -41,6 +41,12 @@ router.get(
   tokenVerification,
   allowRoles("admin"),
   menuController.getMenusByAdmin
+);
+router.get(
+  "/get-by-id/:id",
+  tokenVerification,  
+  allowRoles("admin"),
+  menuController.getMenuById
 );
 // 🌍 PUBLIC MENU FOR PORTFOLIO
 router.get(

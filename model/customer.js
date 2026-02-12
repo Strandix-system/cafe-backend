@@ -10,12 +10,16 @@ const customerSchema = new mongoose.Schema(
         phoneNumber: {
             type: String,
             required: true,
+<<<<<<< feat/onboard
+        }
+=======
         },
         adminId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             required: true,
         },
+>>>>>>> main
     },
     { timestamps: true }
 );

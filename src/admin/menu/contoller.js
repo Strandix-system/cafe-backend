@@ -1,6 +1,7 @@
 import menuService from "./service.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
 import { pick } from "../../../utils/pick.js"
+import { get } from "http";
 
 const menuController = {
   // ✅ CREATE MENU
@@ -52,6 +53,15 @@ const menuController = {
       const filter = pick(req.query, ["adminId", "search", "category"]);
       const result = await menuService.getMenusByAdmin(adminId, filter, options);
       sendSuccessResponse(res, 200, "Admin menus fetched successfully", result);
+    } catch (error) {
+      next(error);
+    }
+  },
+  getMenuById: async (req, res, next) => {
+    try {
+      const menuId = req.params.id; 
+      const result = await menuService.getMenuById(menuId);
+      sendSuccessResponse(res, 200, "Menu fetched successfully", result);
     } catch (error) {
       next(error);
     }

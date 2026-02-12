@@ -28,4 +28,8 @@ const qrSchema = new mongoose.Schema(
 
 qrSchema.plugin(paginate);
 qrSchema.index({ adminId: 1, tableNumber: 1 }, { unique: true });
+<<<<<<< feat/onboard
 export default mongoose.model("Qr", qrSchema);
+=======
+export default mongoose.model("Qr", qrSchema);
+>>>>>>> main

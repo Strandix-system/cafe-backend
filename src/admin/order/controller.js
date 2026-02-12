@@ -8,7 +8,6 @@ const orderController = {
     try {
 
       const order = await orderService.createOrderByCustomerId(
-        req.body.customerId,
         req.body
       );
       sendSuccessResponse(res, 201, "Order placed", order);
@@ -21,15 +20,9 @@ const orderController = {
 
       const adminId = req.user.id;
 
-      const options = pick(
-        req.query,
-        ["page", "limit", "sortBy", "populate"]
-      );
+      const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
 
-      const filter = pick(
-        req.query,
-        ["orderStatus", "tableNumber", "paymentStatus"]
-      );
+      const filter = pick(req.query, ["orderStatus", "tableNumber", "paymentStatus"]);
 
       const result =
         await orderService.getOrders(
@@ -44,14 +37,10 @@ const orderController = {
   },
   getMyOrders: async (req, res, next) => {
     try {
-
-      const result =
-        await orderService.getOrdersByCustomer(
-          req.user._id,
-          {},
-          pick(req.query, ["page", "limit", "sortBy", "populate"])
-        );
-      sendSuccessResponse(res, 200, "My orders fetched", result);
+      const filter = pick(req.query, ["userId"]);
+      const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
+      const result = await orderService.getOrdersByCustomer(filter, options);
+      sendSuccessResponse(res, 200, "Orders fetched successfully", result);
     } catch (err) {
       next(err);
     }
@@ -59,10 +48,11 @@ const orderController = {
   updateStatus: async (req, res, next) => {
     try {
 
+      const status = req.body.status ?? req.body.orderStatus;
       const result =
         await orderService.updateStatus(
-          req.params.id,
-          req.body.status,
+          req.body.orderId,
+          status,
           req.user._id
         );
       sendSuccessResponse(res, 200, "Status updated", result);

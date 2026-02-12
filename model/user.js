@@ -74,7 +74,7 @@ const userSchema = new mongoose.Schema(
       required: true
     },
     gst: {
-      type: Number,
+      type: Number, // percentage
       default: 5,
       required: true
     },

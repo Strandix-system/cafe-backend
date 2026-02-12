@@ -16,7 +16,6 @@ export const getS3Key = (url) => {
       return u.pathname.substring(1); // Remove leading '/'
     }
     
-    // Format 2: https://s3.region.amazonaws.com/bucket-name/folder/file.jpg
     if (u.hostname.includes('s3') && u.pathname.includes(bucketName)) {
       const pathParts = u.pathname.split('/').filter(Boolean);
       const bucketIndex = pathParts.indexOf(bucketName);

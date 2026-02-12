@@ -1,26 +1,24 @@
 import Menu from "../../../model/menu.js";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../../../config/s3.js";
+import Category from "../../../model/category.js";
+import { deleteSingleFile } from "../../../utils/s3Utils.js";
 
 const getS3Key = (value) => {
   if (!value) return null;
   if (!value.startsWith("http")) return value;
-
   const url = new URL(value);
   return url.pathname.substring(1);
 };
+
 const menuService = {
- createMenu: async (adminId, body, file) => {
+createMenu: async (adminId, body, file) => {
   if (!file) {
     throw Object.assign(new Error("Image is required"), { statusCode: 400 });
   }
-
-  // 1. Verify that the category name exists in the Category Collection
-  // Using case-insensitive search so 'coffee' matches 'Coffee'
   const categoryExists = await Category.findOne({ 
     name: { $regex: new RegExp(`^${body.category}$`, "i") } 
   });
-
   if (!categoryExists) {
     throw Object.assign(new Error(`Category '${body.category}' does not exist`), { 
       statusCode: 404 
@@ -29,15 +27,13 @@ const menuService = {
 const menu = await Menu.create({
     ...body,
     adminId,
-    category: categoryExists.name, // Saves the actual string name from the category doc
+    category: categoryExists.name, 
     image: file.location,
     price: Number(body.price),
     discountPrice: body.discountPrice ? Number(body.discountPrice) : undefined,
   });
-  // 2. Create Menu (storing the category NAME, not the ID)
   return menu;
 },
-  // ✅ UPDATE MENU
   updateMenu: async (menuId, body, file) => {
     const menu = await Menu.findById(menuId);
     if (!menu) {

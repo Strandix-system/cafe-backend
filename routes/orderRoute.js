@@ -18,7 +18,7 @@ router.get(
 );
 
 router.patch(
-  "/status/:id",
+  "/status",
   tokenVerification,
   allowRoles("admin"),
   orderController.updateStatus

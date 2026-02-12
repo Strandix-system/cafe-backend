@@ -1,11 +1,15 @@
 import CafeLayout from "../../../model/layout.js";
-import { deleteUploadedFiles } from "../../../utils/s3utils.js";
-import mongoose from "mongoose";
+import { deleteUploadedFiles } from "../../../utils/s3Utils.js";
+
 
 const layoutService = {
   createCafeLayout: async (adminId, body, files, role) => {
-    if (!files?.homeImage?.[0] || !files?.aboutImage?.[0]) {
-      throw Object.assign(new Error("Home image and About image are required"), { statusCode: 400 });
+    const homeImage = files?.homeImage?.[0]?.location;
+    const aboutImage = files?.aboutImage?.[0]?.location;
+    if (!homeImage || !aboutImage) {
+      throw Object.assign(new Error("Both Home image and About image are required"), {
+        statusCode: 400
+      });
     }
     let defaultLayoutId = null;
     let defaultLayout = role === "superadmin";
@@ -15,51 +19,48 @@ const layoutService = {
       defaultLayoutId = baseLayout._id;
     }
     const layout = await CafeLayout.create({
-      ...body, 
+      ...body,
       adminId,
-      homeImage: files.homeImage[0].location,
-      aboutImage: files.aboutImage[0].location,
+      homeImage, // S3 URL
+      aboutImage, // S3 URL
       defaultLayout,
       defaultLayoutId,
     });
     return layout;
   },
-  updateCafeLayout: async (id, body, files) => {
-    const layout = await CafeLayout.findById(id);
-    if (!layout) {
-      throw Object.assign(new Error("Cafe layout not found"), { statusCode: 404 });
+ updateCafeLayout: async (id, body, files) => {
+  const layout = await CafeLayout.findById(id);
+  if (!layout) {
+    throw Object.assign(new Error("Cafe layout not found"), { statusCode: 404 });
+  }
+  if (files?.homeImage?.[0]?.location) {
+    if (layout.homeImage) {
+      await deleteSingleFile(layout.homeImage).catch(err => console.error("S3 Error:", err));
     }
-    const imageFields = ['homeImage', 'aboutImage'];
-    for (const field of imageFields) {
-      if (files?.[field]?.[0]?.location) {
-        const newLocation = files[field][0].location;
-        const oldLocation = layout[field];
-        if (oldLocation) {
-          try {
-            await deleteSingleFile(oldLocation);
-            console.log(`✅ Old ${field} deleted successfully`);
-          } catch (err) {
-            console.error(`❌ S3 Cleanup failed for ${field}:`, err.message);
-          }
-        }
-        layout[field] = newLocation;
-      }
+    layout.homeImage = files.homeImage[0].location;
+  }
+  if (files?.aboutImage?.[0]?.location) {
+    if (layout.aboutImage) {
+      await deleteSingleFile(layout.aboutImage).catch(err => console.error("S3 Error:", err));
     }
-    const nestedFields = ['hours', 'socialLinks'];
-    nestedFields.forEach(field => {
-      if (body[field]) {
-        layout[field] = {
-          ...(layout[field]?.toObject?.() || layout[field] || {}), 
-          ...body[field],
-        };
-        delete body[field]; 
-      }
-    });
-    Object.assign(layout, body);
-    await layout.save();
-    return layout;
-  },
-deleteCafeLayout: async (id) => {
+    layout.aboutImage = files.aboutImage[0].location;
+  }
+  ['hours', 'socialLinks'].forEach(field => {
+    if (body[field]) {
+      const parsedData = typeof body[field] === 'string' ? JSON.parse(body[field]) : body[field];
+      layout[field] = {
+        ...(layout[field]?.toObject?.() || layout[field] || {}),
+        ...parsedData,
+      };
+      delete body[field]; 
+    }
+  });
+  Object.assign(layout, body);
+  await layout.save();
+
+  return layout;
+},
+  deleteCafeLayout: async (id) => {
     const layout = await CafeLayout.findById(id);
     if (!layout) {
       throw Object.assign(new Error("Cafe layout not found"), { statusCode: 404 });
@@ -75,7 +76,7 @@ deleteCafeLayout: async (id) => {
         console.error("Failed to delete S3 images during layout deletion:", err.message);
       }
     }
-     const result = await layout.deleteOne(); 
+    const result = await layout.deleteOne();
     return result;
   },
   getCafeLayoutByAdmin: async (filter, options) => {
@@ -83,7 +84,7 @@ deleteCafeLayout: async (id) => {
     return result;
   },
   getAllLayout: async (filter, options) => {
-    const result = await CafeLayout.find(filter, options);
+    const result = await CafeLayout.paginate(filter, options);
     return result;
   },
   getLayoutById: async (id) => {
@@ -92,7 +93,7 @@ deleteCafeLayout: async (id) => {
   },
   getDefaultLayout: async (id) => {
     const result = await CafeLayout.findById(id)
-      .populate("adminId", "logo address phoneNumber email cafeName gst").populate("menus");
+      .populate("adminId", "logo address phoneNumber email cafeName gst ").populate("menus");
     return result;
   },
 };

@@ -16,51 +16,36 @@ router.get(
   "/get-layout/:id",
   tokenVerification,
   allowRoles("superadmin", "admin"),
-  cafeLayoutController.getLayoutById)
-
-// Delete any layout
+  cafeLayoutController.getLayoutById
+);
 router.delete(
   "/delete/:id",
   tokenVerification,
   allowRoles("superadmin"),
   cafeLayoutController.deleteCafeLayout
 );
-
-// Admin creates own layout
-router.post(
-  "/admin-create",
-  tokenVerification,
-  allowRoles("admin"),
-  uploadLayoutImages,
-  cafeLayoutController.createCafeLayout
-);
-
-// Admin updates own layout
 router.patch(
   "/update/:id",
   tokenVerification,
-  allowRoles("admin"," superadmin"),
+  allowRoles("admin", " superadmin"),
   uploadLayoutImages,
   cafeLayoutController.updateCafeLayout
 );
-
-// Admin dashboard (own layout OR default)
 router.get(
   "/admin-layout",
   tokenVerification,
   allowRoles("admin"),
   cafeLayoutController.getCafeLayoutByAdmin
 );
-
 router.get(
   "/portfolio/:id",
   cafeLayoutController.getLayoutForPortfolio
 );
-// Superadmin listing (all layouts)
 router.get(
-  "/all-layouts", 
+  "/all-layouts",
   tokenVerification,
   allowRoles("superadmin", "admin"),
-  cafeLayoutController.getCafeLayoutByAdmin
+  cafeLayoutController.getAllLayout
 );
+
 export default router;

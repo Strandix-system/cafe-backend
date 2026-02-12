@@ -12,28 +12,28 @@ const getS3Key = (value) => {
 };
 
 const menuService = {
-createMenu: async (adminId, body, file) => {
-  if (!file) {
-    throw Object.assign(new Error("Image is required"), { statusCode: 400 });
-  }
-  const categoryExists = await Category.findOne({ 
-    name: { $regex: new RegExp(`^${body.category}$`, "i") } 
-  });
-  if (!categoryExists) {
-    throw Object.assign(new Error(`Category '${body.category}' does not exist`), { 
-      statusCode: 404 
+  createMenu: async (adminId, body, file) => {
+    if (!file) {
+      throw Object.assign(new Error("Image is required"), { statusCode: 400 });
+    }
+    const categoryExists = await Category.findOne({
+      name: { $regex: new RegExp(`^${body.category}$`, "i") }
     });
-  }
-const menu = await Menu.create({
-    ...body,
-    adminId,
-    category: categoryExists.name, 
-    image: file.location,
-    price: Number(body.price),
-    discountPrice: body.discountPrice ? Number(body.discountPrice) : undefined,
-  });
-  return menu;
-},
+    if (!categoryExists) {
+      throw Object.assign(new Error(`Category '${body.category}' does not exist`), {
+        statusCode: 404
+      });
+    }
+    const menu = await Menu.create({
+      ...body,
+      adminId,
+      category: categoryExists.name,
+      image: file.location,
+      price: Number(body.price),
+      discountPrice: body.discountPrice ? Number(body.discountPrice) : undefined,
+    });
+    return menu;
+  },
   updateMenu: async (menuId, body, file) => {
     const menu = await Menu.findById(menuId);
     if (!menu) {
@@ -94,7 +94,12 @@ const menu = await Menu.create({
   },
   getMenusByAdmin: async (adminId, filter, options) => {
     filter.adminId = adminId;
+    if (filter.search) {
+      filter.name = { $regex: filter.search, $options: "i" };
+    }
+    delete filter.search;
     return await Menu.paginate(filter, options);
-},
+
+  },
 };
 export default menuService;

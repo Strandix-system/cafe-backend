@@ -1,5 +1,7 @@
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../config/s3.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 export const getS3Key = (url) => {
   if (!url) return null;

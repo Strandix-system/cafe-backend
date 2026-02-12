@@ -3,6 +3,7 @@ import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../../../config/s3.js";
 import Category from "../../../model/category.js";
 import { deleteSingleFile } from "../../../utils/s3Utils.js";
+import { get } from "http";
 
 const getS3Key = (value) => {
   if (!value) return null;
@@ -94,7 +95,15 @@ const menu = await Menu.create({
   },
   getMenusByAdmin: async (adminId, filter, options) => {
     filter.adminId = adminId;
+    if(filter.search) {
+      filter.name = { $regex: filter.search, $options: "i" };
+    }
+    delete filter.search;
     return await Menu.paginate(filter, options);
+},
+getMenuById: async (menuId) => {
+  const menu = await Menu.findById(menuId); 
+  return menu;
 },
 };
 export default menuService;

@@ -45,7 +45,7 @@ router.get(
   "/all-layouts",
   tokenVerification,
   allowRoles("superadmin", "admin"),
-  cafeLayoutController.getCafeLayoutByAdmin
+  cafeLayoutController.getAllLayout
 );
 
 export default router;

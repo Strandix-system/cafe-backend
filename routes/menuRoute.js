@@ -17,7 +17,7 @@ router.post(
   menuController.createMenu
 );
 router.patch(
-  "/:id",
+  "/update/:id",
   tokenVerification,
   allowRoles("admin"),
   uploadMenu.single("image"),
@@ -25,7 +25,7 @@ router.patch(
   menuController.updateMenu
 );
 router.delete(
-  "/:id",
+  "/delete/:id",
   tokenVerification,
   allowRoles("admin"),
   menuController.deleteMenu
@@ -41,6 +41,12 @@ router.get(
   tokenVerification,
   allowRoles("admin"),
   menuController.getMenusByAdmin
+);
+router.get(
+  "/get-by-id/:id",
+  tokenVerification,  
+  allowRoles("admin"),
+  menuController.getMenuById
 );
 // 🌍 PUBLIC MENU FOR PORTFOLIO
 router.get(

@@ -22,8 +22,9 @@ const updateMenuSchema = {
     description: Joi.string().trim().min(10).max(500),
     price: Joi.number().positive(),
     discountPrice: Joi.number().min(0).less(Joi.ref('price')),
+    image: Joi.any(),
     isPopular: Joi.boolean(),
-  }).min(0) // Allows updating just the image
+  }).min(0) 
 };
 
 export { menuSchema, updateMenuSchema };

@@ -14,9 +14,9 @@ router.post(
 );
 
 router.get(
-  "/get-allcategories",
+  "/get-all-categories",
   tokenVerification,
-  categoryController.getCategories
+  categoryController.getAllCategories
 );
 router.get("/categories", categoryController.getCategoriesForDropdown);
 router.put(
@@ -30,6 +30,12 @@ router.delete(
   tokenVerification,
     allowRoles("superadmin"),
   categoryController.deleteCategory
+);
+router.get(
+  "/get-by-id/:id",
+  tokenVerification,
+    allowRoles( "superadmin"),
+  categoryController.getCategoryById
 );
 
 export default router;

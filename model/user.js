@@ -78,11 +78,6 @@ const userSchema = new mongoose.Schema(
       default: "admin",
       required: true
     },
-    // gst: {
-    //   type: Number, // percentage
-    //   default: 5,
-    //   required: true
-    
   },
   { timestamps: true }
 );

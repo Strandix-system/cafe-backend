@@ -14,7 +14,7 @@ router.post(
 );
 
 router.get(
-  "/get-all-categories",
+  "/",
   tokenVerification,
   categoryController.getAllCategories
 );

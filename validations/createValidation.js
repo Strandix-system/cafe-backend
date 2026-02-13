@@ -16,7 +16,7 @@ const pincodeRule = Joi.number().integer().min(100000).max(999999);
 const createAdminValidator = {
   body: Joi.object({
     firstName: nameRule.required(),
-    lastName: Joi.string().trim().min(5).max(200).required(),
+    lastName: Joi.string().trim().min(2).max(200).required(),
     cafeName: Joi.string().trim().min(2).max(100).required(),
     email: emailRule.required(),
     phoneNumber: phoneRule.required(),
@@ -25,8 +25,7 @@ const createAdminValidator = {
     state: Joi.string().trim().min(2).max(50).required(),
     city: Joi.string().trim().min(2).max(50).required(),
     pincode: pincodeRule.required(),
-    gst: Joi.string().trim().min(5).max(18).required(),
-  }).required(),
+    gst: Joi.number().min(5).max(18),  }).required(),
 };
 const updateAdminValidator = {
   params: Joi.object({
@@ -45,7 +44,7 @@ const updateAdminValidator = {
     pincode: pincodeRule,
     logo: Joi.any(),
     profileImage: Joi.any(),
-    gst: Joi.string().trim().min(5).max(18),
+    gst: Joi.number().min(5).max(18),
     isActive: Joi.boolean()
   }).min(0) // 👈 Change this to 0 to allow updating ONLY an image
 };
@@ -64,6 +63,6 @@ const updateProfileValidator = {
     email: Joi.string().email().lowercase(),
     phoneNumber: phoneRule,
     profileImage: Joi.any()
-  }).min(1) // Ensure they are actually trying to update something
+  }).min(1) 
 };
 export { createAdminValidator, updateAdminValidator, deleteAdminValidator, updateProfileValidator };

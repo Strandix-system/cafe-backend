@@ -27,26 +27,18 @@ const qrService = {
     const createdQrs = await Qr.insertMany(qrList);
     // 3. Generate QR images
     for (const qr of createdQrs) {
-
       const frontendUrl =
-        `${process.env.FRONTEND_URL}?qr=${qr._id}`;
-
+        `${process.env.FRONTEND_URL}?qr=${qr._id}&layout=${qr.layoutId}`;
       const qrImage =
         await QRCode.toDataURL(frontendUrl);
-
       qr.qrCodeUrl = qrImage;
-
       await qr.save();
     }
-
     return createdQrs;
   },
   scanQr: async (qrId) => {
-
     const qr = await Qr.findById(qrId).populate("layoutId");
-
     if (!qr) throw new Error("Invalid QR");
-
     return {
       qrId: qr._id,
       tableNumber: qr.tableNumber,
@@ -54,20 +46,18 @@ const qrService = {
       layoutId: qr.layoutId, // ✅ SEND THIS
     };
   },
-  // getQrDetails: async (qrId) => {
-  //   const qr = await Qr.findById(qrId);
-
-  //   if (!qr) {
-  //     throw new Error("Invalid QR");
-  //   }
-
-  //   return {
-  //     qrId: qr._id,
-  //     adminId: qr.adminId,
-  //     layoutId: qr.layoutId,
-  //     tableNumber: qr.tableNumber,
-  //   };
-  // },
+  getQrDetails: async (qrId) => {
+    const qr = await Qr.findById(qrId);
+    if (!qr) {
+      throw new Error("Invalid QR");
+    }
+    return {
+      qrId: qr._id,
+      adminId: qr.adminId,
+      layoutId: qr.layoutId,
+      tableNumber: qr.tableNumber,
+    };
+  },
   getAllQr: async (filter, options) => {
     const result = await Qr.paginate(filter, options);
     return result;

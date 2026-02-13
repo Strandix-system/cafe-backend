@@ -2,7 +2,7 @@ import Menu from "../../../model/menu.js";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../../../config/s3.js";
 import Category from "../../../model/category.js";
-import { deleteSingleFile } from "../../../utils/s3Utils.js";
+import { deleteSingleFile } from "../../../utils/s3utils.js";
 
 const getS3Key = (value) => {
   if (!value) return null;
@@ -43,7 +43,6 @@ const menu = await Menu.create({
       if (menu.image) {
         try {
           await deleteSingleFile(menu.image);
-          console.log(`✅ Old image deleted from S3`);
         } catch (err) {
           console.error('❌ S3 Delete Error:', err.message);
         }

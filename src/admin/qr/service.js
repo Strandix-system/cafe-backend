@@ -27,7 +27,7 @@ const qrService = {
     const createdQrs = await Qr.insertMany(qrList);
     // 3. Generate QR images
     for (const qr of createdQrs) {
-     const frontendUrl = `${process.env.FRONTEND_URL}/${qr._id}/${qr.layoutId}`;
+     const frontendUrl = `${process.env.FRONTEND_URL}/${qr.layoutId}/${qr._id}`;
      const qrImage = await QRCode.toDataURL(frontendUrl);
       qr.qrCodeUrl = qrImage;
       await qr.save();

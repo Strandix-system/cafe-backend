@@ -47,7 +47,7 @@ const orderService = {
         m => m._id.toString() === item.menuId
       );
 
-      const price = menu.price;
+    const price = menu.discountPrice && menu.discountPrice > 0 ? menu.discountPrice : menu.price;
 
       subTotal += price * item.quantity;
 
@@ -81,8 +81,9 @@ const orderService = {
       .populate("items.menuId");
 
     // Emit to all admin clients for that adminId
-    io.to(adminId.toString()).emit("newOrder", populatedOrder); // legacy
-    io.to(adminId.toString()).emit("order:new", populatedOrder); // preferred
+    io.to(adminId.toString()).emit("newOrder", populatedOrder);
+    io.to(adminId.toString()).emit("order:new", populatedOrder);
+    io.to(`customer-${customer._id}`).emit("order:new", populatedOrder);
 
     return order;
   },

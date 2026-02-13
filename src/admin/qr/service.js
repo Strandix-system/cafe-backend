@@ -28,8 +28,11 @@ const qrService = {
     // 3. Generate QR images
     for (const qr of createdQrs) {
 
-      const frontendUrl =
-        `${process.env.FRONTEND_URL}?qr=${qr._id}&layout=${qr.layoutId}`;
+      // const frontendUrl =
+      //   `${process.env.FRONTEND_URL}?qr=${qr._id}&layout=${qr.layoutId}`;
+
+      const frontendUrl = `${process.env.FRONTEND_URL}/${qr._id}/${qr.layoutId}`;
+
 
       const qrImage =
         await QRCode.toDataURL(frontendUrl);

@@ -1,6 +1,6 @@
 import CafeLayout from "../../../model/layout.js";
 import { deleteUploadedFiles } from "../../../utils/s3Utils.js";
-
+import { deleteSingleFile } from "../../../utils/s3Utils.js";
 
 const layoutService = {
   createCafeLayout: async (adminId, body, files, role) => {

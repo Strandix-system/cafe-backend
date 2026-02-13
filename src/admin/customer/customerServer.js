@@ -1,5 +1,4 @@
 import Customer from "../../../model/customer.js";
-import Qr from "../../../model/qr.js";
 
 const customerService = {
   createCustomer: async (body) => {

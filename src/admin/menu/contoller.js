@@ -20,7 +20,7 @@ const menuController = {
   updateMenu: async (req, res, next) => {
     try {
       const result = await menuService.updateMenu(
-        req.params.id,
+        req.params.menuId,
         req.body, req.file
       );
       sendSuccessResponse(res, 200, "Menu updated successfully", result);
@@ -30,7 +30,7 @@ const menuController = {
   },
   deleteMenu: async (req, res, next) => {
     try {
-      await menuService.deleteMenu(req.params.id);
+      await menuService.deleteMenu(req.params.menuId);
       sendSuccessResponse(res, 200, "Menu deleted successfully");
     } catch (error) {
       next(error);
@@ -59,7 +59,7 @@ const menuController = {
   },
   getMenuById: async (req, res, next) => {
     try {
-      const menuId = req.params.id; 
+      const menuId = req.params.menuId; 
       const result = await menuService.getMenuById(menuId);
       sendSuccessResponse(res, 200, "Menu fetched successfully", result);
     } catch (error) {

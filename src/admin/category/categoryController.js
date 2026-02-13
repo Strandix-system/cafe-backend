@@ -24,7 +24,7 @@ export default{
 updateCategory : async (req, res, next) => {
   try {
     const category = await categoryService.updateCategoryById  (
-      req.params.id,
+      req.params.categoryId,
       req.body
     );
     sendSuccessResponse(res, 200, "Category updated successfully", category);
@@ -34,7 +34,7 @@ updateCategory : async (req, res, next) => {
 },
  deleteCategory :async (req, res, next) => {
    try {
-    await categoryService.deleteCategoryById(req.params.id);
+    await categoryService.deleteCategoryById(req.params.categoryId);
     sendSuccessResponse(res, 200, "Category deleted successfully");
   } catch (error) {
     next(error);

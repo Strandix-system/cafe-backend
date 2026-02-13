@@ -54,12 +54,9 @@ const orderController = {
   updateStatus: async (req, res, next) => {
     try {
 
-      // accept either { status } or { orderStatus } from client
-      const status = req.body.status ?? req.body.orderStatus;
       const result =
         await orderService.updateStatus(
-          req.body.orderId,
-          status,
+          req.body,
           req.user._id
         );
       sendSuccessResponse(res, 200, "Status updated", result);
@@ -69,10 +66,9 @@ const orderController = {
   },
   getItems: async (req, res, next) => {
     try {
-
       const result =
         await orderService.getOrderItems(
-          req.params.id,
+          req.params.orderId,
           req.user._id
         );
       sendSuccessResponse(res, 200, "Order items fetched", result);

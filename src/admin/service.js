@@ -6,7 +6,6 @@ const adminService = {
     if (exists) {
       throw Object.assign(new Error("User already exists"), { statusCode: 409 });
     }
-
     const phoneExists = await User.findOne({ phoneNumber: body.phoneNumber });
     if (phoneExists) {
       throw Object.assign(new Error("PhoneNumber already exists"), { statusCode: 409 });
@@ -41,7 +40,6 @@ const adminService = {
           if (oldFileUrl) {
             try {
               await deleteSingleFile(oldFileUrl);
-              console.log(`✅ Old ${key} deleted successfully`);
             } catch (err) {
               console.error(`❌ Failed to delete old ${key}:`, err.message);
             }

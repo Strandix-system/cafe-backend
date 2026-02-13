@@ -43,7 +43,6 @@ const menu = await Menu.create({
       if (menu.image) {
         try {
           await deleteSingleFile(menu.image);
-          console.log(`✅ Old image deleted from S3`);
         } catch (err) {
           console.error('❌ S3 Delete Error:', err.message);
         }

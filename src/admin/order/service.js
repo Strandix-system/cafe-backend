@@ -20,7 +20,7 @@ const orderService = {
 
     const adminId = customer.adminId;
 
-   console.log("Admin ID for order:", adminId);
+    console.log("Admin ID for order:", adminId);
     const admin = await User.findOne({ _id: adminId, role: "admin" })
       .select("gst");
 
@@ -97,32 +97,28 @@ const orderService = {
     if (!filter.userId) {
       throw new Error("userId is required to fetch customer's orders");
     }
-
-    const result = await Order.paginate(
-      filter,
-      options
-    );
-
+    const result = await Order.paginate(filter, options);
     return result;
   },
-  updateStatus: async (orderId, status, adminId) => {
+  updateStatus: async (body, adminId) => {
     try {
-      if (!status) {
-        throw new Error("Order status is required");
-      }
-      // Normalize status
-      status = status.trim().toLowerCase();
-
+      const { orderId, status, paymentStatus } = body;
       const allowed = ["pending", "accepted", "completed"];
+      
+      if(status){
+        status = status.trim().toLowerCase();
+      }
 
-      if (!allowed.includes(status)) {
+      if (status && !allowed.includes(status)) {
         throw new Error("Invalid order status");
       }
 
-      // Update + Populate
       const updatedOrder = await Order.findOneAndUpdate(
-        { _id: orderId, adminId },                // ✅ Secure by admin
-        { orderStatus: status },            // ✅ Update
+        { _id: orderId, adminId },
+        {
+          ...(status && { orderStatus: status }),
+          ...(paymentStatus && { paymentStatus })
+        },    
         {
           new: true,
           runValidators: true,
@@ -149,13 +145,15 @@ const orderService = {
         // Emit to admin
         io.to(adminId.toString()).emit("orderStatusUpdate", { // legacy
           orderId: updatedOrder._id,
-          status: status,
+          status,
           order: updatedOrder,
+          paymentStatus: updatedOrder.paymentStatus,
         });
         io.to(adminId.toString()).emit("order:statusUpdated", {
           orderId: updatedOrder._id,
           status,
           order: updatedOrder,
+          paymentStatus: updatedOrder.paymentStatus,
         });
 
         // Emit to customer
@@ -214,7 +212,7 @@ const orderService = {
       options
     );
     return result;
-},
+  },
 
 };
 

@@ -25,7 +25,7 @@ router.patch(
 );
 
 router.get(
-  "/items/:id",
+  "/items/:orderId",
   tokenVerification,
   allowRoles("admin"),
   orderController.getItems

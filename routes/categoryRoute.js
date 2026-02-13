@@ -19,7 +19,7 @@ router.get(
   categoryController.getAllCategories
 );
 router.get("/categories", categoryController.getCategoriesForDropdown);
-router.put(
+router.patch(
   "/update/:categoryId",
   tokenVerification,
     allowRoles("superadmin"),

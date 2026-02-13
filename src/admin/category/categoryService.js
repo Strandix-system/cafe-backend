@@ -19,20 +19,32 @@ const categoryService = {
     }
     return result;
 },
-updateCategoryById : async (categoryId, data) => {
- return await Category.findByIdAndUpdate(categoryId, data, { new: true });
+updateCategoryById: async (categoryId, data) => {
+  const category = await Category.findById(categoryId);
+
+  if (!category) {
+    throw Object.assign(new Error("Category not found"), { statusCode: 404 });
+  }
+
+  const updatedCategory = await Category.findByIdAndUpdate(
+    categoryId,
+    { $set: data },
+    { new: true, runValidators: true }
+  );
+
+  return updatedCategory;
 },
  deleteCategoryById : async (categoryId) => {
   const category = await Category.findByIdAndDelete(categoryId);
   if (!category) {
-    throw new Error("Category not found");
+    throw Object.assign(new Error("Category not found"), { statusCode: 404 });
   }
   return category;
 },
 getCategoryById : async (categoryId) => {
   const category = await Category.findById(categoryId);
   if (!category) {
-    throw new Error("Category not found");
+    throw Object.assign(new Error("Category not found"), { statusCode: 404 });
   } 
   return category;
 },

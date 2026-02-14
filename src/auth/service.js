@@ -26,50 +26,51 @@ const authService = {
     };
   },
 
- login: async (data) => {
-  const { email, phoneNumber, password } = data;
+  login: async (data) => {
+    const { email, phoneNumber, password } = data;
+   
+    if ((!email && !phoneNumber) || !password) {
+      throw new Error("Email or phoneNumber and password are required");
+    }
 
-  if ((!email && !phoneNumber) || !password) {
-    throw new Error("Email or phoneNumber and password are required");
-  }
+    const user = await User.findOne({
+      $or: [
+        email ? { email } : null,
+        phoneNumber ? { phoneNumber } : null,
 
-  const user = await User.findOne({
-    $or: [
-      email ? { email } : null,
-      phoneNumber ? { phoneNumber } : null,
-    ].filter(Boolean),
-  });
+      ].filter(Boolean),
+    }).select("+password");
 
-  if (!user) {
-    throw new Error("Invalid credentials");
-  }
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    throw new Error("Invalid credentials");
-  }
+    if (!user) {
+      throw new Error("Invalid credentials");
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      throw new Error("Invalid credentials");
+    }
 
-  const token = jwt.sign(
-    { id: user._id, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: "7d" }
-  );
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-  return {
-    token,
-    role: user.role,
-  };
-},
+    return {
+      token,
+      role: user.role,
+    };
+  },
 
-  
+
   logout: async (userId) => {
-  const user = await User.findById(userId);
-  if (!user) throw new Error("User not found");
+    const user = await User.findById(userId);
+    if (!user) throw new Error("User not found");
 
-  user.tokenVersion += 1;
-  await user.save();
+    user.tokenVersion += 1;
+    await user.save();
 
-  return { message: "Logged out successfully" };
-}
+    return { message: "Logged out successfully" };
+  }
 
 };
 

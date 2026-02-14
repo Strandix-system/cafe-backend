@@ -37,7 +37,7 @@ const cafeLayoutController = {
   updateLayoutStatus: async (req, res, next) => {
     try {
       const result = await layoutService.updateLayoutStatus(
-        req.params.id,
+        req.body.layoutId,
         req.body,
         req.user.id
       );

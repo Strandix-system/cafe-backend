@@ -19,7 +19,7 @@ router.get(
   cafeLayoutController.getLayoutById
 );
 router.patch(
-  "/update-status/:id",
+  "/update-status",
   tokenVerification,
   allowRoles("admin", " superadmin"),
   cafeLayoutController.updateLayoutStatus

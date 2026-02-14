@@ -77,7 +77,6 @@ const layoutService = {
       );
 
       layout.active = true;
-
     } else {
       layout.active = false;
     }

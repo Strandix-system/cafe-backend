@@ -3,7 +3,7 @@ import User from "../../../model/user.js";
 const profileService = {
   getMyProfile: async (userId) => {
     const user = await User.findById(userId).select(
-      "firstName lastName email phoneNumber profileImage role"
+      "firstName lastName email phoneNumber profileImage role socialLinks hours"
     );
     if (!user) {
       const err = new Error("User not found");

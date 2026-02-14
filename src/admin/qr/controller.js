@@ -1,7 +1,8 @@
 import qrService from "./service.js";
 import { pick } from "../../../utils/pick.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
-import Qr from "../../../model/qr.js";
+import { get } from "http";
+
 const qrController = {
   // Admin creates QR
   createQr: async (req, res, next) => {
@@ -28,24 +29,10 @@ const qrController = {
       next(err);
     }
   },
-      getQrDetails: async (qrId) => {
-    const qr = await Qr.findById(qrId)
-      .populate("layoutId");
-    if (!qr) {
-      throw new Error("Invalid QR");
-    }
-    return {
-      qrId: qr._id,
-      adminId: qr.adminId,
-      layoutId: qr.layoutId._id,
-      tableNumber: qr.tableNumber,
-    };
-  },
   getAllQr: async (req, res, next) => {
     try {
-      const filter = {
-        adminId: req.user._id,
-      };
+      const filter = { ...pick(req.query, ["tableNumber", "layoutId"])};
+
       const options = {...pick(req.query, ["page", "limit", "populate"]),
         sortBy: "tableNumber:asc",
       };
@@ -56,6 +43,15 @@ const qrController = {
       next(error);
     }
   },
+  getQrCountforLayout: async (req, res, next) => {
+    try {
+      const { layoutId } = req.params;
+      const count = await qrService.getQrCountforLayout(layoutId);
+      sendSuccessResponse(res, 200, "QR count fetched", { count });
+    } catch (error) {
+      next(error);
+    }
+},
 };
 
 export default qrController;

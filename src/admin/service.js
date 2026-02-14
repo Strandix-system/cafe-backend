@@ -21,41 +21,74 @@ const adminService = {
     });
     return admin;
   },
-  updateAdmin: async (id, body, files) => {
-    const admin = await User.findById(id);
-    if (!admin) throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
-    const uniqueFields = ['email', 'phoneNumber'];
-    for (const field of uniqueFields) {
-      if (body[field] && body[field] !== admin[field]) {
-        const exists = await User.findOne({ [field]: body[field] });
-        if (exists) throw Object.assign(new Error(`${field} already exists`), { statusCode: 409 });
-      }
+ updateAdmin: async (id, body, files) => {
+  const admin = await User.findById(id);
+  if (!admin)
+    throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
+
+  // ✅ Unique field check
+  const uniqueFields = ['email', 'phoneNumber'];
+  for (const field of uniqueFields) {
+    if (body[field] && body[field] !== admin[field]) {
+      const exists = await User.findOne({ [field]: body[field] });
+      if (exists)
+        throw Object.assign(new Error(`${field} already exists`), { statusCode: 409 });
     }
-    if (files) {
-      const fileFields = ['logo', 'profileImage'];
-      for (const key of fileFields) {
-        const newFile = files[key]?.[0];
-        const oldFileUrl = admin[key];
-        if (newFile?.location) {
-          if (oldFileUrl) {
-            try {
-              await deleteSingleFile(oldFileUrl);
-            } catch (err) {
-              console.error(`❌ Failed to delete old ${key}:`, err.message);
-            }
+  }
+
+  // ✅ Merge nested object fields (LIKE hours, socialLinks)
+  const nestedFields = ['hours', 'socialLinks'];
+
+  nestedFields.forEach(field => {
+    if (body[field]) {
+      const parsedData =
+        typeof body[field] === 'string'
+          ? JSON.parse(body[field])
+          : body[field];
+
+      admin[field] = {
+        ...(admin[field]?.toObject?.() || admin[field] || {}),
+        ...parsedData,
+      };
+
+      delete body[field];
+    }
+  });
+
+  // ✅ File handling
+  if (files) {
+    const fileFields = ['logo', 'profileImage'];
+    for (const key of fileFields) {
+      const newFile = files[key]?.[0];
+      const oldFileUrl = admin[key];
+
+      if (newFile?.location) {
+        if (oldFileUrl) {
+          try {
+            await deleteSingleFile(oldFileUrl);
+          } catch (err) {
+            console.error(`❌ Failed to delete old ${key}:`, err.message);
           }
-          body[key] = newFile.location;
         }
+        admin[key] = newFile.location; // directly assign to admin
       }
     }
-    if (body.password) body.password = await bcrypt.hash(body.password, 10);
-    return await User.findByIdAndUpdate(
-      id,
-      { $set: body },
-      { new: true, runValidators: true }
-    );
-  },
-  deleteAdmin: async (id) => {
+  }
+
+  // ✅ Password hashing
+  if (body.password) {
+    admin.password = await bcrypt.hash(body.password, 10);
+    delete body.password;
+  }
+
+  // ✅ Assign remaining simple fields
+  Object.assign(admin, body);
+
+  await admin.save();
+
+  return admin;
+},
+ deleteAdmin: async (id) => {
     const admin = await User.findOneAndDelete({
       _id: id,
       role: "admin",

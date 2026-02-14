@@ -89,13 +89,10 @@ const orderService = {
     return order;
   },
   getOrders: async (adminId, filter, options) => {
-
-    return await Order.paginate(
-      { adminId, ...filter },
-      options
+    return await Order.paginate( { adminId, ...filter }, options
     );
   },
-  getOrdersByCustomer: async (filter, options) => {
+  getMyOrders: async (filter, options) => {
     if (!filter.userId) {
       throw new Error("userId is required to fetch customer's orders");
     }

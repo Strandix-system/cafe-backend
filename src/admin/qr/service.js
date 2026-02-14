@@ -13,9 +13,25 @@ const qrService = {
       throw new Error("FRONTEND_URL not set");
     }
 
+    const lastQr = await Qr.findOne({ adminId })
+      .sort({ tableNumber: -1 })
+      .select("tableNumber");
+
+    const lastTable = lastQr ? lastQr.tableNumber : 0;
+
+    // ✅ If already enough tables, do nothing
+    if (lastTable >= totalTables) {
+      return {
+        message: "QRs already generated",
+        total: lastTable,
+      };
+    }
+
     const qrList = [];
 
-    for (let i = 1; i <= totalTables; i++) {
+    // ✅ Create only missing tables
+    for (let i = lastTable + 1; i <= totalTables; i++) {
+
       qrList.push({
         adminId,
         tableNumber: i,
@@ -23,9 +39,10 @@ const qrService = {
         qrCodeUrl: "",
       });
     }
-    // 2. Insert all at once
+
+    // ✅ Insert
     const createdQrs = await Qr.insertMany(qrList);
-    // 3. Generate QR images
+
     for (const qr of createdQrs) {
      const frontendUrl = `${process.env.FRONTEND_URL}/${qr.layoutId}/${qr._id}`;
      const qrImage = await QRCode.toDataURL(frontendUrl);

@@ -20,15 +20,9 @@ const orderController = {
 
       const adminId = req.user.id;
 
-      const options = pick(
-        req.query,
-        ["page", "limit", "sortBy", "populate"]
-      );
+      const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
 
-      const filter = pick(
-        req.query,
-        ["orderStatus", "tableNumber", "paymentStatus"]
-      );
+      const filter = pick(req.query, ["orderStatus", "tableNumber", "paymentStatus"]);
 
       const result =
         await orderService.getOrders(
@@ -54,9 +48,11 @@ const orderController = {
   updateStatus: async (req, res, next) => {
     try {
 
+      const status = req.body.status ?? req.body.orderStatus;
       const result =
         await orderService.updateStatus(
-          req.body,
+          req.body.orderId,
+          status,
           req.user._id
         );
       sendSuccessResponse(res, 200, "Status updated", result);
@@ -66,9 +62,10 @@ const orderController = {
   },
   getItems: async (req, res, next) => {
     try {
+
       const result =
         await orderService.getOrderItems(
-          req.params.orderId,
+          req.params.id,
           req.user._id
         );
       sendSuccessResponse(res, 200, "Order items fetched", result);

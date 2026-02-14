@@ -14,7 +14,7 @@ const menuSchema = {
 };
 const updateMenuSchema = {
   params: Joi.object({
-    id: Joi.string().hex().length(24).required() // Validates MongoDB ObjectId
+    menuId: Joi.string().hex().length(24).required() // Validates MongoDB ObjectId
   }),
   body: Joi.object({
     name: Joi.string().trim().min(2).max(100),

@@ -78,13 +78,21 @@ const userSchema = new mongoose.Schema(
       default: "admin",
       required: true
     },
-    // gst: {
-    //   type: Number, // percentage
-    //   default: 5,
-    //   required: true
+   hours: {
+        weekdays: { type: String, required: true },
+        weekends: { type: String, required: true },
+      },
+      socialLinks: {
+        instagram: String,
+        facebook: String,
+        twitter: String,
+      },
     
   },
-  { timestamps: true }
+  { timestamps: true,
+     toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+   }
 );
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();

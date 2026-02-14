@@ -16,17 +16,7 @@ const cafeLayoutSchema = new mongoose.Schema(
     aboutTitle: { type: String, required: true },
     aboutDescription: { type: String, required: true },
     cafeDescription: { type: String, required: true },
-
-    hours: {
-      weekdays: { type: String, required: true },
-      weekends: { type: String, required: true },
-    },
-
-    socialLinks: {
-      instagram: String,
-      facebook: String,
-      twitter: String,
-    },
+    
     defaultLayout: {
       type: Boolean,
       default: false,

@@ -33,29 +33,28 @@ const layoutService = {
   if (!layout) {
     throw Object.assign(new Error("Cafe layout not found"), { statusCode: 404 });
   }
+
+  // ✅ Home Image Update
   if (files?.homeImage?.[0]?.location) {
     if (layout.homeImage) {
-      await deleteSingleFile(layout.homeImage).catch(err => console.error("S3 Error:", err));
+      await deleteSingleFile(layout.homeImage)
+        .catch(err => console.error("S3 Error:", err));
     }
     layout.homeImage = files.homeImage[0].location;
   }
+
+  // ✅ About Image Update
   if (files?.aboutImage?.[0]?.location) {
     if (layout.aboutImage) {
-      await deleteSingleFile(layout.aboutImage).catch(err => console.error("S3 Error:", err));
+      await deleteSingleFile(layout.aboutImage)
+        .catch(err => console.error("S3 Error:", err));
     }
     layout.aboutImage = files.aboutImage[0].location;
   }
-  ['hours', 'socialLinks'].forEach(field => {
-    if (body[field]) {
-      const parsedData = typeof body[field] === 'string' ? JSON.parse(body[field]) : body[field];
-      layout[field] = {
-        ...(layout[field]?.toObject?.() || layout[field] || {}),
-        ...parsedData,
-      };
-      delete body[field]; 
-    }
-  });
+
+  // ✅ Directly assign all body fields
   Object.assign(layout, body);
+
   await layout.save();
 
   return layout;

@@ -20,10 +20,8 @@ const orderService = {
 
     const adminId = customer.adminId;
 
-    console.log("Admin ID for order:", adminId);
     const admin = await User.findOne({ _id: adminId, role: "admin" })
       .select("gst");
-
 
     if (!admin) {
       throw new Error("Admin not found");
@@ -47,7 +45,10 @@ const orderService = {
         m => m._id.toString() === item.menuId
       );
 
-      const price = menu.price;
+      const price = menu.discountPrice && menu.discountPrice > 0
+        ? menu.discountPrice
+        : menu.price;
+
 
       subTotal += price * item.quantity;
 
@@ -80,9 +81,11 @@ const orderService = {
       .populate("userId", "name email phoneNumber")
       .populate("items.menuId");
 
-    // Emit to all admin clients for that adminId
-    io.to(adminId.toString()).emit("newOrder", populatedOrder); // legacy
-    io.to(adminId.toString()).emit("order:new", populatedOrder); // preferred
+    io.to(adminId.toString()).emit("newOrder", populatedOrder);
+
+    io.to(adminId.toString()).emit("order:new", populatedOrder);
+
+    io.to(`customer-${customer._id}`).emit("order:new", populatedOrder);
 
     return order;
   },
@@ -97,28 +100,30 @@ const orderService = {
     if (!filter.userId) {
       throw new Error("userId is required to fetch customer's orders");
     }
-    const result = await Order.paginate(filter, options);
+
+    const result = await Order.paginate(
+      filter,
+      options
+    );
+
     return result;
   },
-  updateStatus: async (body, adminId) => {
+  updateStatus: async (orderId, status, adminId) => {
     try {
-      const { orderId, status, paymentStatus } = body;
-      const allowed = ["pending", "accepted", "completed"];
-      
-      if(status){
-        status = status.trim().toLowerCase();
+      if (!status) {
+        throw new Error("Order status is required");
       }
+      status = status.trim().toLowerCase();
 
-      if (status && !allowed.includes(status)) {
+      const allowed = ["pending", "accepted", "completed"];
+
+      if (!allowed.includes(status)) {
         throw new Error("Invalid order status");
       }
 
       const updatedOrder = await Order.findOneAndUpdate(
         { _id: orderId, adminId },
-        {
-          ...(status && { orderStatus: status }),
-          ...(paymentStatus && { paymentStatus })
-        },    
+        { orderStatus: status },
         {
           new: true,
           runValidators: true,
@@ -142,22 +147,18 @@ const orderService = {
         const io = getIO();
         const customerId = updatedOrder.userId._id.toString();
 
-        // Emit to admin
-        io.to(adminId.toString()).emit("orderStatusUpdate", { // legacy
+        io.to(adminId.toString()).emit("orderStatusUpdate", {
           orderId: updatedOrder._id,
-          status,
+          status: status,
           order: updatedOrder,
-          paymentStatus: updatedOrder.paymentStatus,
         });
         io.to(adminId.toString()).emit("order:statusUpdated", {
           orderId: updatedOrder._id,
           status,
           order: updatedOrder,
-          paymentStatus: updatedOrder.paymentStatus,
         });
 
-        // Emit to customer
-        io.to(`customer-${customerId}`).emit("orderStatusUpdate", { // legacy
+        io.to(`customer-${customerId}`).emit("orderStatusUpdate", {
           orderId: updatedOrder._id,
           status: status,
           order: updatedOrder,
@@ -168,7 +169,6 @@ const orderService = {
           order: updatedOrder,
         });
 
-        // Keep legacy events for backward compatibility if needed
         if (status === "accepted") {
           io.to(adminId.toString()).emit("orderAccepted", {
             orderId: updatedOrder._id,
@@ -181,7 +181,6 @@ const orderService = {
         }
       } catch (socketError) {
         console.error("Socket emission error:", socketError);
-        // Don't throw - order was updated successfully
       }
 
       return updatedOrder;
@@ -203,17 +202,6 @@ const orderService = {
     return await Order.find({ orderId })
       .populate("menuId");
   },
-  getMyOrders: async (customerId, filter, options) => {
-    if (!customerId) {
-      throw new Error("Customer ID is required to fetch orders");
-    }
-    const result = await Order.paginate(
-      { userId: customerId, ...filter },
-      options
-    );
-    return result;
-  },
-
 };
 
 export default orderService;

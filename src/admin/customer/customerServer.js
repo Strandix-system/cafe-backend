@@ -22,6 +22,13 @@ const customerService = {
   },
 
   getCustomers: async (filter, options) => {
+     if (query.Customer) {
+      filter.Customer = query.Customer;
+    }
+    if (query.search) {
+      filter.name = { $regex: query.search, $options: "i" };
+      filter.phoneNumber = { $regex: query.search, $options: "i" };
+    }
     const result = await Customer.paginate(filter, options);
     return result;
   },

@@ -9,6 +9,12 @@ const emailRule = Joi.string().trim().lowercase().max(100).custom((value, helper
   }
   return value;
 });
+const socialLinksSchema = Joi.object({
+  facebook: Joi.string().uri().allow(''),
+  instagram: Joi.string().uri().allow(''),
+  twitter: Joi.string().uri().allow(''),
+  linkedin: Joi.string().uri().allow(''),
+});
 const phoneRule = Joi.number().integer().min(6000000000).max(9999999999);
 const passwordRule = Joi.string().min(8).max(32).pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/);
 const addressRule = Joi.string().trim().min(5).max(200);
@@ -25,7 +31,10 @@ const createAdminValidator = {
     state: Joi.string().trim().min(2).max(50).required(),
     city: Joi.string().trim().min(2).max(50).required(),
     pincode: pincodeRule.required(),
-    gst: Joi.number().min(5).max(18),  }).required(),
+    hours: Joi.string().required(),
+    socialLinks: socialLinksSchema.optional(),
+    gst: Joi.number().min(4).max(18),
+  }).required(),
 };
 const updateAdminValidator = {
   params: Joi.object({
@@ -45,7 +54,9 @@ const updateAdminValidator = {
     logo: Joi.any(),
     profileImage: Joi.any(),
     gst: Joi.number().min(5).max(18),
-    isActive: Joi.boolean()
+    isActive: Joi.boolean(),
+    hours: Joi.string().optional(), // 🔥 Changed to optional for updates
+    socialLinks: socialLinksSchema.optional(),
   }).min(0) // 👈 Change this to 0 to allow updating ONLY an image
 };
 const deleteAdminValidator = {
@@ -62,7 +73,9 @@ const updateProfileValidator = {
     lastName: nameRule,
     email: Joi.string().email().lowercase(),
     phoneNumber: phoneRule,
-    profileImage: Joi.any()
-  }).min(1) 
+    profileImage: Joi.any(),
+    hours: Joi.string().optional(), // 🔥 Changed to optional for updates
+    socialLinks: socialLinksSchema.optional(),
+  }).min(1)
 };
 export { createAdminValidator, updateAdminValidator, deleteAdminValidator, updateProfileValidator };

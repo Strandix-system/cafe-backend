@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import { paginate } from "../model/plugin/paginate.plugin.js"
 import indiaStates from "../config/indiaStates.js";
 import bcrypt from "bcryptjs";
-
 const userSchema = new mongoose.Schema(
   {
     firstName: {
@@ -34,7 +33,8 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
+      select: false // 🔥 Important: Don't return password by default 
     },
     address: {
       type: String,
@@ -67,10 +67,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null, required: false
     },
-    gst:{
-     type: Number,
-     required: true,
-     default:5,
+    gst: {
+      type: Number,
+      required: true,
+      default: 5,
     },
     role: {
       type: String,
@@ -78,21 +78,22 @@ const userSchema = new mongoose.Schema(
       default: "admin",
       required: true
     },
-   hours: {
-        weekdays: { type: String, required: true },
-        weekends: { type: String, required: true },
-      },
-      socialLinks: {
-        instagram: String,
-        facebook: String,
-        twitter: String,
-      },
-    
+    hours: {
+      weekdays: { type: String, required: true },
+      weekends: { type: String, required: true },
+    },
+    socialLinks: {
+      instagram: { type: String, default: null },
+      facebook: { type: String, default: null },
+      twitter: { type: String, default: null },
+    },
   },
-  { timestamps: true,
-     toJSON: { virtuals: true },
-    toObject: { virtuals: true }
-   }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+    id: false
+  }
 );
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();

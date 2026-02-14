@@ -18,6 +18,12 @@ router.get(
   allowRoles("superadmin", "admin"),
   cafeLayoutController.getLayoutById
 );
+router.patch(
+  "/update-status/:id",
+  tokenVerification,
+  allowRoles("admin", " superadmin"),
+  cafeLayoutController.updateLayoutStatus
+);
 router.delete(
   "/delete/:id",
   tokenVerification,
@@ -38,8 +44,8 @@ router.get(
   cafeLayoutController.getCafeLayoutByAdmin
 );
 router.get(
-  "/portfolio/:id",
-  cafeLayoutController.getLayoutForPortfolio
+  "/active/:id",
+  cafeLayoutController.getActiveLayout
 );
 router.get(
   "/all-layouts",

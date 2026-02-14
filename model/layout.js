@@ -26,6 +26,10 @@ const cafeLayoutSchema = new mongoose.Schema(
       ref: "CafeLayout",
       default: null,
     },
+    active: {
+      type: Boolean,
+      default: false,
+    }
   },
   { timestamps: true  ,
     toJSON: { virtuals: true },

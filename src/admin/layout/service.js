@@ -28,37 +28,64 @@ const layoutService = {
     });
     return layout;
   },
- updateCafeLayout: async (id, body, files) => {
-  const layout = await CafeLayout.findById(id);
-  if (!layout) {
-    throw Object.assign(new Error("Cafe layout not found"), { statusCode: 404 });
-  }
-
-  // ✅ Home Image Update
-  if (files?.homeImage?.[0]?.location) {
-    if (layout.homeImage) {
-      await deleteSingleFile(layout.homeImage)
-        .catch(err => console.error("S3 Error:", err));
+  updateCafeLayout: async (id, body, files) => {
+    const layout = await CafeLayout.findById(id);
+    if (!layout) {
+      throw Object.assign(new Error("Cafe layout not found"), { statusCode: 404 });
     }
-    layout.homeImage = files.homeImage[0].location;
-  }
 
-  // ✅ About Image Update
-  if (files?.aboutImage?.[0]?.location) {
-    if (layout.aboutImage) {
-      await deleteSingleFile(layout.aboutImage)
-        .catch(err => console.error("S3 Error:", err));
+    // ✅ Home Image Update
+    if (files?.homeImage?.[0]?.location) {
+      if (layout.homeImage) {
+        await deleteSingleFile(layout.homeImage)
+          .catch(err => console.error("S3 Error:", err));
+      }
+      layout.homeImage = files.homeImage[0].location;
     }
-    layout.aboutImage = files.aboutImage[0].location;
-  }
 
-  // ✅ Directly assign all body fields
-  Object.assign(layout, body);
+    // ✅ About Image Update
+    if (files?.aboutImage?.[0]?.location) {
+      if (layout.aboutImage) {
+        await deleteSingleFile(layout.aboutImage)
+          .catch(err => console.error("S3 Error:", err));
+      }
+      layout.aboutImage = files.aboutImage[0].location;
+    }
 
-  await layout.save();
+    // ✅ Directly assign all body fields
+    Object.assign(layout, body);
 
-  return layout;
-},
+    await layout.save();
+
+    return layout;
+  },
+  updateLayoutStatus: async (id, body, adminId) => {
+    const layout = await CafeLayout.findById(id);
+
+    if (!layout) {
+      throw Object.assign(new Error("Cafe layout not found"), { statusCode: 404 });
+    }
+
+    if (body.active === undefined) {
+      throw Object.assign(new Error("Active status is required"), { statusCode: 400 });
+    }
+
+    if (body.active === true) {
+      await CafeLayout.updateMany(
+        { adminId: adminId },
+        { $set: { active: false } }
+      );
+
+      layout.active = true;
+
+    } else {
+      layout.active = false;
+    }
+
+    await layout.save();
+
+    return layout;
+  },
   deleteCafeLayout: async (id) => {
     const layout = await CafeLayout.findById(id);
     if (!layout) {
@@ -90,8 +117,8 @@ const layoutService = {
     const layout = await CafeLayout.findById(id);
     return layout;
   },
-  getDefaultLayout: async (id) => {
-    const result = await CafeLayout.findById(id)
+  getActiveLayout: async (adminid) => {
+    const result = await CafeLayout.findOne({ adminId: adminid, active: true })
       .populate("adminId", "logo address phoneNumber email cafeName gst ").populate("menus");
     return result;
   },

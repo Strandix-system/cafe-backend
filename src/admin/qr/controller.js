@@ -7,11 +7,10 @@ const qrController = {
   // Admin creates QR
   createQr: async (req, res, next) => {
     try {
-      const { totalTables, layoutId } = req.body;
+      const { totalTables } = req.body;
       const result = await qrService.createQr(
         req.user._id,
         totalTables,
-        layoutId
       );
 
       sendSuccessResponse(res, 201, "QR codes created", result);
@@ -31,9 +30,10 @@ const qrController = {
   },
   getAllQr: async (req, res, next) => {
     try {
-      const filter = { ...pick(req.query, ["tableNumber", "layoutId"])};
+      const filter = { ...pick(req.query, ["tableNumber", "layoutId"]) };
 
-      const options = {...pick(req.query, ["page", "limit", "populate"]),
+      const options = {
+        ...pick(req.query, ["page", "limit", "populate"]),
         sortBy: "tableNumber:asc",
       };
       const result = await qrService.getAllQr(filter, options);
@@ -45,13 +45,12 @@ const qrController = {
   },
   getQrCountforLayout: async (req, res, next) => {
     try {
-      const { layoutId } = req.params;
-      const count = await qrService.getQrCountforLayout(layoutId);
+      const count = await qrService.getQrCountforLayout(req.user._id);
       sendSuccessResponse(res, 200, "QR count fetched", { count });
     } catch (error) {
       next(error);
     }
-},
+  },
 };
 
 export default qrController;

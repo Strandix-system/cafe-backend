@@ -96,7 +96,7 @@ const cafeLayoutController = {
   getActiveLayout: async (req, res, next) => {
     try {
       const { id } = req.params;
-      const layout = await layoutService.getDefaultLayout(id);
+      const layout = await layoutService.getActiveLayout(id);
       sendSuccessResponse(res, 200, "Layout fetched for portfolio successfully", layout);
     } catch (err) {
       next(err);

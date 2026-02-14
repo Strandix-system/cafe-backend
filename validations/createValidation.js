@@ -9,16 +9,32 @@ const emailRule = Joi.string().trim().lowercase().max(100).custom((value, helper
   }
   return value;
 });
+
 const socialLinksSchema = Joi.object({
-  facebook: Joi.string().uri().allow(''),
-  instagram: Joi.string().uri().allow(''),
-  twitter: Joi.string().uri().allow(''),
-  linkedin: Joi.string().uri().allow(''),
-});
+  facebook: Joi.string()
+    .uri({ scheme: ['http', 'https'] }).allow('')
+    .messages({
+      "string.uri": "Facebook must be a valid URL starting with http or https",
+    }),
+
+  instagram: Joi.string()
+    .uri({ scheme: ['http', 'https'] }).allow('')
+    .messages({
+      "string.uri": "Instagram must be a valid URL starting with http or https",
+    }),
+
+  twitter: Joi.string()
+    .uri({ scheme: ['http', 'https'] }).allow('')
+    .messages({
+      "string.uri": "Twitter must be a valid URL starting with http or https",
+    }),
+}).optional();
+
 const phoneRule = Joi.number().integer().min(6000000000).max(9999999999);
 const passwordRule = Joi.string().min(8).max(32).pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/);
 const addressRule = Joi.string().trim().min(5).max(200);
 const pincodeRule = Joi.number().integer().min(100000).max(999999);
+
 const createAdminValidator = {
   body: Joi.object({
     firstName: nameRule.required(),
@@ -31,11 +47,12 @@ const createAdminValidator = {
     state: Joi.string().trim().min(2).max(50).required(),
     city: Joi.string().trim().min(2).max(50).required(),
     pincode: pincodeRule.required(),
-    hours: Joi.string().required(),
+    hours: Joi.any().required(),
     socialLinks: socialLinksSchema.optional(),
     gst: Joi.number().min(4).max(18),
   }).required(),
 };
+
 const updateAdminValidator = {
   params: Joi.object({
     id: objectId.required(),
@@ -43,6 +60,7 @@ const updateAdminValidator = {
   body: Joi.object({
     firstName: nameRule,
     lastName: nameRule,
+    role: Joi.string().valid("admin").optional(),
     email: Joi.string().email().lowercase(),
     password: Joi.string().min(6),
     cafeName: Joi.string().trim().min(2).max(100),
@@ -55,7 +73,7 @@ const updateAdminValidator = {
     profileImage: Joi.any(),
     gst: Joi.number().min(5).max(18),
     isActive: Joi.boolean(),
-    hours: Joi.string().optional(), // 🔥 Changed to optional for updates
+    hours: Joi.any().optional(), // 🔥 Changed to optional for updates
     socialLinks: socialLinksSchema.optional(),
   }).min(0) // 👈 Change this to 0 to allow updating ONLY an image
 };

@@ -22,12 +22,12 @@ const customerService = {
   },
 
   getCustomers: async (filter, options) => {
-     if (query.Customer) {
-      filter.Customer = query.Customer;
+     if (options.Customer) {
+      filter.Customer = options.Customer;
     }
-    if (query.search) {
-      filter.name = { $regex: query.search, $options: "i" };
-      filter.phoneNumber = { $regex: query.search, $options: "i" };
+    if (options.search) {
+      filter.name = { $regex: options.search, $options: "i" };
+      filter.phoneNumber = { $regex: options.search, $options: "i" };
     }
     const result = await Customer.paginate(filter, options);
     return result;
@@ -59,5 +59,6 @@ const customerService = {
     };
   },
 };
+
 
 export default customerService;

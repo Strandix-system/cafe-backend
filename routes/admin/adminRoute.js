@@ -10,6 +10,7 @@ import {
 } from "../../validations/createValidation.js";
 import { uploadAdminImages } from "../../middleware/upload.js";
 import dashboardRoute from "../../routes/dashboardRoute.js";
+import { parseJSONFields } from "../../utils/helper.js";
 
 const router = express.Router();
 
@@ -21,6 +22,7 @@ router.post(
     { name: "logo", maxCount: 1 },
     { name: "profileImage", maxCount: 1 }
   ]),
+  parseJSONFields(["socialLinks", "hours"]),
   validate(createAdminValidator),
   controller.createAdmin
 );
@@ -33,6 +35,7 @@ router.patch(
     { name: "logo", maxCount: 1 },
     { name: "profileImage", maxCount: 1 }
   ]),
+  parseJSONFields(["socialLinks", "hours"]),
   validate(updateAdminValidator),
   controller.updateAdmin
 );
@@ -43,18 +46,21 @@ router.delete(
   validate(deleteAdminValidator),
   controller.deleteAdmin
 );
+
 router.get(
   "/get-users",
   tokenVerification,
   allowRoles("superadmin"),
   controller.listAdmins
 );
+
 router.get(
   "/get-user/:id",
   tokenVerification,
   allowRoles("superadmin"),
   controller.getByAdmin
 );
+
 router.use("/dashboard", dashboardRoute);
 
 export default router;

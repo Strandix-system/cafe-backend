@@ -13,6 +13,7 @@ const adminService = {
     if (!files || !files.logo || files.logo.length === 0) {
       throw Object.assign(new Error("Logo is required"), { statusCode: 400 });
     }
+
     const admin = await User.create({
       ...body,
       role: "admin",
@@ -120,13 +121,15 @@ const adminService = {
     return result;
   },
   getByAdmin: async (adminId) => {
-    const admin = await User.findById({
+    const admin = await User.findOne({
       _id: adminId,
       role: "admin",
-    }).select("-password");
+    }).lean();;
+
     if (!admin) {
       throw new Error("Admin not found");
     }
+
     return admin;
   }
 };

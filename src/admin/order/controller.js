@@ -39,7 +39,7 @@ const orderController = {
     try {
       const filter = pick(req.query, ["userId"]);
       const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
-      const result = await orderService.getOrdersByCustomer(filter, options);
+      const result = await orderService.getMyOrders(filter, options);
       sendSuccessResponse(res, 200, "Orders fetched successfully", result);
     } catch (err) {
       next(err);

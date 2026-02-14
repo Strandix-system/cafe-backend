@@ -48,11 +48,8 @@ const qrService = {
     return createdQrs;
   },
   scanQr: async (qrId) => {
-
     const qr = await Qr.findById(qrId).populate("layoutId");
-
     if (!qr) throw new Error("Invalid QR");
-
     return {
       qrId: qr._id,
       tableNumber: qr.tableNumber,

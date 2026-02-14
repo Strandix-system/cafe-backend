@@ -81,10 +81,9 @@ const orderService = {
       .populate("userId", "name email phoneNumber")
       .populate("items.menuId");
 
+    // Emit to all admin clients for that adminId
     io.to(adminId.toString()).emit("newOrder", populatedOrder);
-
     io.to(adminId.toString()).emit("order:new", populatedOrder);
-
     io.to(`customer-${customer._id}`).emit("order:new", populatedOrder);
 
     return order;

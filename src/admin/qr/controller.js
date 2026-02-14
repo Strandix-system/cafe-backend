@@ -7,9 +7,7 @@ const qrController = {
   // Admin creates QR
   createQr: async (req, res, next) => {
     try {
-
       const { totalTables, layoutId } = req.body;
-
       const result = await qrService.createQr(
         req.user._id,
         totalTables,
@@ -25,9 +23,7 @@ const qrController = {
   scanQr: async (req, res, next) => {
     try {
       const { qrId } = req.params;
-
       const result = await qrService.scanQr(qrId);
-
       sendSuccessResponse(res, 200, "QR scanned", result);
     } catch (err) {
       next(err);

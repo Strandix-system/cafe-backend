@@ -8,8 +8,8 @@ import {
   updateAdminValidator,
   deleteAdminValidator
 } from "../../validations/createValidation.js";
-import { uploadAdminImages  } from "../../middleware/upload.js";
-import dashboardRoute from "../dashboardRoute.js";
+import { uploadAdminImages } from "../../middleware/upload.js";
+import dashboardRoute from "../../routes/dashboardRoute.js";
 
 const router = express.Router();
 

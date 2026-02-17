@@ -15,21 +15,12 @@ const orderController = {
       next(err);
     }
   },
-  getOrders: async (req, res, next) => {
+   getOrders: async (req, res, next) => {
     try {
-
-      const adminId = req.user.id;
-
-      const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
-
+      const adminId = req.user._id;
       const filter = pick(req.query, ["orderStatus", "tableNumber", "paymentStatus"]);
-
-      const result =
-        await orderService.getOrders(
-          adminId,
-          filter,
-          options
-        );
+      const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
+      const result =await orderService.getOrders( adminId,filter,options );
       sendSuccessResponse(res, 200, "Orders fetched", result);
     } catch (err) {
       next(err);

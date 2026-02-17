@@ -10,6 +10,11 @@ const server = http.createServer(app);
 
 initSocket(server);
 
+app.get("/", (req, res) => {
+  res.status(200).send("OK");
+});
+
+
 server.listen(port, "0.0.0.0", () => {
   console.log(`Server running on port ${port}`);
 });

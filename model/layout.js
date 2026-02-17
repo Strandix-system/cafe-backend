@@ -16,7 +16,7 @@ const cafeLayoutSchema = new mongoose.Schema(
     aboutTitle: { type: String, required: true },
     aboutDescription: { type: String, required: true },
     cafeDescription: { type: String, required: true },
-    
+
     defaultLayout: {
       type: Boolean,
       default: false,
@@ -31,7 +31,8 @@ const cafeLayoutSchema = new mongoose.Schema(
       default: false,
     }
   },
-  { timestamps: true  ,
+  {
+    timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
   }
@@ -41,6 +42,7 @@ cafeLayoutSchema.virtual('menus', {
   localField: 'adminId',   // Field in CafeLayout
   foreignField: 'adminId', // Field in Menu
 });
+
 cafeLayoutSchema.plugin(paginate)
 
 export default mongoose.model("CafeLayout", cafeLayoutSchema);

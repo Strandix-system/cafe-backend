@@ -47,11 +47,7 @@ const qrService = {
   scanQr: async (qrId) => {
     const qr = await Qr.findById(qrId);
     if (!qr) throw new Error("Invalid QR");
-    return {
-      qrId: qr._id,
-      tableNumber: qr.tableNumber,
-      adminId: qr.adminId,
-    };
+    return qr;
   },
   getAllQr: async (filter, options) => {
     const result = await Qr.paginate(filter, options);

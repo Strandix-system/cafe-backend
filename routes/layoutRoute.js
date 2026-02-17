@@ -12,12 +12,15 @@ router.post(
   uploadLayoutImages,
   cafeLayoutController.createCafeLayout
 );
+
+// used by portfolio website
 router.get(
   "/get-layout/:id",
-  tokenVerification,
-  allowRoles("superadmin", "admin"),
+  // tokenVerification,
+  // allowRoles("superadmin", "admin"),
   cafeLayoutController.getLayoutById
 );
+
 router.patch(
   "/update-status",
   tokenVerification,

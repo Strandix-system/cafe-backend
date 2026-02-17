@@ -30,7 +30,7 @@ const qrController = {
   },
   getAllQr: async (req, res, next) => {
     try {
-      const filter = { ...pick(req.query, ["tableNumber", "layoutId"]) };
+      const filter = { ...pick(req.query, ["tableNumber", "layoutId", "adminId"]) };
 
       const options = {
         ...pick(req.query, ["page", "limit", "populate"]),

@@ -28,7 +28,7 @@ const authService = {
 
   login: async (data) => {
     const { email, phoneNumber, password } = data;
-   
+
     if ((!email && !phoneNumber) || !password) {
       throw new Error("Email or phoneNumber and password are required");
     }

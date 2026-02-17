@@ -11,12 +11,12 @@ const categoryService = {
   return result;
 },
  getAllCategories :async (filter, options) => {
-    const result = await Category.paginate(filter, options);
+    
     if(filter.search){
-      result.docs = result.docs.filter(category =>
-        category.name.toLowerCase().includes(filter.search.toLowerCase())
-      );
-    }
+     filter.name = { $regex: filter.search, $options: "i" };
+      delete filter.search;   
+   }
+    const result = await Category.paginate(filter, options);
     return result;
 },
 updateCategoryById: async (categoryId, data) => {

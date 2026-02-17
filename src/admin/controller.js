@@ -63,5 +63,12 @@ export default {
       next(error);
     }
   },
+  deleteCafeLayout: async (req, res, next) => {
+    try {
+      await service.deleteCafeLayout(req.params.id);
+      sendSuccessResponse(res, 200, "Cafe layout deleted successfully", null);
+    } catch (error) {
+      next(error);
+    }
+},
 };
-

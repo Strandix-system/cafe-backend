@@ -12,11 +12,20 @@ router.post(
   uploadLayoutImages,
   cafeLayoutController.createCafeLayout
 );
+
+// used by portfolio website
 router.get(
   "/get-layout/:id",
-  tokenVerification,
-  allowRoles("superadmin", "admin"),
+  // tokenVerification,
+  // allowRoles("superadmin", "admin"),
   cafeLayoutController.getLayoutById
+);
+
+router.patch(
+  "/update-status",
+  tokenVerification,
+  allowRoles("admin", " superadmin"),
+  cafeLayoutController.updateLayoutStatus
 );
 router.delete(
   "/delete/:id",
@@ -38,8 +47,8 @@ router.get(
   cafeLayoutController.getCafeLayoutByAdmin
 );
 router.get(
-  "/portfolio/:id",
-  cafeLayoutController.getLayoutForPortfolio
+  "/active/:id",
+  cafeLayoutController.getActiveLayout
 );
 router.get(
   "/all-layouts",

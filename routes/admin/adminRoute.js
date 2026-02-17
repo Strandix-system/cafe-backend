@@ -61,6 +61,13 @@ router.get(
   controller.getByAdmin
 );
 
+router.patch(
+  "/update-status/:id",
+  tokenVerification,
+  allowRoles("superadmin"),
+  controller.updateAdminStatus
+);
+
 router.use("/dashboard", dashboardRoute);
 
 export default router;

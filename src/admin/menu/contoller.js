@@ -48,7 +48,7 @@ const menuController = {
   },
   getMenusByAdmin: async (req, res, next) => {
     try {
-      const adminId = req.user.id;
+      const adminId = req.user._id;
       const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
       const filter = pick(req.query, ["adminId", "search", "category"]);
       const result = await menuService.getMenusByAdmin(adminId, filter, options);
@@ -59,7 +59,7 @@ const menuController = {
   },
   getMenuById: async (req, res, next) => {
     try {
-      const menuId = req.params.menuId; 
+      const menuId = req.params.menuId;
       const result = await menuService.getMenuById(menuId);
       sendSuccessResponse(res, 200, "Menu fetched successfully", result);
     } catch (error) {

@@ -34,6 +34,16 @@ const cafeLayoutController = {
       next(err);
     }
   },
+  updateLayoutStatus: async (req, res, next) => {
+    try {
+      const result = await layoutService.updateLayoutStatus(
+        req.body
+      );
+      sendSuccessResponse(res, 200, "Cafe layout status updated successfully", result);
+    } catch (err) {
+      next(err);
+    }
+  },
   getAllLayout: async (req, res, next) => {
     try {
       const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
@@ -81,10 +91,10 @@ const cafeLayoutController = {
       next(err);
     }
   },
-  getLayoutForPortfolio: async (req, res, next) => {
+  getActiveLayout: async (req, res, next) => {
     try {
       const { id } = req.params;
-      const layout = await layoutService.getDefaultLayout(id);
+      const layout = await layoutService.getActiveLayout(id);
       sendSuccessResponse(res, 200, "Layout fetched for portfolio successfully", layout);
     } catch (err) {
       next(err);

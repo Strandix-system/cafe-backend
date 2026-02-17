@@ -13,11 +13,6 @@ const qrSchema = new mongoose.Schema(
             required: true,
             min: 1,
         },
-        layoutId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "CafeLayout",
-            required: true,
-        },
         qrCodeUrl: {
             type: String,
             default: "",

@@ -21,16 +21,22 @@ const customerService = {
     return newCustomer.toObject();
   },
 
-  getCustomers: async (filter, options) => {
-     if (options.Customer) {
-      filter.Customer = options.Customer;
+  getCustomers: async (filter, options, adminId) => {
+
+    filter.adminId = adminId;
+
+    if (filter.search) {
+      filter.$or = [
+        { name: { $regex: filter.search, $options: "i" } },
+        { phoneNumber: { $regex: filter.search, $options: "i" } }
+      ];
+      delete filter.search;
     }
-    if (options.search) {
-      filter.name = { $regex: options.search, $options: "i" };
-      filter.phoneNumber = { $regex: options.search, $options: "i" };
-    }
-    const result = await Customer.paginate(filter, options);
-    return result;
+
+    options.page = Number(options.page) || 0;
+    options.limit = Number(options.limit) || 10;
+
+    return await Customer.paginate(filter, options);
   },
   getCustomerById: async (id) => {
     const customer = await Customer.findById(id);

@@ -1,6 +1,8 @@
 import CafeLayout from "../../../model/layout.js";
 import { deleteUploadedFiles } from "../../../utils/s3utils.js";
 import { deleteSingleFile } from "../../../utils/s3utils.js";
+import Qr from "../../../model/qr.js"
+import mongoose from "mongoose";
 
 const layoutService = {
   createCafeLayout: async (adminId, body, files, role) => {
@@ -13,52 +15,78 @@ const layoutService = {
     }
     let defaultLayoutId = null;
     let defaultLayout = role === "superadmin";
-    if (role === "admin") {
-      const baseLayout = await CafeLayout.findOne({ defaultLayout: true });
-      if (!baseLayout) throw Object.assign(new Error("No default layout available"), { statusCode: 500 });
-      defaultLayoutId = baseLayout._id;
-    }
+    const haveLayout = await CafeLayout.findOne({ adminId });
     const layout = await CafeLayout.create({
       ...body,
       adminId,
       homeImage, // S3 URL
       aboutImage, // S3 URL
       defaultLayout,
-      defaultLayoutId,
+      active: !haveLayout
     });
     return layout;
   },
- updateCafeLayout: async (id, body, files) => {
-  const layout = await CafeLayout.findById(id);
-  if (!layout) {
-    throw Object.assign(new Error("Cafe layout not found"), { statusCode: 404 });
-  }
-
-  // ✅ Home Image Update
-  if (files?.homeImage?.[0]?.location) {
-    if (layout.homeImage) {
-      await deleteSingleFile(layout.homeImage)
-        .catch(err => console.error("S3 Error:", err));
+  updateCafeLayout: async (id, body, files) => {
+    const layout = await CafeLayout.findById(id);
+    if (!layout) {
+      throw Object.assign(new Error("Cafe layout not found"), { statusCode: 404 });
     }
-    layout.homeImage = files.homeImage[0].location;
-  }
 
-  // ✅ About Image Update
-  if (files?.aboutImage?.[0]?.location) {
-    if (layout.aboutImage) {
-      await deleteSingleFile(layout.aboutImage)
-        .catch(err => console.error("S3 Error:", err));
+    // ✅ Home Image Update
+    if (files?.homeImage?.[0]?.location) {
+      if (layout.homeImage) {
+        await deleteSingleFile(layout.homeImage)
+          .catch(err => console.error("S3 Error:", err));
+      }
+      layout.homeImage = files.homeImage[0].location;
     }
-    layout.aboutImage = files.aboutImage[0].location;
-  }
 
-  // ✅ Directly assign all body fields
-  Object.assign(layout, body);
+    // ✅ About Image Update
+    if (files?.aboutImage?.[0]?.location) {
+      if (layout.aboutImage) {
+        await deleteSingleFile(layout.aboutImage)
+          .catch(err => console.error("S3 Error:", err));
+      }
+      layout.aboutImage = files.aboutImage[0].location;
+    }
 
-  await layout.save();
+    // ✅ Directly assign all body fields
+    Object.assign(layout, body);
 
-  return layout;
-},
+    await layout.save();
+
+    return layout;
+  },
+  updateLayoutStatus: async (body) => {
+    const { layoutId, active } = body;
+    const layout = await CafeLayout.findById(layoutId);
+    if (!layout) {
+      throw Object.assign(new Error("Cafe layout not found"), { statusCode: 404 });
+    }
+
+    if (active === undefined || typeof active !== "boolean") {
+      throw Object.assign(new Error("Active status is required"), { statusCode: 400 });
+    }
+
+    if (active === true) {
+      // 1️⃣ Deactivate all OTHER layouts of same admin
+      await CafeLayout.updateMany(
+        {
+          adminId: layout?.adminId,
+          _id: { $ne: layout?._id },
+        },
+        { $set: { active: false } }
+      );
+
+      layout.active = true;
+    } else {
+      layout.active = false;
+    }
+
+    await layout.save();
+
+    return layout;
+  },
   deleteCafeLayout: async (id) => {
     const layout = await CafeLayout.findById(id);
     if (!layout) {
@@ -80,19 +108,22 @@ const layoutService = {
   },
   getCafeLayoutByAdmin: async (filter, options) => {
     const result = await CafeLayout.paginate(filter, options);
-    return result;
+
+    const cafeQr = await Qr.findOne({ adminId: filter.adminId });
+
+    return { ...result, cafeQr };
   },
   getAllLayout: async (filter, options) => {
     const result = await CafeLayout.paginate(filter, options);
     return result;
   },
   getLayoutById: async (id) => {
-    const layout = await CafeLayout.findById(id);
+    const layout = await CafeLayout.findById(id).populate("adminId");
     return layout;
   },
-  getDefaultLayout: async (id) => {
-    const result = await CafeLayout.findById(id)
-      .populate("adminId", "logo address phoneNumber email cafeName gst ").populate("menus");
+  getActiveLayout: async (adminid) => {
+    const result = await CafeLayout.findOne({ adminId: adminid, active: true })
+      .populate("adminId").populate("menus");
     return result;
   },
 };

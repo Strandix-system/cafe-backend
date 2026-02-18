@@ -34,7 +34,7 @@ export default {
 
   me: async (req, res, next) => {
     try {
-      const user = req.user;
+      const user = req.user.toObject();
 
       sendSuccessResponse(
         res,

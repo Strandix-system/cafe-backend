@@ -30,7 +30,7 @@ router.patch(
 router.delete(
   "/delete/:id",
   tokenVerification,
-  allowRoles("superadmin"),
+  allowRoles("superadmin", "admin"),
   cafeLayoutController.deleteCafeLayout
 );
 router.patch(

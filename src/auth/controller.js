@@ -42,8 +42,7 @@ export default {
         "Profile fetched successfully",
         {
           id: user._id,
-          email: user.email,
-          role: user.role
+          ...user
         }
       );
     } catch (error) {

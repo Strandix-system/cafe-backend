@@ -7,7 +7,6 @@ import {
   loginValidator,
   logoutValidator,
 } from "../validations/authValidation.js";
-import { allowRoles} from "../middleware/permission.js";
 
 const router = express.Router();
 
@@ -28,6 +27,6 @@ router.post(
   controller.logout
 );
 
-router.get("/me", tokenVerification, allowRoles("superadmin", "admin"), controller.me);
+router.get("/me", tokenVerification, controller.me);
 
 export default router;

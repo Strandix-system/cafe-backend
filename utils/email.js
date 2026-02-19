@@ -1,6 +1,4 @@
 import nodemailer from "nodemailer";
-import dotenv from "dotenv";
-dotenv.config();
 
 export const sendResetEmail = async (email, resetLink) => {
   const transporter = nodemailer.createTransport({

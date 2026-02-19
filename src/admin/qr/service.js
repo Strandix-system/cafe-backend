@@ -7,8 +7,8 @@ const qrService = {
       throw new Error("Invalid totalTables");
     }
 
-    if (!process.env.FRONTEND_URL) {
-      throw new Error("FRONTEND_URL not set");
+    if (!process.env.PORTFOLIO_URL) {
+      throw new Error("PORTFOLIO_URL not set");
     }
 
     const lastQr = await Qr.findOne({ adminId })
@@ -37,7 +37,7 @@ const qrService = {
     // ✅ Insert
     const createdQrs = await Qr.insertMany(qrList);
     for (const qr of createdQrs) {
-      const frontendUrl = `${process.env.FRONTEND_URL}/${qr._id}`;
+      const frontendUrl = `${process.env.PORTFOLIO_URL}/${qr._id}`;
       const qrImage = await QRCode.toDataURL(frontendUrl);
       qr.qrCodeUrl = qrImage;
       await qr.save();

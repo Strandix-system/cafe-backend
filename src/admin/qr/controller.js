@@ -30,13 +30,14 @@ const qrController = {
   },
   getAllQr: async (req, res, next) => {
     try {
-      const filter = { ...pick(req.query, ["tableNumber", "layoutId", "adminId"]) };
+      const adminId=req.user._id;
+      const filter = { ...pick(req.query, ["search","tableNumber", "adminId"]) };
 
       const options = {
         ...pick(req.query, ["page", "limit", "populate"]),
         sortBy: "tableNumber:asc",
       };
-      const result = await qrService.getAllQr(filter, options);
+      const result = await qrService.getAllQr(filter, options,adminId);
 
       sendSuccessResponse(res, 200, "QR codes fetched", result);
     } catch (error) {

@@ -7,31 +7,26 @@ const categoryService = {
     throw new Error("Category already exists");
   }
    const result = await Category.create(data);
-
   return result;
 },
  getAllCategories :async (filter, options) => {
+  if(filter.search){
+   filter.name = { $regex: filter.search, $options:"i"};
+   delete filter.search;
+  }
     const result = await Category.paginate(filter, options);
-    if(filter.search){
-      result.docs = result.docs.filter(category =>
-        category.name.toLowerCase().includes(filter.search.toLowerCase())
-      );
-    }
     return result;
 },
 updateCategoryById: async (categoryId, data) => {
   const category = await Category.findById(categoryId);
-
   if (!category) {
     throw Object.assign(new Error("Category not found"), { statusCode: 404 });
   }
-
   const updatedCategory = await Category.findByIdAndUpdate(
     categoryId,
     { $set: data },
     { new: true, runValidators: true }
   );
-
   return updatedCategory;
 },
  deleteCategoryById : async (categoryId) => {

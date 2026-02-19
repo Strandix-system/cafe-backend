@@ -49,7 +49,12 @@ const qrService = {
     if (!qr) throw new Error("Invalid QR");
     return qr;
   },
-  getAllQr: async (filter, options) => {
+  getAllQr: async (filter, options,adminId) => {
+    filter.adminId=adminId;
+    if (filter.search) {
+      filter.tableNumber = Number(filter.search);
+      delete filter.search;
+    }
     const result = await Qr.paginate(filter, options);
     return result;
   },

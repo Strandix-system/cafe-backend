@@ -30,7 +30,7 @@ router.post(
 router.patch(
   "/update/:id",
   tokenVerification,
-  allowRoles("superadmin"),
+  allowRoles("superadmin","admin"),
   uploadAdminImages.fields([
     { name: "logo", maxCount: 1 },
     { name: "profileImage", maxCount: 1 }
@@ -39,6 +39,7 @@ router.patch(
   validate(updateAdminValidator),
   controller.updateAdmin
 );
+
 router.delete(
   "/delete/:id",
   tokenVerification,

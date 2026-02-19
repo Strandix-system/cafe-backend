@@ -20,7 +20,7 @@ const orderController = {
       const adminId = req.user._id;
       const filter = pick(req.query, ["orderStatus", "tableNumber", "paymentStatus"]);
       const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
-      const result =await orderService.getOrders( adminId,filter,options );
+      const result = await orderService.getOrders(adminId, filter, options);
       sendSuccessResponse(res, 200, "Orders fetched", result);
     } catch (err) {
       next(err);
@@ -44,7 +44,7 @@ const orderController = {
         await orderService.updateStatus(
           req.body.orderId,
           status,
-          req.user._id
+          req.user._id,
         );
       sendSuccessResponse(res, 200, "Status updated", result);
     } catch (err) {
@@ -60,6 +60,19 @@ const orderController = {
           req.user._id
         );
       sendSuccessResponse(res, 200, "Order items fetched", result);
+    } catch (err) {
+      next(err);
+    }
+  },
+  updatePaymentStatus: async (req, res, next) => {
+    try {
+      const { orderId, paymentStatus } = req.body;
+      const result = await orderService.updatePaymentStatus(
+        orderId,
+        paymentStatus,
+        req.user._id
+      );
+      sendSuccessResponse(res, 200, "Payment status updated", result);
     } catch (err) {
       next(err);
     }

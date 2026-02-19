@@ -89,7 +89,7 @@ const orderService = {
     return order;
   },
   getOrders: async (adminId, filter, options) => {
-    return await Order.paginate( { adminId, ...filter }, options
+    return await Order.paginate({ adminId, ...filter }, options
     );
   },
   getMyOrders: async (filter, options) => {
@@ -197,6 +197,47 @@ const orderService = {
 
     return await Order.find({ orderId })
       .populate("menuId");
+  },
+  updatePaymentStatus: async (orderId, paymentStatus, adminId) => {
+    try {
+
+      if (typeof paymentStatus !== "boolean") {
+        throw new Error("Payment status must be true or false");
+      }
+
+      // Find order first (important to check orderStatus)
+      const order = await Order.findOne({ _id: orderId, adminId });
+
+      if (!order) {
+        throw new Error("Order not found");
+      }
+
+      // 🔥 BUSINESS RULE
+      if (order.orderStatus !== "completed") {
+        throw new Error(
+          "Payment status can only be updated when order is completed"
+        );
+      }
+      if (order.paymentStatus === paymentStatus) {
+        throw new Error("Payment status already updated");
+      }
+      const updatedOrder = await Order.findOneAndUpdate(
+        { _id: orderId, adminId },
+        { paymentStatus },
+        {
+          new: true,
+          runValidators: true,
+        }
+      )
+        .populate("adminId", "name email")
+        .populate("userId", "name email phoneNumber")
+        .populate("items.menuId");
+
+      return updatedOrder;
+
+    } catch (error) {
+      throw new Error(`Error updating payment status: ${error.message}`);
+    }
   },
 };
 

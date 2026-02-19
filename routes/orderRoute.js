@@ -36,5 +36,12 @@ router.get(
   orderController.getMyOrders
 );
 
+router.patch(
+  "/payment-status",
+  tokenVerification,
+  allowRoles("admin"),
+  orderController.updatePaymentStatus
+);
+
 
 export default router;

@@ -15,7 +15,7 @@ const orderController = {
       next(err);
     }
   },
-  getOrders: async (req, res, next) => {
+   getOrders: async (req, res, next) => {
     try {
       const adminId = req.user._id;
       const filter = pick(req.query, ["orderStatus", "tableNumber", "paymentStatus"]);

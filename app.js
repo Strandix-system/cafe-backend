@@ -40,7 +40,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(compression());
 
-
+app.get("/", (req, res) => {
+  res.status(200).send("OK");
+});
 // Routes
 app.use("/api", routes);
 

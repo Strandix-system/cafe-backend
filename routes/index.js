@@ -9,7 +9,7 @@ import customerRoute from "./customerRoute.js";
 import categoryRoute from "./categoryRoute.js";
 import orderRoute from "./orderRoute.js";
 import qrRoute from "./qrRoute.js";
-// import dashboardRoute from "./dashboardRoute.js";
+import dashboardRoute from "./dashboardRoute.js";
 
 const router = express.Router();
 
@@ -54,10 +54,10 @@ const defaultRoutes = [
     route: orderRoute,
   },
 
-  // {
-  //   path: "/dashboard",
-  //   route: dashboardRoute,
-  // },
+  {
+    path: "/dashboard",
+    route: dashboardRoute,
+  },
 ];
 
 defaultRoutes.forEach((route) => {

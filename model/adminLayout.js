@@ -34,4 +34,8 @@ const cafeLayoutSchema = new mongoose.Schema({
   ]
 }, { timestamps: true });
 
-export default mongoose.model("CafeLayout", cafeLayoutSchema);
+const CafeLayout =
+  mongoose.models.CafeLayout ||
+  mongoose.model("CafeLayout", cafeLayoutSchema);
+
+export default CafeLayout;

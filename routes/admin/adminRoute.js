@@ -9,7 +9,7 @@ import {
   deleteAdminValidator
 } from "../../validations/createValidation.js";
 import { uploadAdminImages } from "../../middleware/upload.js";
-import dashboardRoute from "../../routes/dashboardRoute.js";
+// import dashboardRoute from "../../routes/dashboardRoute.js";
 import { parseJSONFields } from "../../utils/helper.js";
 
 const router = express.Router();
@@ -68,7 +68,7 @@ router.patch(
   controller.updateAdminStatus
 );
 
-router.use("/dashboard", dashboardRoute);
+// router.use("/dashboard", dashboardRoute);
 
 export default router;
 

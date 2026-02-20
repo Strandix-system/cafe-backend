@@ -34,7 +34,7 @@ export default {
 
   me: async (req, res, next) => {
     try {
-      const user = req.user;
+      const user = req.user.toObject();
 
       sendSuccessResponse(
         res,
@@ -42,8 +42,7 @@ export default {
         "Profile fetched successfully",
         {
           id: user._id,
-          email: user.email,
-          role: user.role
+          ...user
         }
       );
     } catch (error) {

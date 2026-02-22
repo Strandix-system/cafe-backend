@@ -69,7 +69,6 @@ router.patch(
   controller.updateAdminStatus
 );
 
-router.use("/dashboard", dashboardRoute);
 
 export default router;
 

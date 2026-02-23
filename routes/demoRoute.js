@@ -20,5 +20,11 @@ router.get(
  allowRoles("superadmin"),
  controller.getAllDemoRequests
 );
+router.get(
+  "/getbyid/:id",
+ tokenVerification,
+ allowRoles("superadmin"),
+ controller.getDemoRequestById
+)
 
 export default router;

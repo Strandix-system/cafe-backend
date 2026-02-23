@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
     firstName: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
     lastName: {
       type: String,
@@ -17,8 +17,8 @@ const userSchema = new mongoose.Schema(
     cafeName: {
       type: String,
       required: true,
-      unique: true,
-      trim: true
+      trim: true,
+      default: "Your Cafe Name"
     },
     email: {
       type: String,
@@ -38,20 +38,24 @@ const userSchema = new mongoose.Schema(
     },
     address: {
       type: String,
-      trim: true
+      trim: true,
+      default: "your address"
     },
     state: {
       type: String,
       trim: true,
-      enum: indiaStates
+      enum: indiaStates,
+      default: "Madhya Pradesh"
     },
     city: {
       type: String,
-      trim: true
+      trim: true,
+      default: "Indore"
     },
     pincode: {
       type: Number,
-      trim: true
+      trim: true,
+      default: null
     },
     isActive: {
       type: Boolean,
@@ -79,8 +83,8 @@ const userSchema = new mongoose.Schema(
       required: true
     },
     hours: {
-      weekdays: { type: String, required: true },
-      weekends: { type: String, required: true },
+      weekdays: { type: String, required: true, default: "10:00 AM-10:00 PM" },
+      weekends: { type: String, required: true, default: "10:00 AM-11:00 PM" },
     },
     socialLinks: {
       instagram: { type: String, default: null },

@@ -27,7 +27,8 @@ const signUpService = {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      name,
+      firstName,
+      lastName,
       email,
       phoneNumber,
       password,
@@ -49,7 +50,8 @@ const signUpService = {
       throw new Error("User already exists");
     }
     const user = await User.create({
-      name,
+      firstName,
+      lastName,
       email,
       password: password,
       phoneNumber: phoneNumber,

@@ -40,7 +40,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: [
-      "https://aeternis.in/",
+      "https://aeternis.in",
       "https://admin.aeternis.in"
     ],
     // origin: "*",

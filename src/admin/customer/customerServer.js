@@ -7,6 +7,7 @@ const customerService = {
 
     let customer = await Customer.findOne({
       phoneNumber,
+      adminId,
     });
     if (customer) {
       customer.name = name;

@@ -2,7 +2,6 @@ import orderService from "./service.js";
 import { pick } from "../../../utils/pick.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
 
-
 const orderController = {
   createPublicOrder: async (req, res, next) => {
     try {
@@ -15,7 +14,7 @@ const orderController = {
       next(err);
     }
   },
-   getOrders: async (req, res, next) => {
+    getOrders: async (req, res, next) => {
     try {
       const adminId = req.user._id;
       const filter = pick(req.query, ["orderStatus", "tableNumber", "paymentStatus"]);
@@ -77,6 +76,18 @@ const orderController = {
       next(err);
     }
   },
+ getBillDetails: async (req, res, next) => {
+  try {
+    const result = await orderService.getOrderBillDetails(
+      req.params.id,
+      req.user._id
+    );
+
+    sendSuccessResponse(res, 200, "Bill details fetched", result);
+  } catch (err) {
+    next(err);
+  }
+},
 };
 
 export default orderController;

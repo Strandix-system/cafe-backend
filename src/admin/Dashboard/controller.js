@@ -24,10 +24,13 @@ const dashboardController = {
   },
   getSalesChart: async (req, res, next) => {
     try {
-      const adminId = req.user._id;
-      const type = req.query.type || "daily";
+      const { startDate, endDate } = req.query;
 
-      const data = await dashboardService.salesChart(adminId, type);
+      const data = await dashboardService.salesChart(
+        req.user._id,
+        startDate,
+        endDate
+      );
       sendSuccessResponse(res, 200, "Sales chart fetched", data);
     } catch (err) {
       next(err);
@@ -43,8 +46,23 @@ const dashboardController = {
   },
   getPeakTime: async (req, res, next) => {
     try {
-      const data = await dashboardService.peakTime(req.user._id);
+      const { startDate, endDate } = req.query;
+
+      const data = await dashboardService.peakTime(
+        req.user._id,
+        startDate,
+        endDate
+      );
       sendSuccessResponse(res, 200, "Peak time fetched", data);
+    } catch (err) {
+      next(err);
+    }
+  },
+  getTopCustomers: async (req, res, next) => {
+    try {
+      const data = await dashboardService.topCustomers(req.user._id);
+
+      sendSuccessResponse( res,200,"Top customers fetched",data);
     } catch (err) {
       next(err);
     }
@@ -53,6 +71,15 @@ const dashboardController = {
     try {
       const data = await dashboardService.tablePerformance(req.user._id);
       sendSuccessResponse(res, 200, "Table performance fetched", data);
+    } catch (err) {
+      next(err);
+    }
+  },
+  getTopCafes: async (req, res, next) => {
+    try {
+      const data = await dashboardService.topCafes();
+
+      sendSuccessResponse(res,200,"Top cafes fetched",data);
     } catch (err) {
       next(err);
     }

@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      default: "Your Cafe Name"
+      default: null
     },
     email: {
       type: String,
@@ -34,23 +34,23 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      select: false // 🔥 Important: Don't return password by default 
+      select: false 
     },
     address: {
       type: String,
       trim: true,
-      default: "your address"
+      default: null
     },
     state: {
       type: String,
       trim: true,
       enum: indiaStates,
-      default: "Madhya Pradesh"
+      default: null
     },
     city: {
       type: String,
       trim: true,
-      default: "Indore"
+      default: null
     },
     pincode: {
       type: Number,

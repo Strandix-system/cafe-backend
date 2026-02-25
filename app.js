@@ -41,7 +41,8 @@ app.use(
   cors({
     origin: [
       "https://aeternis.in",
-      "https://admin.aeternis.in"
+      "https://admin.aeternis.in",
+      "https://portfolio.aeternis.in"
     ],
     // origin: "*",
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],

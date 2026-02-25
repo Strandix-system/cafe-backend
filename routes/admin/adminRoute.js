@@ -9,7 +9,7 @@ import {
   deleteAdminValidator
 } from "../../validations/createValidation.js";
 import { uploadAdminImages } from "../../middleware/upload.js";
-// import dashboardRoute from "../../routes/dashboardRoute.js";
+import dashboardController from "../../src/admin/dashboard/controller.js";
 import { parseJSONFields } from "../../utils/helper.js";
 
 const router = express.Router();
@@ -68,7 +68,54 @@ router.patch(
   controller.updateAdminStatus
 );
 
-// router.use("/dashboard", dashboardRoute);
+// Dashboard routes
+router.get(
+  "/dashboard/stats",
+  tokenVerification,
+  allowRoles("admin", "superadmin"),
+  dashboardController.getStats
+);
+
+router.get(
+  "/dashboard/sales",
+  tokenVerification,
+  allowRoles("admin"), dashboardController.getSalesChart
+);
+
+router.get(
+  "/dashboard/items-performance",
+  tokenVerification, allowRoles("admin"),
+  dashboardController.getItemPerformance
+);
+
+router.get(
+  "/dashboard/peak-time",
+  tokenVerification,
+  allowRoles("admin"),
+  dashboardController.getPeakTime
+);
+
+//not use for now
+router.get(
+  "/dashboard/tables",
+  tokenVerification,
+  allowRoles("admin"),
+  dashboardController.getTablePerformance
+);
+
+router.get(
+  "/dashboard/top-customers",
+  tokenVerification,
+  allowRoles("admin"),
+  dashboardController.getTopCustomers
+);
+
+router.get(
+  "/dashboard/top-cafes",
+  tokenVerification,
+  allowRoles("superadmin"),
+  dashboardController.getTopCafes
+);
 
 export default router;
 

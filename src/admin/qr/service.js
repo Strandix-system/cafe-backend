@@ -1,6 +1,6 @@
 import Qr from "../../../model/qr.js";
 import QRCode from "qrcode";
-import CafeLayout from "../../../model/adminLayout.js";
+import CafeLayout from "../../../model/layout.js";
 
 
 const qrService = {

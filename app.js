@@ -37,7 +37,17 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "https://aeternis.in/",
+      "https://admin.aeternis.in"
+    ],
+    // origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-type", "Authorization"],
+  }),
+);
 app.use(compression());
 
 app.get("/", (req, res) => {

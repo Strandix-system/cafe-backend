@@ -22,23 +22,39 @@ const customerService = {
     return newCustomer.toObject();
   },
 
-  getCustomers: async (filter, options, adminId) => {
+ getCustomers: async (filter, options, user) => {
 
-    filter.adminId = adminId;
+  let adminId;
 
-    if (filter.search) {
-      filter.$or = [
-        { name: { $regex: filter.search, $options: "i" } },
-        { phoneNumber: { $regex: filter.search, $options: "i" } }
-      ];
-      delete filter.search;
+  if (user.role === "admin") {
+    adminId = user._id;
+  }
+
+  if (user.role === "superadmin") {
+    if (!filter.adminId) {
+      throw Object.assign(
+        new Error("adminId is required to view customers"),
+        { statusCode: 400 }
+      );
     }
+    adminId = filter.adminId;
+  }
 
-    options.page = Number(options.page) || 0;
-    options.limit = Number(options.limit) || 10;
+  filter.adminId = adminId;
 
-    return await Customer.paginate(filter, options);
-  },
+  if (filter.search) {
+    filter.$or = [
+      { name: { $regex: filter.search, $options: "i" } },
+      { phoneNumber: { $regex: filter.search, $options: "i" } }
+    ];
+    delete filter.search;
+  }
+
+  options.page = Number(options.page) || 0;
+  options.limit = Number(options.limit) || 10;
+
+  return await Customer.paginate(filter, options);
+},
   getCustomerById: async (id) => {
     const customer = await Customer.findById(id);
     if (!customer) {

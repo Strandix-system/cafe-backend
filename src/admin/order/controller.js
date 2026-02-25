@@ -2,7 +2,6 @@ import orderService from "./service.js";
 import { pick } from "../../../utils/pick.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
 
-
 const orderController = {
   createPublicOrder: async (req, res, next) => {
     try {
@@ -15,21 +14,12 @@ const orderController = {
       next(err);
     }
   },
-  getOrders: async (req, res, next) => {
+    getOrders: async (req, res, next) => {
     try {
-
-      const adminId = req.user.id;
-
-      const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
-
+      const adminId = req.user._id;
       const filter = pick(req.query, ["orderStatus", "tableNumber", "paymentStatus"]);
-
-      const result =
-        await orderService.getOrders(
-          adminId,
-          filter,
-          options
-        );
+      const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
+      const result = await orderService.getOrders(adminId, filter, options);
       sendSuccessResponse(res, 200, "Orders fetched", result);
     } catch (err) {
       next(err);
@@ -53,7 +43,7 @@ const orderController = {
         await orderService.updateStatus(
           req.body.orderId,
           status,
-          req.user._id
+          req.user._id,
         );
       sendSuccessResponse(res, 200, "Status updated", result);
     } catch (err) {
@@ -73,6 +63,31 @@ const orderController = {
       next(err);
     }
   },
+  updatePaymentStatus: async (req, res, next) => {
+    try {
+      const { orderId, paymentStatus } = req.body;
+      const result = await orderService.updatePaymentStatus(
+        orderId,
+        paymentStatus,
+        req.user._id
+      );
+      sendSuccessResponse(res, 200, "Payment status updated", result);
+    } catch (err) {
+      next(err);
+    }
+  },
+ getBillDetails: async (req, res, next) => {
+  try {
+    const result = await orderService.getOrderBillDetails(
+      req.params.id,
+      req.user._id
+    );
+
+    sendSuccessResponse(res, 200, "Bill details fetched", result);
+  } catch (err) {
+    next(err);
+  }
+},
 };
 
 export default orderController;

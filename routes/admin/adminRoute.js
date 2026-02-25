@@ -9,8 +9,8 @@ import {
   deleteAdminValidator
 } from "../../validations/createValidation.js";
 import { uploadAdminImages } from "../../middleware/upload.js";
-import dashboardController from "../../src/admin/dashboard/controller.js";
 import { parseJSONFields } from "../../utils/helper.js";
+import dashboardController from "../../src/admin/dashboard/controller.js";
 
 const router = express.Router();
 
@@ -30,7 +30,7 @@ router.post(
 router.patch(
   "/update/:id",
   tokenVerification,
-  allowRoles("superadmin"),
+  allowRoles("superadmin","admin"),
   uploadAdminImages.fields([
     { name: "logo", maxCount: 1 },
     { name: "profileImage", maxCount: 1 }
@@ -39,6 +39,7 @@ router.patch(
   validate(updateAdminValidator),
   controller.updateAdmin
 );
+
 router.delete(
   "/delete/:id",
   tokenVerification,
@@ -67,8 +68,6 @@ router.patch(
   allowRoles("superadmin"),
   controller.updateAdminStatus
 );
-
-// Dashboard routes
 router.get(
   "/dashboard/stats",
   tokenVerification,
@@ -95,21 +94,18 @@ router.get(
   dashboardController.getPeakTime
 );
 
-//not use for now
 router.get(
   "/dashboard/tables",
   tokenVerification,
   allowRoles("admin"),
   dashboardController.getTablePerformance
 );
-
 router.get(
   "/dashboard/top-customers",
   tokenVerification,
   allowRoles("admin"),
   dashboardController.getTopCustomers
 );
-
 router.get(
   "/dashboard/top-cafes",
   tokenVerification,

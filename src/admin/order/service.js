@@ -3,6 +3,7 @@ import Menu from "../../../model/menu.js";
 import Customer from "../../../model/customer.js";
 import User from "../../../model/user.js";
 import { getIO } from "../../../socket.js";
+import sendWhatsAppMessage from "../../../utils/whatsapp.js";
 
 const orderService = {
   createOrderByCustomerId: async (body) => {
@@ -81,7 +82,6 @@ const orderService = {
       .populate("userId", "name email phoneNumber")
       .populate("items.menuId");
 
-    // Emit to all admin clients for that adminId
     io.to(adminId.toString()).emit("newOrder", populatedOrder);
     io.to(adminId.toString()).emit("order:new", populatedOrder);
     io.to(`customer-${customer._id}`).emit("order:new", populatedOrder);
@@ -89,7 +89,7 @@ const orderService = {
     return order;
   },
   getOrders: async (adminId, filter, options) => {
-    return await Order.paginate( { adminId, ...filter }, options
+    return await Order.paginate({ adminId, ...filter }, options
     );
   },
   getMyOrders: async (filter, options) => {
@@ -197,6 +197,113 @@ const orderService = {
 
     return await Order.find({ orderId })
       .populate("menuId");
+  },
+  updatePaymentStatus: async (orderId, paymentStatus, adminId) => {
+    try {
+
+      if (typeof paymentStatus !== "boolean") {
+        throw new Error("Payment status must be true or false");
+      }
+      const order = await Order.findOne({ _id: orderId, adminId });
+      if (!order) {
+        throw new Error("Order not found");
+      }
+      if (order.orderStatus !== "completed") {
+        throw new Error(
+          "Payment status can only be updated when order is completed"
+        );
+      }
+      if (order.paymentStatus === paymentStatus) {
+        throw new Error("Payment status already updated");
+      }
+      order.paymentStatus = paymentStatus;
+      await order.save();
+      if (paymentStatus === true) {
+        const billDetails = await orderService.getOrderBillDetails(
+          orderId,
+          adminId
+        );
+        try {
+          const populatedOrder = await Order.findById(orderId)
+            .populate("userId", "name phoneNumber")
+            .populate("adminId", "cafeName");
+
+          const customer = populatedOrder.userId;
+
+          if (customer?.phoneNumber) {
+
+            const formattedPhone = `91${customer.phoneNumber}`;
+
+            const message = `
+Hello ${customer.name},
+
+✅ Payment received successfully.
+
+🧾 Order Summary:
+Table No: ${billDetails.tableNumber}
+Total Amount: ₹${billDetails.total}
+
+Your bill PDF is ready in the app.
+
+Thank you for visiting ${populatedOrder.adminId.cafeName} ☕
+See you again!
+          `;
+
+            await sendWhatsAppMessage({
+              to: formattedPhone,
+              message,
+            });
+          }
+
+        } catch (whatsappError) {
+          console.error("WhatsApp Error:", whatsappError.message);
+        }
+      }
+
+      return order;
+
+    } catch (error) {
+      throw new Error(`Error updating payment status: ${error.message}`);
+    }
+  },
+  getOrderBillDetails: async (orderId, adminId) => {
+    const order = await Order.findOne({
+      _id: orderId,
+      adminId,
+    })
+      .populate("adminId", "cafeName gst address city state pincode")
+      .populate("userId", "name");
+
+    if (!order) {
+      throw new Error("Order not found");
+    }
+    const subTotal = order.items.reduce((sum, item) => {
+      return sum + item.price * item.quantity;
+    }, 0);
+
+    const gstPercent = order.adminId.gst;
+    const gstAmount = (subTotal * gstPercent) / 100;
+
+    const total = Math.round(subTotal + gstAmount);
+
+    return {
+      cafeName: order.adminId.cafeName,
+      address: `${order.adminId.address || ""}, ${order.adminId.city || ""}`,
+      tableNumber: order.tableNumber,
+
+      items: order.items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        amount: item.price * item.quantity,
+      })),
+
+      subTotal,
+      gstPercent,
+      gstAmount,
+      total,
+      createdAt: order.createdAt,
+    };
   },
 };
 

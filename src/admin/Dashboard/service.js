@@ -2,8 +2,7 @@ import mongoose from "mongoose";
 import User from "../../../model/user.js";
 import Order from "../../../model/order.js";
 import Customer from "../../../model/customer.js";
-import DemoRequest from "../../../model/demoRequest.js";
-import CafeLayout from "../../../model/layout.js";
+import demoRequest from "../../../model/demoRequest.js";
 
 const dashboardService = {
   superAdminStats: async () => {
@@ -12,7 +11,7 @@ const dashboardService = {
         User.countDocuments({ role: "admin" }),
         User.countDocuments({ role: "admin", isActive: true }),
         User.countDocuments({ role: "admin", isActive: false }),
-        DemoRequest.countDocuments(),
+        demoRequest.countDocuments(),
         Order.aggregate([
           { $group: { _id: null, total: { $sum: "$totalAmount" } } }
         ])
@@ -25,49 +24,6 @@ const dashboardService = {
       totalDemoRequest,
       totalIncome: incomeAgg[0]?.total || 0,
     };
-  },
-  topCafes: async () => {
-    const cafes = await Order.aggregate([
-      {
-        $match: {
-          orderStatus: "completed",
-        },
-      },
-      {
-        $group: {
-          _id: "$adminId",
-          totalOrders: { $sum: 1 },
-          totalAmount: { $sum: "$totalAmount" },
-        },
-      },
-      {
-        $lookup: {
-          from: "users",          // admin collection
-          localField: "_id",
-          foreignField: "_id",
-          as: "admin",
-        },
-      },
-      { $unwind: "$admin" },
-      {
-        $project: {
-          _id: 0,
-          cafeId: "$admin._id",
-          cafeName: "$admin.name",
-          totalOrders: 1,
-          totalAmount: 1,
-        },
-      },
-      {
-        $sort: {
-          totalOrders: -1,
-          totalAmount: -1,
-        },
-      },
-      { $limit: 5 },
-    ]);
-
-    return cafes;
   },
   adminStats: async (adminId) => {
     const id = adminId;
@@ -273,7 +229,6 @@ const dashboardService = {
     if (!startDate || !endDate) {
       const now = new Date();
 
-      // ✅ UTC day boundaries
       start = new Date(Date.UTC(
         now.getUTCFullYear(),
         now.getUTCMonth(),
@@ -291,7 +246,6 @@ const dashboardService = {
       start = new Date(startDate);
       end = new Date(endDate);
     }
-
     const raw = await Order.aggregate([
       {
         $match: {
@@ -306,7 +260,7 @@ const dashboardService = {
               date: "$createdAt",
               timezone: "Asia/Kolkata"
             }
-          }, // UTC hour
+          },
           orders: { $sum: 1 },
         },
       },
@@ -390,6 +344,49 @@ const dashboardService = {
       { $sort: { totalOrders: -1 } }
 
     ]);
+  },
+  topCafes: async () => {
+    const cafes = await Order.aggregate([
+      {
+        $match: {
+          orderStatus: "completed",
+        },
+      },
+      {
+        $group: {
+          _id: "$adminId",
+          totalOrders: { $sum: 1 },
+          totalAmount: { $sum: "$totalAmount" },
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "admin",
+        },
+      },
+      { $unwind: "$admin" },
+      {
+        $project: {
+          _id: 0,
+          cafeId: "$admin._id",
+          cafeName: "$admin.name",
+          totalOrders: 1,
+          totalAmount: 1,
+        },
+      },
+      {
+        $sort: {
+          totalOrders: -1,
+          totalAmount: -1,
+        },
+      },
+      { $limit: 5 },
+    ]);
+
+    return cafes;
   },
 };
 

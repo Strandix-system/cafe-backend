@@ -22,20 +22,6 @@ const dashboardController = {
       next(err);
     }
   },
-  getTopCafes: async (req, res, next) => {
-    try {
-      const data = await dashboardService.topCafes();
-
-      sendSuccessResponse(
-        res,
-        200,
-        "Top cafes fetched",
-        data
-      );
-    } catch (err) {
-      next(err);
-    }
-  },
   getSalesChart: async (req, res, next) => {
     try {
       const { startDate, endDate } = req.query;
@@ -76,12 +62,7 @@ const dashboardController = {
     try {
       const data = await dashboardService.topCustomers(req.user._id);
 
-      sendSuccessResponse(
-        res,
-        200,
-        "Top customers fetched",
-        data
-      );
+      sendSuccessResponse( res,200,"Top customers fetched",data);
     } catch (err) {
       next(err);
     }
@@ -90,6 +71,15 @@ const dashboardController = {
     try {
       const data = await dashboardService.tablePerformance(req.user._id);
       sendSuccessResponse(res, 200, "Table performance fetched", data);
+    } catch (err) {
+      next(err);
+    }
+  },
+  getTopCafes: async (req, res, next) => {
+    try {
+      const data = await dashboardService.topCafes();
+
+      sendSuccessResponse(res,200,"Top cafes fetched",data);
     } catch (err) {
       next(err);
     }

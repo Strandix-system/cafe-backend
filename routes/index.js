@@ -13,6 +13,8 @@ import qrRoute from "./qrRoute.js";
 import demoRoute from "./demoRoute.js";
 
 
+import signUp from "./signUp.js";
+import demoRoute from "./demoRoute.js";
 const router = express.Router();
 
 const defaultRoutes = [
@@ -55,15 +57,14 @@ const defaultRoutes = [
     path: "/order",
     route: orderRoute,
   },
-
-  // {
-  //   path: "/dashboard",
-  //   route: dashboardRoute,
-  // },
+  {
+    path: "/signup",
+    route: signUp,
+  },
   {
     path: "/demo",
-    route: demoRoute,
-  },
+    route : demoRoute,
+  }
 ];
 
 defaultRoutes.forEach((route) => {

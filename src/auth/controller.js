@@ -22,10 +22,20 @@ export default {
   me: async (req, res, next) => {
     try {
       const user = req.user.toObject();
-      sendSuccessResponse(res, 200, "Profile fetched successfully",
+
+      // Check profile completion
+      const isProfileComplete =
+        new Date(user.createdAt).getTime() !==
+        new Date(user.updatedAt).getTime();
+
+      sendSuccessResponse(
+        res,
+        200,
+        "Profile fetched successfully",
         {
           id: user._id,
-          ...user
+          ...user,
+          isProfileComplete, // true if profile updated, false if not
         }
       );
     } catch (error) {
@@ -49,14 +59,14 @@ export default {
       next(error);
     }
   },
-  resetPassword: async (req, res,next) => {
+  resetPassword: async (req, res, next) => {
     try {
       const { password } = req.body;
       const { token } = req.params;
 
       await service.resetPassword(token, password);
 
-       sendSuccessResponse(res, 200, "Password reset successful");
+      sendSuccessResponse(res, 200, "Password reset successful");
     } catch (error) {
       next(error);
     }

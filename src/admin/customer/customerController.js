@@ -13,35 +13,15 @@ const customerController = {
       next(err);
     }
   },
-  getCustomers: async (req, res, next) => {
+getCustomers: async (req, res, next) => {
   try {
-    const { role, _id } = req.user;
-
-    const filter = pick(req.query, ["search"]);
+    const filter = pick(req.query, ["search", "adminId"]);
     const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
-
-    let adminId;
-
-    if (role === "admin") {
-      // 🔐 Admin → only own customers
-      adminId = _id;
-    }
-
-    if (role === "superadmin") {
-      // 🔓 SuperAdmin → must provide adminId
-      if (!req.query.adminId) {
-        throw Object.assign(
-          new Error("adminId is required to view customers"),
-          { statusCode: 400 }
-        );
-      }
-      adminId = req.query.adminId;
-    }
 
     const customers = await customerService.getCustomers(
       filter,
       options,
-      adminId
+      req.user
     );
 
     sendSuccessResponse(res, 200, "Customers fetched", customers);

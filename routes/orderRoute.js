@@ -42,6 +42,12 @@ router.patch(
   allowRoles("admin"),
   orderController.updatePaymentStatus
 );
+router.get(
+  "/bill/:id",
+  tokenVerification,
+  allowRoles("admin"),
+  orderController.getBillDetails
+);
 
 
 export default router;

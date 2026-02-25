@@ -3,6 +3,7 @@ import { deleteUploadedFiles } from "../../../utils/s3utils.js";
 import { deleteSingleFile } from "../../../utils/s3utils.js";
 import Qr from "../../../model/qr.js"
 import mongoose from "mongoose";
+import { ApiError } from "../../../utils/apiError.js";
 
 const layoutService = {
   createCafeLayout: async (adminId, body, files, role) => {
@@ -13,7 +14,6 @@ const layoutService = {
         statusCode: 400
       });
     }
-    let defaultLayoutId = null;
     let defaultLayout = role === "superadmin";
     const haveLayout = await CafeLayout.findOne({ adminId });
     const layout = await CafeLayout.create({
@@ -29,7 +29,7 @@ const layoutService = {
   updateCafeLayout: async (id, body, files) => {
     const layout = await CafeLayout.findById(id);
     if (!layout) {
-      throw Object.assign(new Error("Cafe layout not found"), { statusCode: 404 });
+      throw new ApiError("Cafe layout not found");
     }
 
     // ✅ Home Image Update
@@ -61,15 +61,14 @@ const layoutService = {
     const { layoutId, active } = body;
     const layout = await CafeLayout.findById(layoutId);
     if (!layout) {
-      throw Object.assign(new Error("Cafe layout not found"), { statusCode: 404 });
+      throw new ApiError("Cafe layout not found");
     }
 
     if (active === undefined || typeof active !== "boolean") {
-      throw Object.assign(new Error("Active status is required"), { statusCode: 400 });
+      throw new ApiError("Active status is required");
     }
 
     if (active === true) {
-      // 1️⃣ Deactivate all OTHER layouts of same admin
       await CafeLayout.updateMany(
         {
           adminId: layout?.adminId,
@@ -90,7 +89,10 @@ const layoutService = {
   deleteCafeLayout: async (id) => {
     const layout = await CafeLayout.findById(id);
     if (!layout) {
-      throw Object.assign(new Error("Cafe layout not found"), { statusCode: 404 });
+      throw new ApiError("Cafe layout not found");
+    }
+    if (layout.active) {
+      throw new ApiError("Active cafe layout cannot be deleted")
     }
     const imagesToDelete = [];
     if (layout.homeImage) imagesToDelete.push(layout.homeImage);
@@ -98,7 +100,6 @@ const layoutService = {
     if (imagesToDelete.length > 0) {
       try {
         await deleteUploadedFiles(imagesToDelete);
-        console.log("✅ S3 images deleted successfully");
       } catch (err) {
         console.error("Failed to delete S3 images during layout deletion:", err.message);
       }

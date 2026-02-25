@@ -9,8 +9,8 @@ import customerRoute from "./customerRoute.js";
 import categoryRoute from "./categoryRoute.js";
 import orderRoute from "./orderRoute.js";
 import qrRoute from "./qrRoute.js";
-// import dashboardRoute from "./dashboardRoute.js";
-
+import signUp from "./signUp.js";
+import demoRoute from "./demoRoute.js";
 const router = express.Router();
 
 const defaultRoutes = [
@@ -53,11 +53,14 @@ const defaultRoutes = [
     path: "/order",
     route: orderRoute,
   },
-
-  // {
-  //   path: "/dashboard",
-  //   route: dashboardRoute,
-  // },
+  {
+    path: "/signup",
+    route: signUp,
+  },
+  {
+    path: "/demo",
+    route : demoRoute,
+  }
 ];
 
 defaultRoutes.forEach((route) => {

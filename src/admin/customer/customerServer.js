@@ -49,10 +49,6 @@ const customerService = {
       ];
       delete filter.search;
     }
-
-    options.page = Number(options.page) || 0;
-    options.limit = Number(options.limit) || 10;
-
     return await Customer.paginate(filter, options);
   },
   getCustomerById: async (id) => {

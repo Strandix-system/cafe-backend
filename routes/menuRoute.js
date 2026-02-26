@@ -53,5 +53,11 @@ router.get(
   "/public/:adminId",
   menuController.getPublicMenus
 );
+router.get(
+  "/used-categories",
+   tokenVerification,  
+  allowRoles("admin"),
+  menuController.getAdminUsedCategories
+);
 
 export default router;

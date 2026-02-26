@@ -29,7 +29,7 @@ const demoController = {
 
   getAllDemoRequests: async (req, res, next) => {
     try {
-      const filter = pick(req.query, ["search"]);
+      const filter = pick(req.query, ["search","status"]);
       const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
       const result = await demoService.getAllDemoRequests(filter, options);
       sendSuccessResponse(res, 200, "requests fetched successfully", result);

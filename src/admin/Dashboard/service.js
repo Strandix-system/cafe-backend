@@ -280,7 +280,7 @@ const dashboardService = {
     raw.forEach(r => (hourMap[r._id] = r.orders));
 
     const result = [];
-    for (let hour = 9; hour <= 22; hour++) {
+    for (let hour = 8; hour <= 24; hour++) {
       result.push({
         hour:
           hour === 12

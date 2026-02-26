@@ -82,14 +82,15 @@ const userSchema = new mongoose.Schema(
       required: true
     },
     hours: {
-      weekdays: { type: String, required: true, default: "10:00 AM-10:00 PM" },
-      weekends: { type: String, required: true, default: "10:00 AM-11:00 PM" },
+      weekdays: { type: String,  default: null },
+      weekends: { type: String, default: null },
     },
     socialLinks: {
       instagram: { type: String, default: null },
       facebook: { type: String, default: null },
       twitter: { type: String, default: null },
     },
+    
   },
   {
     timestamps: true,

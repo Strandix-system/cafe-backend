@@ -93,8 +93,14 @@ const menuService = {
   },
   getMenusByAdmin: async (adminId, filter, options) => {
     filter.adminId = adminId;
+    if (filter.category) {
+       filter.category = filter.category;
+    }
     if (filter.search) {
-      filter.name = { $regex: filter.search, $options: "i" };
+      filter.$or = [
+        { name: { $regex: filter.search, $options: "i" } },
+        { category: { $regex: filter.search, $options: "i" } }
+      ];
     }
     delete filter.search;
     return await Menu.paginate(filter, options);
@@ -103,5 +109,28 @@ const menuService = {
     const menu = await Menu.findById(menuId);
     return menu;
   },
+getAdminUsedCategories: async (adminId, filter, options) => {
+  // Step 1: Get categories used by this admin in Menu
+  const usedCategories = await Menu.distinct("category", { adminId });
+
+  // Step 2: Build query for Category collection
+  const query = {
+    name: { $in: usedCategories }
+  };
+
+  // Step 3: Apply search if provided
+  if (filter.search) {
+    query.name = { 
+      $in: usedCategories,
+      $regex: filter.search,
+      $options: "i"
+    };
+  }
+
+  // Step 4: Paginate
+  const result = await Category.paginate(query, options);
+
+  return result;
+},
 };
 export default menuService;

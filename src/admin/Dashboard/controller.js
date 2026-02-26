@@ -62,7 +62,7 @@ const dashboardController = {
     try {
       const data = await dashboardService.topCustomers(req.user._id);
 
-      sendSuccessResponse( res,200,"Top customers fetched",data);
+      sendSuccessResponse(res, 200, "Top customers fetched", data);
     } catch (err) {
       next(err);
     }
@@ -79,11 +79,27 @@ const dashboardController = {
     try {
       const data = await dashboardService.topCafes();
 
-      sendSuccessResponse(res,200,"Top cafes fetched",data);
+      sendSuccessResponse(res, 200, "Top cafes fetched", data);
     } catch (err) {
       next(err);
     }
   },
+  getPlatformSales: async (req, res, next) => {
+    try {
+      const { startDate, endDate } = req.query;
+
+      const data = await dashboardService.platformSales(
+        startDate,
+        endDate
+      );
+
+      sendSuccessResponse(res, 200, "Platform sales chart fetched successfully", data);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+
 };
 
 export default dashboardController;

@@ -113,6 +113,12 @@ router.get(
   dashboardController.getTopCafes
 );
 
+router.get(
+  "/dashboard/platform-sales",
+  tokenVerification,
+  allowRoles("superadmin"),
+  dashboardController.getPlatformSales
+);
 
 export default router;
 

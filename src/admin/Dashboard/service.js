@@ -112,7 +112,7 @@ const dashboardService = {
       const now = new Date();
 
       start = new Date(now.getFullYear(), 0, 1); // Jan 1
-      end = new Date(now.getFullYear(), 11, 31, 23, 59, 59); // Dec 31
+      end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999); // Dec 31
 
       groupId = {
         year: { $year: "$createdAt" },
@@ -123,8 +123,13 @@ const dashboardService = {
     }
     // ✅ Custom date range
     else {
+      // 🔥 FIX START
       start = new Date(startDate);
+      start.setUTCHours(0, 0, 0, 0);
+
       end = new Date(endDate);
+      end.setUTCHours(23, 59, 59, 999);
+      // 🔥 FIX END
 
       const diffDays = Math.ceil(
         (end - start) / (1000 * 60 * 60 * 24)
@@ -243,8 +248,13 @@ const dashboardService = {
         23, 59, 59, 999
       ));
     } else {
+      // 🔥 FIX START
       start = new Date(startDate);
+      start.setUTCHours(0, 0, 0, 0);
+
       end = new Date(endDate);
+      end.setUTCHours(23, 59, 59, 999);
+      // 🔥 FIX END
     }
     const raw = await Order.aggregate([
       {
@@ -345,6 +355,82 @@ const dashboardService = {
 
     ]);
   },
+  platformSales: async (startDate, endDate) => {
+    let start, end, groupId, labelFormatter;
+
+    // ✅ DEFAULT: current year (month-wise)
+    if (!startDate || !endDate) {
+      const now = new Date();
+
+      start = new Date(Date.UTC(now.getUTCFullYear(), 0, 1, 0, 0, 0, 0));
+      end = new Date(Date.UTC(now.getUTCFullYear(), 11, 31, 23, 59, 59, 999));
+
+      // Month-wise
+      groupId = {
+        year: { $year: "$createdAt" },
+        month: { $month: "$createdAt" },
+      };
+      
+      labelFormatter = (id) => `${id.month}-${id.year}`;
+    }
+    // ✅ Custom date range
+    else {
+      start = new Date(startDate);
+      start.setUTCHours(0, 0, 0, 0);
+
+      end = new Date(endDate);
+      end.setUTCHours(23, 59, 59, 999);
+
+      const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+
+      // Day-wise
+      if (diffDays <= 45) {
+        groupId = {
+          date: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$createdAt",
+            },
+          },
+        };
+        labelFormatter = (id) => id.date;
+      }
+      // Month-wise
+      else {
+        groupId = {
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" },
+        };
+        labelFormatter = (id) => {
+          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          return `${months[id.month - 1]}-${id.year}`;
+        };
+      }
+    }
+
+    const chartAgg = await Order.aggregate([
+      {
+        $match: {
+          orderStatus: "completed",
+          createdAt: { $gte: start, $lte: end },
+        },
+      },
+      {
+        $group: {
+          _id: groupId,
+          orders: { $sum: 1 },
+          revenue: { $sum: "$totalAmount" },
+        },
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1, "_id.date": 1 } },
+    ]);
+
+    return chartAgg.map((c) => ({
+      label: labelFormatter(c._id),
+      orders: c.orders,
+      revenue: c.revenue,
+    }));
+  },
   topCafes: async () => {
     const cafes = await Order.aggregate([
       {
@@ -372,7 +458,7 @@ const dashboardService = {
         $project: {
           _id: 0,
           cafeId: "$admin._id",
-          cafeName: "$admin.name",
+          cafeName: "$admin.cafeName", // ✅ FIX HERE
           totalOrders: 1,
           totalAmount: 1,
         },

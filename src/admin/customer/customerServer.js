@@ -22,39 +22,39 @@ const customerService = {
     return newCustomer.toObject();
   },
 
- getCustomers: async (filter, options, user) => {
+  getCustomers: async (filter, options, user) => {
 
-  let adminId;
+    let adminId;
 
-  if (user.role === "admin") {
-    adminId = user._id;
-  }
-
-  if (user.role === "superadmin") {
-    if (!filter.adminId) {
-      throw Object.assign(
-        new Error("adminId is required to view customers"),
-        { statusCode: 400 }
-      );
+    if (user.role === "admin") {
+      adminId = user._id;
     }
-    adminId = filter.adminId;
-  }
 
-  filter.adminId = adminId;
+    if (user.role === "superadmin") {
+      if (!filter.adminId) {
+        throw Object.assign(
+          new Error("adminId is required to view customers"),
+          { statusCode: 400 }
+        );
+      }
+      adminId = filter.adminId;
+    }
 
-  if (filter.search) {
-    filter.$or = [
-      { name: { $regex: filter.search, $options: "i" } },
-      { phoneNumber: { $regex: filter.search, $options: "i" } }
-    ];
-    delete filter.search;
-  }
+    filter.adminId = adminId;
 
-  options.page = Number(options.page) || 0;
-  options.limit = Number(options.limit) || 10;
+    if (filter.search) {
+      filter.$or = [
+        { name: { $regex: filter.search, $options: "i" } },
+        { phoneNumber: { $regex: filter.search, $options: "i" } }
+      ];
+      delete filter.search;
+    }
 
-  return await Customer.paginate(filter, options);
-},
+    options.page = Number(options.page) || 0;
+    options.limit = Number(options.limit) || 10;
+
+    return await Customer.paginate(filter, options);
+  },
   getCustomerById: async (id) => {
     const customer = await Customer.findById(id);
     if (!customer) {

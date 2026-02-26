@@ -144,6 +144,14 @@ const adminService = {
     }
     return admin;
   },
+  deleteCafeLayout: async (id) => {
+    const layout = await CafeLayout.findById(id);
+    if (!layout) {    
+      throw Object.assign(new Error("Cafe layout not found"), { statusCode: 404 });
+    }
+     const result = await layout.deleteOne();
+    return result;
+  },
 };
 
 export default adminService;

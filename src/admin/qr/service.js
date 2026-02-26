@@ -1,6 +1,8 @@
 import Qr from "../../../model/qr.js";
 import layout from "../../../model/layout.js"
 import QRCode from "qrcode";
+import CafeLayout from "../../../model/layout.js";
+
 
 const qrService = {
   createQr: async (adminId, totalTables) => {
@@ -10,7 +12,9 @@ const qrService = {
       throw new Error("Please create cafe layout before generating Qr")
     }
     if (!totalTables || totalTables < 1) {
-      throw new Error("Invalid totalTables");
+      const err = new Error("Invalid totalTables");
+      err.statusCode = 400;
+      throw err;
     }
 
     if (!process.env.PORTFOLIO_URL) {

@@ -10,7 +10,7 @@ import {
 } from "../../validations/createValidation.js";
 import { uploadAdminImages } from "../../middleware/upload.js";
 import { parseJSONFields } from "../../utils/helper.js";
-import dashboardController from "../../src/admin/dashboard/controller.js";
+import dashboardController from "../../src/admin/Dashboard/controller.js";
 
 const router = express.Router();
 

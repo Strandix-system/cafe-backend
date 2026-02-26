@@ -16,7 +16,6 @@ const userSchema = new mongoose.Schema(
     },
     cafeName: {
       type: String,
-      required: true,
       trim: true,
       default: null
     },

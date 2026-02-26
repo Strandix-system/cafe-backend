@@ -96,7 +96,6 @@ const orderService = {
     if (!filter.userId) {
       throw new Error("userId is required to fetch customer's orders");
     }
-
     const result = await Order.paginate(
       filter,
       options

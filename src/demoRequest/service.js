@@ -7,22 +7,38 @@ const demoService = {
     },
 
     updateDemoStatus: async (id, status) => {
-        if (!["accepted", "rejected"].includes(status)) {
-            throw Object.assign(new Error("Invalid status value"), { statusCode: 404 });
+        const allowedStatus = ["Requested", "Full Filled", "Inquiry", "Not Interested"];
+
+        if (!allowedStatus.includes(status)) {
+            throw Object.assign(new Error("Invalid status value"), { statusCode: 400 });
         }
+
         const result = await DemoRequest.findByIdAndUpdate(
             id,
             { status },
-            { new: true }
+            { new: true, runValidators: true }
         );
 
         if (!result) {
-            throw Object.assign(new Error("Demo request not find"), { statusCode: 404 });
+            throw Object.assign(new Error("Demo request not found"), { statusCode: 404 });
         }
+
         return result;
     },
 
     getAllDemoRequests: async (filter, options) => {
+        if (filter.status) {
+            filter.status = filter.status;
+        }
+        if (filter.search) {
+
+            filter.$or = [
+                { name: { $regex: filter.search, $options: "i" } },
+                { status: { $regex: filter.search, $options: "i" } }
+            ];
+            delete filter.search;
+        }
+        
         const result = await DemoRequest.paginate(filter, options);
         return result;
     },

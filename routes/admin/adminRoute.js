@@ -6,11 +6,12 @@ import { allowRoles } from "../../middleware/permission.js";
 import {
   createAdminValidator,
   updateAdminValidator,
-  deleteAdminValidator
+  deleteAdminValidator, updateSuperAdmin
 } from "../../validations/createValidation.js";
 import { uploadAdminImages } from "../../middleware/upload.js";
 import { parseJSONFields } from "../../utils/helper.js";
 import dashboardController from "../../src/admin/Dashboard/controller.js";
+import visitController from "../../src/admin/visit/controller.js";
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ router.post(
 router.patch(
   "/update/:id",
   tokenVerification,
-  allowRoles("superadmin","admin"),
+  allowRoles("superadmin", "admin"),
   uploadAdminImages.fields([
     { name: "logo", maxCount: 1 },
     { name: "profileImage", maxCount: 1 }
@@ -39,6 +40,7 @@ router.patch(
   validate(updateAdminValidator),
   controller.updateAdmin
 );
+
 
 router.delete(
   "/delete/:id",
@@ -60,6 +62,17 @@ router.get(
   tokenVerification,
   allowRoles("superadmin"),
   controller.getByAdmin
+);
+//only for super admin 
+router.patch(
+  "/superadmin/:id",
+  tokenVerification,
+  allowRoles("superadmin"),
+  uploadAdminImages.fields([
+    { name: "profileImage", maxCount: 1 }
+  ]),
+  validate(updateSuperAdmin),
+  controller.updateSuperAdmin
 );
 
 router.patch(
@@ -119,6 +132,11 @@ router.get(
   allowRoles("superadmin"),
   dashboardController.getPlatformSales
 );
+router.post("/track", visitController.trackVisit);
+router.get("/total",
+  tokenVerification,
+  allowRoles("superadmin"),
+  visitController.getTotalVisits);
 
 export default router;
 

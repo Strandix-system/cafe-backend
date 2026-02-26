@@ -144,14 +144,62 @@ const adminService = {
     }
     return admin;
   },
-  deleteCafeLayout: async (id) => {
-    const layout = await CafeLayout.findById(id);
-    if (!layout) {    
-      throw Object.assign(new Error("Cafe layout not found"), { statusCode: 404 });
+ updateSuperAdmin: async (id, body, files) => {
+  const superadmin = await User.findById(id);
+
+  if (!superadmin) {
+    throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
+  }
+
+  // 🔐 Only allow specific fields
+  const allowedFields = ["firstName", "lastName", "email", "phoneNumber"];
+
+  // ✅ Unique check (with self exclusion)
+  for (const field of ["email", "phoneNumber"]) {
+    if (body[field] && body[field] !== superadmin[field]) {
+      const exists = await User.findOne({
+        [field]: body[field],
+        _id: { $ne: id }
+      });
+
+      if (exists) {
+        throw Object.assign(
+          new Error(`${field} already exists`),
+          { statusCode: 409 }
+        );
+      }
     }
-     const result = await layout.deleteOne();
-    return result;
-  },
+  }
+
+  // ✅ Assign only allowed fields
+  allowedFields.forEach(field => {
+    if (body[field] !== undefined) {
+      superadmin[field] = body[field];
+    }
+  });
+
+  // ✅ Profile Image handling
+  if (files?.profileImage?.[0]) {
+    const newFile = files.profileImage[0];
+    const oldFileUrl = superadmin.profileImage;
+
+    if (newFile?.location) {
+      if (oldFileUrl) {
+        try {
+          await deleteSingleFile(oldFileUrl);
+        } catch (err) {
+          console.error("❌ Failed to delete old profileImage:", err.message);
+        }
+      }
+
+      superadmin.profileImage = newFile.location;
+    }
+  }
+
+  await superadmin.save();
+
+  return superadmin;
+},
 };
 
 export default adminService;

@@ -19,7 +19,7 @@ const uploadMenu = multer({
     key: (req, file, cb) => {
       cb(null, `menu/${Date.now()}-${file.originalname}`);
     },
-  }),
+  }),limits: { fileSize: 10 * 1024 * 1024 },
 });
 const uploadAdminImages = multer({
   storage: multerS3({
@@ -32,7 +32,7 @@ const uploadAdminImages = multer({
 
       cb(null, `${folder}/${Date.now()}-${file.originalname}`);
     },
-  }),
+  }), limits: { fileSize: 10 * 1024 * 1024 },
 });
 const uploadLayoutImages = multer({
   storage: multerS3({
@@ -45,7 +45,7 @@ const uploadLayoutImages = multer({
 
       cb(null, `${folder}/${Date.now()}-${file.originalname}`);
     },
-  }),
+  }),limits: { fileSize: 10 * 1024 * 1024 },
 }).fields([
   { name: "homeImage", maxCount: 1 },
   { name: "aboutImage", maxCount: 1 },

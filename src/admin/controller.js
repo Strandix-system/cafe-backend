@@ -63,12 +63,12 @@ export default {
       next(error);
     }
   },
-  deleteCafeLayout: async (req, res, next) => {
+    updateSuperAdmin: async (req, res, next) => {
     try {
-      await service.deleteCafeLayout(req.params.id);
-      sendSuccessResponse(res, 200, "Cafe layout deleted successfully", null);
+      const result = await service.updateSuperAdmin(req.params.id,req.body,req.files);
+      sendSuccessResponse(res,200,"SuperAdmin updated successfully",result);
     } catch (error) {
       next(error);
     }
-},
+  },
 };

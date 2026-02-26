@@ -34,8 +34,8 @@ const demoRequestSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["requested", "accepted", "rejected"],
-      default: "requested",
+      enum: ["Requested", "Full Filled", "Inquiry","Not Interested"],
+      default: "Requested",
     },
   },
   { timestamps: true }

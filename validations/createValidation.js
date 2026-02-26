@@ -96,4 +96,15 @@ const updateProfileValidator = {
     socialLinks: socialLinksSchema.optional(),
   }).min(1)
 };
-export { createAdminValidator, updateAdminValidator, deleteAdminValidator, updateProfileValidator };
+const updateSuperAdmin = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+   body: Joi.object({
+    firstName: nameRule,
+    lastName: nameRule,
+     phoneNumber: phoneRule,
+     profileImage: Joi.any(),
+       }).min(1)
+};
+export { createAdminValidator, updateAdminValidator, deleteAdminValidator, updateProfileValidator,updateSuperAdmin };

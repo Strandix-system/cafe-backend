@@ -21,6 +21,24 @@ const signUpController = {
       next(err);
     }
   },
+   checkEmail: async (req, res,next ) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: "Email is required",
+        });
+      }
+
+      const result = await signUpService.checkEmailExists(email);
+
+      return   sendSuccessResponse(res, 201,"Email is Valid", result);
+    } catch (error) {
+     next (error)
+    }
+  },
 };
 
 export default signUpController;

@@ -78,22 +78,7 @@ const menuController = {
       next(error);
     }
   },
- getAdminUsedCategories: async (req, res, next) => {
-  try {
-    const filter = pick(req.query, ["search","adminId"]);
-    const options = pick(req.query, ["page", "limit", "sortBy"]);
-
-    const result = await menuService.getAdminUsedCategories(
-      req.user.id,
-      filter,
-      options
-    );
-
-    sendSuccessResponse(res, 200, "Categories fetched successfully", result);
-  } catch (error) {
-    next(error);
-  }
-},
+ 
 };
 
 export default menuController;

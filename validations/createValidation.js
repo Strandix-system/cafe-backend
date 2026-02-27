@@ -50,7 +50,7 @@ const createAdminValidator = {
     hours: Joi.any().required(),
     socialLinks: socialLinksSchema.optional(),
     gst: Joi.number().min(4).max(18),
-  }).required(),
+  }),
 };
 
 const updateAdminValidator = {
@@ -73,9 +73,9 @@ const updateAdminValidator = {
     profileImage: Joi.any(),
     gst: Joi.number().min(5).max(18),
     isActive: Joi.boolean(),
-    hours: Joi.any().optional(), // 🔥 Changed to optional for updates
+    hours: Joi.any().optional(), 
     socialLinks: socialLinksSchema.optional(),
-  }).min(0) // 👈 Change this to 0 to allow updating ONLY an image
+  }).min(0) 
 };
 const deleteAdminValidator = {
   params: Joi.object().keys({
@@ -92,7 +92,7 @@ const updateProfileValidator = {
     email: Joi.string().email().lowercase(),
     phoneNumber: phoneRule,
     profileImage: Joi.any(),
-    hours: Joi.string().optional(), // 🔥 Changed to optional for updates
+    hours: Joi.string().optional(), 
     socialLinks: socialLinksSchema.optional(),
   }).min(1)
 };

@@ -47,6 +47,9 @@ const authService = {
     if (!user) {
       throw new Error("Invalid credentials");
     }
+    if (!user.isActive) {
+      throw new Error("Your account is inactive. Please contact admin.");
+    }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       throw new Error("Invalid credentials");
@@ -85,7 +88,7 @@ const authService = {
     return true;
   },
 
- resetPassword : async (token, newPassword) => {
+  resetPassword : async (token, newPassword) => {
 
     if (!token) {
       throw new Error("No token provided");

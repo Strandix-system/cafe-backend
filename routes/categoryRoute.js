@@ -37,5 +37,11 @@ router.get(
     allowRoles( "superadmin"),
   categoryController.getCategoryById
 );
+router.get(
+  "/used-categories",
+   tokenVerification,  
+  allowRoles("admin"),
+  categoryController.getAdminUsedCategories
+);
 
 export default router;

@@ -1,5 +1,5 @@
-import { get } from "http";
 import Category from "../../../model/category.js";
+import Menu from "../../../model/menu.js";
 const categoryService = {
  createCategory : async (data) => {
   const exists = await Category.findOne({ name: data.name });
@@ -47,6 +47,26 @@ getCategoriesForDropdown : async () => {
   return await Category.find()
     .select("_id name")
     .sort({ name: 1 });
+},
+getAdminUsedCategories: async (adminId, filter, options) => {
+
+  // Step 1: get category ids used in menu
+  const usedCategoryIds = await Menu.distinct("category", { adminId });
+
+  // Step 2: build query using _id (NOT name)
+  const query = {
+    _id: { $in: usedCategoryIds }
+  };
+
+  // Optional search
+  if (filter.search) {
+    query.name = { $regex: filter.search, $options: "i" };
+  }
+
+  // Step 3: paginate properly (only 2 params)
+  const result = await Category.paginate(query, options);
+
+  return result;
 },
 };
 export default categoryService;

@@ -6,10 +6,10 @@ import jwt from "jsonwebtoken";
 import User from "../../model/user.js";
 import razorpay from "../../config/razorpay.js";
 
-const SIGNUP_AMOUNT = 10; 
+const SIGNUP_AMOUNT = 10;
 
 const signUpService = {
-  
+
   createRazorpayOrder: async () => {
     const options = {
       amount: SIGNUP_AMOUNT * 100,
@@ -55,7 +55,7 @@ const signUpService = {
       email,
       password: password,
       phoneNumber: phoneNumber,
-      role: "admin", 
+      role: "admin",
     });
     const token = jwt.sign(
       { id: user._id, role: user.role },
@@ -68,17 +68,37 @@ const signUpService = {
       token,
     };
   },
-   checkEmailExists: async (email) => {
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-
-    if (existingUser) {
-      const error = new Error("Email already registered.");
-      error.statusCode = 409;
+  checkEmailExists: async (email, phoneNumber) => {
+    if (!email && !phoneNumber) {
+      const error = new Error("Email or phone number is required.");
+      error.statusCode = 400;
       throw error;
     }
+    const query = {
+      $or: []
+    };
+    if (email) {
+      query.$or.push({ email: email.toLowerCase() });
+    }
+    if (phoneNumber) {
+      query.$or.push({ phoneNumber });
+    }
+    const existingUser = await User.findOne(query);
+    if (existingUser) {
 
+      if (email && existingUser.email === email.toLowerCase()) {
+        const error = new Error("Email already registered.");
+        error.statusCode = 409;
+        throw error;
+      }
+      if (phoneNumber && existingUser.phoneNumber === phoneNumber) {
+        const error = new Error("Phone number already exists.");
+        error.statusCode = 409;
+        throw error;
+      }
+    }
     return {
-      message: "Email is available.",
+      message: "Email and phone number are available.",
     };
   },
 

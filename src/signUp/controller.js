@@ -23,7 +23,7 @@ const signUpController = {
   },
    checkEmail: async (req, res,next ) => {
     try {
-      const { email } = req.body;
+      const { email, phoneNumber  } = req.body;
 
       if (!email) {
         return res.status(400).json({
@@ -32,9 +32,9 @@ const signUpController = {
         });
       }
 
-      const result = await signUpService.checkEmailExists(email);
+      const result = await signUpService.checkEmailExists(email,phoneNumber);
 
-      return   sendSuccessResponse(res, 201,"Email is Valid", result);
+      return   sendSuccessResponse(res, 200,"Email is Valid", result);
     } catch (error) {
      next (error)
     }

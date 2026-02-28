@@ -48,25 +48,35 @@ getCategoriesForDropdown : async () => {
     .select("_id name")
     .sort({ name: 1 });
 },
-getAdminUsedCategories: async (adminId, filter, options) => {
+getUsedCategoriesForDropdown: async (user, requestedAdminId) => {
+  const adminId = await categoryService.resolveAdminIdForUsedCategories(
+    user,
+    requestedAdminId
+  );
 
-  // Step 1: get category ids used in menu
   const usedCategoryIds = await Menu.distinct("category", { adminId });
 
-  // Step 2: build query using _id (NOT name)
-  const query = {
-    _id: { $in: usedCategoryIds }
-  };
+const categories = await Category.find({
+  name: { $in: usedCategoryIds }
+})
+.select("_id name")
+.sort({ name: 1 });
 
-  // Optional search
-  if (filter.search) {
-    query.name = { $regex: filter.search, $options: "i" };
+  return { adminId, categories };
+},
+
+resolveAdminIdForUsedCategories: async (user, requestedAdminId) => {
+  if (user.role === "superadmin") {
+    if (!requestedAdminId) {
+      throw Object.assign(
+        new Error("adminId is required for superadmin"),
+        { statusCode: 400 }
+      );
+    }
+    return requestedAdminId;
   }
 
-  // Step 3: paginate properly (only 2 params)
-  const result = await Category.paginate(query, options);
-
-  return result;
+  return user._id;
 },
 };
 export default categoryService;

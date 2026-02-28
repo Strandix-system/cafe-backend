@@ -38,10 +38,10 @@ router.get(
   categoryController.getCategoryById
 );
 router.get(
-  "/used-categories",
-   tokenVerification,  
-  allowRoles("admin"),
-  categoryController.getAdminUsedCategories
+  "/used-categories-dropdown",
+  tokenVerification,
+  allowRoles("admin", "superadmin"),
+  categoryController.getUsedCategoriesForDropdown
 );
 
 export default router;

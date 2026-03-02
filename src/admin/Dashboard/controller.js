@@ -5,18 +5,19 @@ const dashboardController = {
 
   getStats: async (req, res, next) => {
     try {
-      const user = req.user;
       let data;
 
-      if (user.role === "admin") {
-        data = await dashboardService.adminStats(user._id);
-      }
-      else if (user.role === "superadmin") {
+      const adminId = await dashboardService.resolveTargetAdminId(
+        req.user,
+        req.query.adminId
+      );
+
+      if (adminId) {
+        data = await dashboardService.adminStats(adminId);
+      } else {
         data = await dashboardService.superAdminStats();
       }
-      else {
-        return res.status(403).json({ message: "Access Denied" });
-      }
+
       sendSuccessResponse(res, 200, "Dashboard stats fetched successfully", data);
     } catch (err) {
       next(err);
@@ -25,9 +26,14 @@ const dashboardController = {
   getSalesChart: async (req, res, next) => {
     try {
       const { startDate, endDate } = req.query;
+      const adminId = await dashboardService.resolveTargetAdminId(
+        req.user,
+        req.query.adminId,
+        { requireForSuperadmin: true }
+      );
 
       const data = await dashboardService.salesChart(
-        req.user._id,
+        adminId,
         startDate,
         endDate
       );
@@ -38,7 +44,12 @@ const dashboardController = {
   },
   getItemPerformance: async (req, res, next) => {
     try {
-      const data = await dashboardService.itemPerformance(req.user._id);
+      const adminId = await dashboardService.resolveTargetAdminId(
+        req.user,
+        req.query.adminId,
+        { requireForSuperadmin: true }
+      );
+      const data = await dashboardService.itemPerformance(adminId);
       sendSuccessResponse(res, 200, "Item performance fetched", data);
     } catch (err) {
       next(err);
@@ -47,9 +58,14 @@ const dashboardController = {
   getPeakTime: async (req, res, next) => {
     try {
       const { startDate, endDate } = req.query;
+      const adminId = await dashboardService.resolveTargetAdminId(
+        req.user,
+        req.query.adminId,
+        { requireForSuperadmin: true }
+      );
 
       const data = await dashboardService.peakTime(
-        req.user._id,
+        adminId,
         startDate,
         endDate
       );
@@ -60,7 +76,12 @@ const dashboardController = {
   },
   getTopCustomers: async (req, res, next) => {
     try {
-      const data = await dashboardService.topCustomers(req.user._id);
+      const adminId = await dashboardService.resolveTargetAdminId(
+        req.user,
+        req.query.adminId,
+        { requireForSuperadmin: true }
+      );
+      const data = await dashboardService.topCustomers(adminId);
 
       sendSuccessResponse(res, 200, "Top customers fetched", data);
     } catch (err) {
@@ -69,7 +90,12 @@ const dashboardController = {
   },
   getTablePerformance: async (req, res, next) => {
     try {
-      const data = await dashboardService.tablePerformance(req.user._id);
+      const adminId = await dashboardService.resolveTargetAdminId(
+        req.user,
+        req.query.adminId,
+        { requireForSuperadmin: true }
+      );
+      const data = await dashboardService.tablePerformance(adminId);
       sendSuccessResponse(res, 200, "Table performance fetched", data);
     } catch (err) {
       next(err);
@@ -98,8 +124,44 @@ const dashboardController = {
       next(err);
     }
   },
+  getAdminAnalytics: async (req, res, next) => {
+    try {
+      const { startDate, endDate } = req.query;
+      const adminId = await dashboardService.resolveTargetAdminId(
+        req.user,
+        req.query.adminId,
+        { requireForSuperadmin: true }
+      );
 
+      const [
+        stats,
+        sales,
+        items,
+        peakTime,
+        tables,
+        topCustomers
+      ] = await Promise.all([
+        dashboardService.adminStats(adminId),
+        dashboardService.salesChart(adminId, startDate, endDate),
+        dashboardService.itemPerformance(adminId),
+        dashboardService.peakTime(adminId, startDate, endDate),
+        dashboardService.tablePerformance(adminId),
+        dashboardService.topCustomers(adminId)
+      ]);
 
+      sendSuccessResponse(res, 200, "Admin analytics fetched successfully", {
+        adminId,
+        stats,
+        sales,
+        items,
+        peakTime,
+        tables,
+        topCustomers
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
 };
 
 export default dashboardController;

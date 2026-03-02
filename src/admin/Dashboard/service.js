@@ -5,6 +5,33 @@ import Customer from "../../../model/customer.js";
 import demoRequest from "../../../model/demoRequest.js";
 
 const dashboardService = {
+  resolveTargetAdminId: async (user, requestedAdminId, { requireForSuperadmin = false } = {}) => {
+    if (user.role === "admin") {
+      return user._id;
+    }
+
+    if (user.role !== "superadmin") {
+      throw Object.assign(new Error("Access Denied"), { statusCode: 403 });
+    }
+
+    if (!requestedAdminId) {
+      if (requireForSuperadmin) {
+        throw Object.assign(new Error("adminId query parameter is required"), { statusCode: 400 });
+      }
+      return null;
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(requestedAdminId)) {
+      throw Object.assign(new Error("Invalid adminId"), { statusCode: 400 });
+    }
+
+    const admin = await User.findOne({ _id: requestedAdminId, role: "admin" }).select("_id");
+    if (!admin) {
+      throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
+    }
+
+    return admin._id;
+  },
   superAdminStats: async () => {
     const [totalCafe, totalActive, totalInActive, totalDemoRequest, incomeAgg] =
       await Promise.all([
@@ -355,25 +382,24 @@ const dashboardService = {
 
     ]);
   },
-  platformSales: async (startDate, endDate) => {
+ platformSales: async (startDate, endDate) => {
     let start, end, groupId, labelFormatter;
 
-    // ✅ DEFAULT: current year (month-wise)
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     if (!startDate || !endDate) {
       const now = new Date();
 
       start = new Date(Date.UTC(now.getUTCFullYear(), 0, 1, 0, 0, 0, 0));
       end = new Date(Date.UTC(now.getUTCFullYear(), 11, 31, 23, 59, 59, 999));
 
-      // Month-wise
       groupId = {
         year: { $year: "$createdAt" },
         month: { $month: "$createdAt" },
       };
-      
-      labelFormatter = (id) => `${id.month}-${id.year}`;
+
+      labelFormatter = (id) => `${months[id.month - 1]}-${String(id.year).slice(-2)}`;
     }
-    // ✅ Custom date range
+
     else {
       start = new Date(startDate);
       start.setUTCHours(0, 0, 0, 0);
@@ -383,7 +409,6 @@ const dashboardService = {
 
       const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
 
-      // Day-wise
       if (diffDays <= 45) {
         groupId = {
           date: {
@@ -393,18 +418,20 @@ const dashboardService = {
             },
           },
         };
-        labelFormatter = (id) => id.date;
+
+        labelFormatter = (id) => {
+          const [year, month, day] = id.date.split("-");
+          return `${day}-${months[Number(month) - 1]}-${year}`;
+        };
       }
-      // Month-wise
+    
       else {
         groupId = {
           year: { $year: "$createdAt" },
           month: { $month: "$createdAt" },
         };
-        labelFormatter = (id) => {
-          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-          return `${months[id.month - 1]}-${id.year}`;
-        };
+
+        labelFormatter = (id) => `${months[id.month - 1]}-${String(id.year).slice(-2)}`;
       }
     }
 

@@ -68,6 +68,20 @@ const signUpService = {
       token,
     };
   },
+   checkEmailExists: async (email) => {
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+
+    if (existingUser) {
+      const error = new Error("Email already registered.");
+      error.statusCode = 409;
+      throw error;
+    }
+
+    return {
+      message: "Email is available.",
+    };
+  },
+
 };
 
 export default signUpService;

@@ -53,6 +53,18 @@ const orderSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    gstAmount: {
+      type: Number,
+      required: true,
+    },
+     subTotal: {
+      type: Number,
+      required: true,
+    },
+    gstPercent:{
+      type: Number,
+      required: true,
+    },
   },
 
   { timestamps: true }

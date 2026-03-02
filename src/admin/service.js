@@ -1,5 +1,5 @@
 import User from "../../model/user.js";
-
+import { deleteSingleFile } from "../../utils/s3utils.js";
 const adminService = {
   createAdmin: async (body, files) => {
     const exists = await User.findOne({ email: body.email });

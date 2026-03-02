@@ -112,13 +112,9 @@ const menuService = {
 getAdminUsedCategories: async (adminId, filter, options) => {
   // Step 1: Get categories used by this admin in Menu
   const usedCategories = await Menu.distinct("category", { adminId });
-
-  // Step 2: Build query for Category collection
   const query = {
     name: { $in: usedCategories }
   };
-
-  // Step 3: Apply search if provided
   if (filter.search) {
     query.name = { 
       $in: usedCategories,
@@ -126,10 +122,7 @@ getAdminUsedCategories: async (adminId, filter, options) => {
       $options: "i"
     };
   }
-
-  // Step 4: Paginate
-  const result = await Category.paginate(query, options);
-
+  const result = await Category.paginate(query,filter, options);
   return result;
 },
 };

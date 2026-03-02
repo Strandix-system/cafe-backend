@@ -56,4 +56,20 @@ getCategoryById: async (req, res, next) => {
     next(err);
   }
 },
+getAdminUsedCategories: async (req, res, next) => {
+  try {
+    const filter = pick(req.query, ["search"]);
+    const options = pick(req.query, ["page", "limit", "sortBy","populate"]);
+
+    const result = await categoryService.getAdminUsedCategories(
+      req.user.id,
+      filter,
+      options
+    );
+
+    sendSuccessResponse(res, 200, "Categories fetched successfully", result);
+  } catch (error) {
+    next(error);
+  }
+},
 };

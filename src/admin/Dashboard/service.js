@@ -5,6 +5,33 @@ import Customer from "../../../model/customer.js";
 import demoRequest from "../../../model/demoRequest.js";
 
 const dashboardService = {
+  resolveTargetAdminId: async (user, requestedAdminId, { requireForSuperadmin = false } = {}) => {
+    if (user.role === "admin") {
+      return user._id;
+    }
+
+    if (user.role !== "superadmin") {
+      throw Object.assign(new Error("Access Denied"), { statusCode: 403 });
+    }
+
+    if (!requestedAdminId) {
+      if (requireForSuperadmin) {
+        throw Object.assign(new Error("adminId query parameter is required"), { statusCode: 400 });
+      }
+      return null;
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(requestedAdminId)) {
+      throw Object.assign(new Error("Invalid adminId"), { statusCode: 400 });
+    }
+
+    const admin = await User.findOne({ _id: requestedAdminId, role: "admin" }).select("_id");
+    if (!admin) {
+      throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
+    }
+
+    return admin._id;
+  },
   superAdminStats: async () => {
     const [totalCafe, totalActive, totalInActive, totalDemoRequest, incomeAgg] =
       await Promise.all([

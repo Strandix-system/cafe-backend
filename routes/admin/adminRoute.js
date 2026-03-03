@@ -10,7 +10,7 @@ import {
 } from "../../validations/createValidation.js";
 import { uploadAdminImages } from "../../middleware/upload.js";
 import { parseJSONFields } from "../../utils/helper.js";
-import dashboardController from "../../src/admin/Dashboard/controller.js";
+import dashboardController from "../../src/admin/dashboard/controller.js";
 import visitController from "../../src/admin/visit/controller.js";
 
 const router = express.Router();
@@ -91,32 +91,32 @@ router.get(
 router.get(
   "/dashboard/sales",
   tokenVerification,
-  allowRoles("admin"), dashboardController.getSalesChart
+  allowRoles("admin", "superadmin"), dashboardController.getSalesChart
 );
 
 router.get(
   "/dashboard/items-performance",
-  tokenVerification, allowRoles("admin"),
+  tokenVerification, allowRoles("admin", "superadmin"),
   dashboardController.getItemPerformance
 );
 
 router.get(
   "/dashboard/peak-time",
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles("admin", "superadmin"),
   dashboardController.getPeakTime
 );
 
 router.get(
   "/dashboard/tables",
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles("admin", "superadmin"),
   dashboardController.getTablePerformance
 );
 router.get(
   "/dashboard/top-customers",
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles("admin", "superadmin"),
   dashboardController.getTopCustomers
 );
 router.get(
@@ -132,6 +132,12 @@ router.get(
   allowRoles("superadmin"),
   dashboardController.getPlatformSales
 );
+router.get(
+  "/dashboard/admin-analytics",
+  tokenVerification,
+  allowRoles("superadmin"),
+  dashboardController.getAdminAnalytics
+);
 router.post("/track", visitController.trackVisit);
 router.get("/total",
   tokenVerification,
@@ -139,7 +145,3 @@ router.get("/total",
   visitController.getTotalVisits);
 
 export default router;
-
-
-
-

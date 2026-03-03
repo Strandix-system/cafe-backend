@@ -34,10 +34,24 @@ app.use((req, res, next) => {
 
 
 app.use(helmet());
+app.use("/api/signup/webhook", express.raw({ type: "application/json" }));
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-app.use(cors(),);
+app.use(
+  cors({
+    origin: [
+      "https://aeternis.in",
+      "https://admin.aeternis.in",
+      "https://portfolio.aeternis.in",
+      "http://localhost:5173",
+      "http://localhost:5174",
+    ],
+    // origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "ngrok-skip-browser-warning"],
+  }),
+);
 app.use(compression());
 
 app.get("/", (req, res) => {

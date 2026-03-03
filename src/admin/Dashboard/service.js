@@ -40,7 +40,15 @@ const dashboardService = {
         User.countDocuments({ role: "admin", isActive: false }),
         demoRequest.countDocuments(),
         Order.aggregate([
-          { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+          {
+            $match: { orderStatus: "completed" }
+          },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: "$totalAmount" }
+            }
+          }
         ])
       ]);
 
@@ -82,9 +90,11 @@ const dashboardService = {
 
       // TOTAL
       Customer.countDocuments({ adminId: id }),
-      Order.countDocuments({ adminId: id }),
+      Order.countDocuments({
+        adminId: id, orderStatus: "completed"
+      }),
       Order.aggregate([
-        { $match: { adminId: id } },
+        { $match: { adminId: id, orderStatus: "completed" } },
         { $group: { _id: null, total: { $sum: "$totalAmount" } } }
       ]),
 
@@ -102,6 +112,7 @@ const dashboardService = {
       ]),
       Order.countDocuments({
         adminId: id,
+        orderStatus: "completed",
         createdAt: { $gte: start, $lte: end }
       }),
       Order.aggregate([
@@ -382,7 +393,7 @@ const dashboardService = {
 
     ]);
   },
- platformSales: async (startDate, endDate) => {
+  platformSales: async (startDate, endDate) => {
     let start, end, groupId, labelFormatter;
 
     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -424,7 +435,7 @@ const dashboardService = {
           return `${day}-${months[Number(month) - 1]}-${year}`;
         };
       }
-    
+
       else {
         groupId = {
           year: { $year: "$createdAt" },

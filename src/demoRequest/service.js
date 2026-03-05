@@ -7,7 +7,7 @@ const demoService = {
     },
 
     updateDemoStatus: async (id, status) => {
-        const allowedStatus = ["Requested", "Full Filled", "Inquiry", "Not Interested"];
+        const allowedStatus = ["requested", "full_filled", "inquiry","not_interested"];
 
         if (!allowedStatus.includes(status)) {
             throw Object.assign(new Error("Invalid status value"), { statusCode: 400 });

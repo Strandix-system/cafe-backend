@@ -1,0 +1,47 @@
+import issueService from "./service.js";
+import { sendSuccessResponse } from "../../utils/response.js";
+import { pick } from "../../utils/pick.js";
+
+const issueController = {
+    raiseTicket: async (req, res, next) => {
+        try {
+            const data = await issueService.raiseTicket(req.body, req.user._id, req.files);
+            sendSuccessResponse(res, 201, "Ticket raised successfully", data);
+        } catch (err) {
+            next(err);
+        }
+    },
+    getAllTickets: async (req, res, next) => {
+        try {
+            const filter = pick(req.query, ["search", "status", "ticketId", "adminId"]);
+            const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
+            const data = await issueService.getAllTickets(filter, options);
+            sendSuccessResponse(res, 200, "All tickets fetched", data);
+        } catch (err) {
+            next(err);
+        }
+    },
+    updateStatus: async (req, res, next) => {
+        try {
+            const { ticketId } = req.params;
+            const { status } = req.body;
+
+            const data = await issueService.updateStatus(ticketId, status);
+            sendSuccessResponse(res, 200, "Status updated", data);
+        } catch (err) {
+            next(err);
+        }
+    },
+    getAdminTickets: async (req, res, next) => {
+        try {
+            const filter = pick(req.query, ["search", "status", "ticketId"]);
+            const options = pick(req.query, ["page", "limit", "sortBy"]);
+            const data = await issueService.getAdminTickets(req.user._id, filter, options);
+            sendSuccessResponse(res, 200, "My tickets fetched", data);
+        } catch (err) {
+            next(err);
+        }
+    },
+};
+
+export default issueController;

@@ -11,6 +11,7 @@ import orderRoute from "./orderRoute.js";
 import qrRoute from "./qrRoute.js";
 // import dashboardRoute from "./dashboardRoute.js";
 import demoRoute from "./demoRoute.js";
+import issueReportedRoute from "./issueReportedRoute.js";
 
 
 import signUp from "./signUp.js";
@@ -63,6 +64,10 @@ const defaultRoutes = [
   {
     path: "/demo",
     route: demoRoute,
+  },
+  {
+    path: "/issue-reported",
+    route: issueReportedRoute,
   },
 ];
 

@@ -5,6 +5,33 @@ import Customer from "../../../model/customer.js";
 import demoRequest from "../../../model/demoRequest.js";
 
 const dashboardService = {
+  resolveTargetAdminId: async (user, requestedAdminId, { requireForSuperadmin = false } = {}) => {
+    if (user.role === "admin") {
+      return user._id;
+    }
+
+    if (user.role !== "superadmin") {
+      throw Object.assign(new Error("Access Denied"), { statusCode: 403 });
+    }
+
+    if (!requestedAdminId) {
+      if (requireForSuperadmin) {
+        throw Object.assign(new Error("adminId query parameter is required"), { statusCode: 400 });
+      }
+      return null;
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(requestedAdminId)) {
+      throw Object.assign(new Error("Invalid adminId"), { statusCode: 400 });
+    }
+
+    const admin = await User.findOne({ _id: requestedAdminId, role: "admin" }).select("_id");
+    if (!admin) {
+      throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
+    }
+
+    return admin._id;
+  },
   superAdminStats: async () => {
     const [totalCafe, totalActive, totalInActive, totalDemoRequest, incomeAgg] =
       await Promise.all([
@@ -13,7 +40,15 @@ const dashboardService = {
         User.countDocuments({ role: "admin", isActive: false }),
         demoRequest.countDocuments(),
         Order.aggregate([
-          { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+          {
+            $match: { orderStatus: "completed" }
+          },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: "$totalAmount" }
+            }
+          }
         ])
       ]);
 
@@ -55,9 +90,11 @@ const dashboardService = {
 
       // TOTAL
       Customer.countDocuments({ adminId: id }),
-      Order.countDocuments({ adminId: id }),
+      Order.countDocuments({
+        adminId: id, orderStatus: "completed"
+      }),
       Order.aggregate([
-        { $match: { adminId: id } },
+        { $match: { adminId: id, orderStatus: "completed" } },
         { $group: { _id: null, total: { $sum: "$totalAmount" } } }
       ]),
 
@@ -75,6 +112,7 @@ const dashboardService = {
       ]),
       Order.countDocuments({
         adminId: id,
+        orderStatus: "completed",
         createdAt: { $gte: start, $lte: end }
       }),
       Order.aggregate([
@@ -355,7 +393,7 @@ const dashboardService = {
 
     ]);
   },
- platformSales: async (startDate, endDate) => {
+  platformSales: async (startDate, endDate) => {
     let start, end, groupId, labelFormatter;
 
     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -397,7 +435,7 @@ const dashboardService = {
           return `${day}-${months[Number(month) - 1]}-${year}`;
         };
       }
-    
+
       else {
         groupId = {
           year: { $year: "$createdAt" },

@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      select: false 
+      select: false
     },
     address: {
       type: String,
@@ -82,7 +82,7 @@ const userSchema = new mongoose.Schema(
       required: true
     },
     hours: {
-      weekdays: { type: String,  default: null },
+      weekdays: { type: String, default: null },
       weekends: { type: String, default: null },
     },
     socialLinks: {
@@ -90,7 +90,31 @@ const userSchema = new mongoose.Schema(
       facebook: { type: String, default: null },
       twitter: { type: String, default: null },
     },
-    
+    subscriptionId: {
+      type: String,
+    },
+
+    subscriptionStatus: {
+      type: String,
+      enum: ["created", "active", "cancelled", "completed", "expired"],
+      default: "created",
+    },
+
+    razorpayCustomerId: {
+      type: String,
+    },
+    subscriptionStartDate: {
+      type: Date,
+    },
+
+    subscriptionEndDate: {
+      type: Date,
+    },
+
+    subscriptionPlanId: {
+      type: String,
+    },
+
   },
   {
     timestamps: true,

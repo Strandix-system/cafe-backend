@@ -22,7 +22,6 @@ export default {
   me: async (req, res, next) => {
     try {
       const user = req.user.toObject();
-
       // Check profile completion
       const isProfileComplete =
         new Date(user.createdAt).getTime() !==
@@ -35,6 +34,7 @@ export default {
         {
           id: user._id,
           ...user,
+          subscriptionAlert: req.subscriptionAlert || null,
           isProfileComplete, // true if profile updated, false if not
         }
       );

@@ -1,4 +1,5 @@
-import User from "../model/user.js";
+import Transaction from "../model/transaction.js";
+import { ApiError } from "../utils/apiError.js";
 
 const checkSubscription = async (req, res, next) => {
   try {
@@ -6,30 +7,41 @@ const checkSubscription = async (req, res, next) => {
       return next();
     }
 
-    const user = await User.findById(req.user._id);
+    const latestSubscriptionTransaction = await Transaction.findOne({
+      user: req.user._id,
+      subscriptionEndDate: { $ne: null },
+    }).sort({ subscriptionEndDate: -1 });
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
     if (
-      user.subscriptionEndDate &&
-      new Date() > user.subscriptionEndDate
+      latestSubscriptionTransaction?.subscriptionEndDate &&
+      new Date() > latestSubscriptionTransaction.subscriptionEndDate
     ) {
-      user.subscriptionStatus = "expired";
-      await user.save();
+      req.subscriptionAlert = {
+        type: "expired",
+        message:
+          "Your subscription has expired. Please renew to continue using the service.",
+        endDate: latestSubscriptionTransaction.subscriptionEndDate,
+      };
 
-      return res.status(403).json({
-        success: false,
-        message: "Your subscription has expired. Please renew.",
+      await Transaction.findByIdAndUpdate(latestSubscriptionTransaction._id, {
+        subscriptionStatus: "expired",
       });
+
+      if (req.path === "/me") {
+        return next();
+      }
+
+      return next(
+        new ApiError(
+          403,
+          "Your subscription has expired. Please renew to continue using the service."
+        )
+      );
     }
 
-    next();
+    return next();
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 

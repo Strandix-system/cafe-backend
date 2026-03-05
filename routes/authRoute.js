@@ -4,7 +4,7 @@ import { tokenVerification } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { registerValidator, loginValidator, logoutValidator, } from "../validations/authValidation.js";
 import { allowRoles } from "../middleware/permission.js";
-
+import checkSubscription from "../middleware/checkSubscription.js";
 const router = express.Router();
 
 router.post(
@@ -26,7 +26,19 @@ router.post(
 
 router.post("/forgot-password", controller.forgotPassword);
 router.post("/reset-password/:token", controller.resetPassword);
-router.get("/me", tokenVerification, allowRoles("admin", "superadmin"), controller.me);
-router.post("/change-password", tokenVerification, controller.changePassword);
+router.get(
+  "/me",
+  tokenVerification,
+  allowRoles("admin", "superadmin"),
+  checkSubscription,
+  controller.me
+);
+router.post(
+  "/change-password",
+  tokenVerification,
+  allowRoles("admin", "superadmin"),
+  checkSubscription,
+  controller.changePassword
+);
 
 export default router;

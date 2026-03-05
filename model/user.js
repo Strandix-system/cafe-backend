@@ -90,31 +90,6 @@ const userSchema = new mongoose.Schema(
       facebook: { type: String, default: null },
       twitter: { type: String, default: null },
     },
-    subscriptionId: {
-      type: String,
-    },
-
-    subscriptionStatus: {
-      type: String,
-      enum: ["created", "active", "cancelled", "completed", "expired"],
-      default: "created",
-    },
-
-    razorpayCustomerId: {
-      type: String,
-    },
-    subscriptionStartDate: {
-      type: Date,
-    },
-
-    subscriptionEndDate: {
-      type: Date,
-    },
-
-    subscriptionPlanId: {
-      type: String,
-    },
-
   },
   {
     timestamps: true,

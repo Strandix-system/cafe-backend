@@ -9,12 +9,6 @@ const transactionSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    subscription: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Subscription",
-      default: null,
-      index: true,
-    },
     razorpayPaymentId: {
       type: String,
       unique: true,
@@ -23,11 +17,7 @@ const transactionSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
-    razorpayOrderId: {
-      type: String,
-      trim: true,
-      default: null,
-    },
+   
     razorpaySubscriptionId: {
       type: String,
       trim: true,
@@ -61,16 +51,6 @@ const transactionSchema = new mongoose.Schema(
       default: null,
       trim: true,
     },
-    email: {
-      type: String,
-      default: null,
-      trim: true,
-    },
-    contact: {
-      type: String,
-      default: null,
-      trim: true,
-    },
     description: {
       type: String,
       default: null,
@@ -96,6 +76,33 @@ const transactionSchema = new mongoose.Schema(
       default: null,
     },
     capturedAt: {
+      type: Date,
+      default: null,
+    },
+    razorpayCustomerId: {
+      type: String,
+      trim: true,
+      default: null,
+      index: true,
+    },
+    subscriptionPlanId: {
+      type: String,
+      trim: true,
+      default: null,
+      index: true,
+    },
+    subscriptionStatus: {
+      type: String,
+      enum: ["created", "active", "cancelled", "completed", "expired"],
+      trim: true,
+      default: "created",
+      index: true,
+    },
+    subscriptionStartDate: {
+      type: Date,
+      default: null,
+    },
+    subscriptionEndDate: {
       type: Date,
       default: null,
     },

@@ -1,7 +1,7 @@
 import signUpService from "./service.js";
 import { sendSuccessResponse } from "../../utils/response.js";
 import { pick } from "../../utils/pick.js";
-
+import { ApiError } from "../../utils/apiError.js";
 const signUpController = {
 
   // :one: Create Subscription
@@ -30,14 +30,9 @@ const signUpController = {
       const { email, phoneNumber } = req.body;
 
       if (!email) {
-        return res.status(400).json({
-          success: false,
-          message: "Email is required",
-        });
+        throw new ApiError(400, "email is required");
       }
-
       const result = await signUpService.checkEmailExists(email, phoneNumber);
-
       return sendSuccessResponse(res, 200, "Email is Valid", result);
     } catch (error) {
       next(error)
@@ -45,34 +40,18 @@ const signUpController = {
   },
 getTransactions: async (req, res, next) => {
   try {
-    const filter = pick(req.query, [
-      "status",
-      "adminId",
-      "search",
-      "fromDate",
-      "toDate",
-    ]);
+    const filter = pick(req.query, ["status","adminId","search","fromDate","toDate",]);
 
-    const options = pick(req.query, [
-      "page",
-      "limit",
-      "sortBy",
-      "populate",
-    ]);
+    const options = pick(req.query, ["page","limit","sortBy","populate",]);
 
-    // ✅ PASS FULL USER OBJECT (IMPORTANT)
+    // PASS FULL USER OBJECT (IMPORTANT)
     const transactions = await signUpService.getTransactions(
       filter,
       options,
       req.user
     );
 
-    return sendSuccessResponse(
-      res,
-      200,
-      "Transactions fetched successfully",
-      transactions
-    );
+    return sendSuccessResponse(res,200,"Transactions fetched successfully",transactions);
   } catch (error) {
     next(error);
   }
@@ -89,12 +68,7 @@ getTransactions: async (req, res, next) => {
 renewSubscription: async (req, res, next) => {
   try {
     const subscription = await signUpService.renewSubscription(req.user._id);
-    return sendSuccessResponse(
-      res,
-      200,
-      "Renew subscription created successfully",
-      subscription
-    );
+    return sendSuccessResponse(res,200,"Renew subscription created successfully",subscription);
   } catch (error) {
     next(error);
   }
@@ -103,12 +77,7 @@ verifyRenewSubscription: async (req, res, next) => {
   try {
     const result = await signUpService.verifyRenewSubscription(req.body, req.user);
 
-    return sendSuccessResponse(
-      res,
-      200,
-      "Subscription renewed successfully",
-      result
-    );
+    return sendSuccessResponse( res,200,"Subscription renewed successfully",result);
   } catch (error) {
     next(error);
   }

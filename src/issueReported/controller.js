@@ -11,12 +11,12 @@ const issueController = {
             next(err);
         }
     },
-    getAllTickets: async (req, res, next) => {
+    getTickets: async (req, res, next) => {
         try {
             const filter = pick(req.query, ["search", "status", "ticketId", "adminId"]);
             const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
-            const data = await issueService.getAllTickets(filter, options);
-            sendSuccessResponse(res, 200, "All tickets fetched", data);
+            const data = await issueService.getTickets(req.user, filter, options);
+            sendSuccessResponse(res, 200, "Tickets fetched", data);
         } catch (err) {
             next(err);
         }
@@ -28,16 +28,6 @@ const issueController = {
 
             const data = await issueService.updateStatus(ticketId, status);
             sendSuccessResponse(res, 200, "Status updated", data);
-        } catch (err) {
-            next(err);
-        }
-    },
-    getAdminTickets: async (req, res, next) => {
-        try {
-            const filter = pick(req.query, ["search", "status", "ticketId"]);
-            const options = pick(req.query, ["page", "limit", "sortBy"]);
-            const data = await issueService.getAdminTickets(req.user._id, filter, options);
-            sendSuccessResponse(res, 200, "My tickets fetched", data);
         } catch (err) {
             next(err);
         }

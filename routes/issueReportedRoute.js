@@ -14,16 +14,10 @@ router.post(
     issueController.raiseTicket
 );
 router.get(
-    "/get-my",
+    "/get-tickets",
     tokenVerification,
-    allowRoles("admin"),
-    issueController.getAdminTickets
-);
-router.get(
-    "/all",
-    tokenVerification,
-    allowRoles("superadmin"),
-    issueController.getAllTickets
+    allowRoles("admin", "superadmin"),
+    issueController.getTickets
 );
 router.patch(
     "/status/:ticketId",

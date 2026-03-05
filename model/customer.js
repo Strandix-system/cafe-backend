@@ -16,6 +16,13 @@ const customerSchema = new mongoose.Schema(
             ref: "User",
             required: true,
         }],
+        customerStatus: {
+            type: String,
+            enum: ["new", "frequent", "vip"],
+            default: "new",
+            lowercase: true,
+            trim: true,
+        },
     },
     { timestamps: true }
 );

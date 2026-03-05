@@ -15,7 +15,7 @@ const customerController = {
   },
  getCustomers: async (req, res, next) => {
   try {
-    const filter = pick(req.query, ["search", "adminId"]);
+    const filter = pick(req.query, ["search", "adminId", "status"]);
     const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
 
     const customers = await customerService.getCustomers(

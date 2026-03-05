@@ -24,7 +24,6 @@ const customerService = {
 
     return newCustomer.toObject();
   },
-
   getCustomers: async (filter, options, user) => {
     let adminId = user.role === "admin" ? user._id : filter.adminId;
 

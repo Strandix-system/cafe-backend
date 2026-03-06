@@ -3,7 +3,7 @@ import env from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
-
+import webhookRoutes from "./routes/webhookRoute.js";
 import errorHandler from "./middleware/errorHandler.js";
 import connectDB from "./database/dbConnect.js";
 import routes from "./routes/index.js";
@@ -34,7 +34,7 @@ app.use((req, res, next) => {
 
 
 app.use(helmet());
-app.use("/api/signup/webhook", express.raw({ type: "application/json" }));
+app.use("/api", webhookRoutes);
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true }));
 

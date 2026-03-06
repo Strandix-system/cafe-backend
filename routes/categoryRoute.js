@@ -22,26 +22,26 @@ router.get("/categories", categoryController.getCategoriesForDropdown);
 router.patch(
   "/update/:categoryId",
   tokenVerification,
-    allowRoles("superadmin"),
+  allowRoles("superadmin"),
   categoryController.updateCategory
 );
 router.delete(
   "/delete/:categoryId",
   tokenVerification,
-    allowRoles("superadmin"),
+  allowRoles("superadmin"),
   categoryController.deleteCategory
 );
 router.get(
   "/get-by-id/:id",
   tokenVerification,
-    allowRoles( "superadmin"),
+  allowRoles("superadmin"),
   categoryController.getCategoryById
 );
 router.get(
-  "/used-categories",
-   tokenVerification,  
+  "/admin-category",
+  tokenVerification,
   allowRoles("admin"),
-  categoryController.getAdminUsedCategories
+  categoryController.getUsedCategoriesForDropdown
 );
 
 export default router;

@@ -54,6 +54,7 @@ const authService = {
     if (!isMatch) {
       throw new Error("Invalid credentials");
     }
+
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,

@@ -4,7 +4,7 @@ import { tokenVerification } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { registerValidator, loginValidator, logoutValidator, } from "../validations/authValidation.js";
 import { allowRoles } from "../middleware/permission.js";
-import checkSubscription from "../middleware/checkSubscription.js";
+import { checkSubscription } from "../middleware/checkSubscription.js";
 const router = express.Router();
 
 router.post(
@@ -37,7 +37,6 @@ router.post(
   "/change-password",
   tokenVerification,
   allowRoles("admin", "superadmin"),
-  checkSubscription,
   controller.changePassword
 );
 

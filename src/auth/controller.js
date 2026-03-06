@@ -34,7 +34,7 @@ export default {
         {
           id: user._id,
           ...user,
-          subscriptionAlert: req.subscriptionAlert || null,
+          subscriptionAlert: req?.subscriptionAlert,
           isProfileComplete, // true if profile updated, false if not
         }
       );

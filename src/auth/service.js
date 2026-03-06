@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 import User from "../../model/user.js";
 import { sendResetEmail } from "../../utils/email.js";
 import dotenv from "dotenv";
-import Transaction from "../../model/transaction.js";
 dotenv.config();
 
 const authService = {

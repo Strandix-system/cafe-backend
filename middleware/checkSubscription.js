@@ -1,7 +1,6 @@
 import Transaction from "../model/transaction.js";
-import { ApiError } from "../utils/apiError.js";
 
-const checkSubscription = async (req, res, next) => {
+export const checkSubscription = async (req, res, next) => {
   try {
     if (req.user.role !== "admin") {
       return next();
@@ -12,31 +11,39 @@ const checkSubscription = async (req, res, next) => {
       subscriptionEndDate: { $ne: null },
     }).sort({ subscriptionEndDate: -1 });
 
-    if (
-      latestSubscriptionTransaction?.subscriptionEndDate &&
-      new Date() > latestSubscriptionTransaction.subscriptionEndDate
-    ) {
+    if (!latestSubscriptionTransaction?.subscriptionEndDate) {
+      return next();
+    }
+
+    const today = new Date();
+    const endDate = new Date(latestSubscriptionTransaction.subscriptionEndDate);
+
+    const diffTime = endDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // 1️⃣ Subscription expired
+    if (diffDays <= 0) {
       req.subscriptionAlert = {
         type: "expired",
         message:
           "Your subscription has expired. Please renew to continue using the service.",
-        endDate: latestSubscriptionTransaction.subscriptionEndDate,
+        endDate,
+        modalClosable: false, // FE can lock modal
       };
 
       await Transaction.findByIdAndUpdate(latestSubscriptionTransaction._id, {
         subscriptionStatus: "expired",
       });
+    }
 
-      if (req.path === "/me") {
-        return next();
-      }
-
-      return next(
-        new ApiError(
-          403,
-          "Your subscription has expired. Please renew to continue using the service."
-        )
-      );
+    // 2️⃣ Subscription expiring in next 7 days
+    else if (diffDays <= 7) {
+      req.subscriptionAlert = {
+        type: "expiringSoon",
+        message: `Your subscription will expire in ${diffDays} day(s). Please renew soon.`,
+        endDate,
+        modalClosable: true, // FE can close modal
+      };
     }
 
     return next();
@@ -44,5 +51,3 @@ const checkSubscription = async (req, res, next) => {
     return next(error);
   }
 };
-
-export default checkSubscription;

@@ -8,6 +8,14 @@ const generateTicketId = () => {
     return `TKT-${Date.now()}-${randomPart}`;
 };
 
+const validateStatus = (status) => {
+    if (status && !ALLOWED_STATUS.includes(status)) {
+        const error = new Error("Invalid status. Allowed: pending, in_progress, resolve");
+        error.statusCode = 400;
+        throw error;
+    }
+};
+
 const issueService = {
     raiseTicket: async (data, adminId, files = []) => {
         const title = data?.title?.trim();
@@ -35,9 +43,22 @@ const issueService = {
 
         return ticket;
     },
-    getAllTickets: async (filter, options) => {
+    getTickets: async (user, filter, options) => {
         const query = {};
 
+        if (user.role === "admin") {
+            query.admin = user._id;
+        } else if (user.role === "superadmin") {
+            if (filter.adminId) {
+                query.admin = filter.adminId;
+            }
+        } else {
+            const error = new Error("Access denied");
+            error.statusCode = 403;
+            throw error;
+        }
+
+        validateStatus(filter.status);
         if (filter.status) {
             query.status = filter.status;
         }
@@ -55,11 +76,16 @@ const issueService = {
             ];
         }
 
-        return IssueReported.paginate(query, {
+        const paginateOptions = {
             ...options,
-            populate: options.populate || "admin",
             sortBy: options.sortBy || "createdAt:desc",
-        });
+        };
+
+        if (user.role === "superadmin") {
+            paginateOptions.populate = options.populate || "admin";
+        }
+
+        return IssueReported.paginate(query, paginateOptions);
     },
     updateStatus: async (ticketId, status) => {
         if (!ticketId) {
@@ -68,11 +94,7 @@ const issueService = {
             throw error;
         }
 
-        if (!ALLOWED_STATUS.includes(status)) {
-            const error = new Error("Invalid status. Allowed: pending, in_progress, resolve");
-            error.statusCode = 400;
-            throw error;
-        }
+        validateStatus(status);
 
         const ticket = await IssueReported.findOneAndUpdate(
             { ticketId },
@@ -87,28 +109,6 @@ const issueService = {
         }
 
         return ticket;
-    },
-    getAdminTickets: async (adminId, filter, options) => {
-        const query = { admin: adminId };
-
-        if (filter.status) {
-            query.status = filter.status;
-        }
-        if (filter.ticketId) {
-            query.ticketId = filter.ticketId;
-        }
-        if (filter.search) {
-            query.$or = [
-                { title: { $regex: filter.search, $options: "i" } },
-                { description: { $regex: filter.search, $options: "i" } },
-                { ticketId: { $regex: filter.search, $options: "i" } },
-            ];
-        }
-
-        return IssueReported.paginate(query, {
-            ...options,
-            sortBy: options.sortBy || "createdAt:desc",
-        });
     },
 };
 

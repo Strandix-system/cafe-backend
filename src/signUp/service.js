@@ -83,7 +83,7 @@ const signUpService = {
     const subscription = await razorpay.subscriptions.create({
       plan_id: selectedPlanId,
       customer_notify: 1,
-      total_count: 12, // monthly for 12 months
+      total_count: 12,
       customer_id: customer.id,
     });
 
@@ -152,19 +152,13 @@ const signUpService = {
           user: user._id,
           razorpayPaymentId: payment.id,
           razorpaySubscriptionId: razorpay_subscription_id,
-          amount: payment.amount || 0,
-          currency: payment.currency || "INR",
-          status: payment.status || "captured",
-          method: payment.method || null,
+          amount: payment.amount,  
+          method: payment.method ,
           description: payment.description || "Signup subscription payment",
-          invoiceId: payment.invoice_id || null,
-          errorCode: payment.error_code || null,
-          errorDescription: payment.error_description || null,
           paidAt: toDate(payment.created_at),
-          capturedAt: toDate(payment.captured_at),
           razorpayCustomerId: subscription.customer_id || null,
           subscriptionPlanId: subscription.plan_id || null,
-          subscriptionStatus: subscription.status || null,
+          subscriptionStatus: payment.status || null,
           subscriptionStartDate: startDate,
           subscriptionEndDate: endDate,
           source: "signup",
@@ -328,9 +322,9 @@ const signUpService = {
     if (!planId) {
       throw new ApiError(400, "Razorpay plan ID is missing");
     }
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      throw new ApiError(400, "Email already exists");
+    const existingUser = await User.findOne({ email: user.email.toLowerCase() });
+    if (!existingUser) {
+      throw new ApiError(400, "Email does not exist");
     }
 
     const subscription = await razorpay.subscriptions.create({
@@ -382,11 +376,6 @@ const signUpService = {
       throw new ApiError(404, "Subscription not found");
     }
 
-    // Only allow active subscription
-    if (subscription.status !== "active") {
-      throw new ApiError(400, "Subscription not active");
-    }
-
     const { startDate, endDate } = await resolveSubscriptionDates(
       subscription,
       payment
@@ -424,17 +413,14 @@ const signUpService = {
           razorpayPaymentId: payment.id,
           razorpaySubscriptionId: razorpay_subscription_id,
           amount: payment.amount,
-          currency: payment.currency || "INR",
-          status: payment.status,
           method: payment.method || null,
           razorpayCustomerId: subscription.customer_id,
           subscriptionPlanId: subscription.plan_id,
-          subscriptionStatus: subscription.status,
+          subscriptionStatus: payment.status,
           subscriptionStartDate: startDate,
           subscriptionEndDate: endDate,
           description: "Subscription renewal payment",
           paidAt: toDate(payment.created_at),
-          capturedAt: toDate(payment.captured_at),
           source: "renewal",
           raw: payment,
         },

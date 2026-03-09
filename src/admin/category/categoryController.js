@@ -1,8 +1,8 @@
-import categoryService from "./categoryService.js";
+import { categoryService } from "./categoryService.js";
 import {sendSuccessResponse} from "../../../utils/response.js";
 import { pick } from "../../../utils/pick.js";
 
-export default{
+export const categoryController = {
  createCategory :async (req, res, next) => {
   try {
     const result = await categoryService.createCategory(req.body);

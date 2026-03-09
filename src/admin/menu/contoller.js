@@ -1,9 +1,9 @@
-import menuService from "./service.js";
+import { menuService } from "./service.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
 import { pick } from "../../../utils/pick.js"
 import { get } from "http";
 
-const menuController = {
+export const menuController = {
   // ✅ CREATE MENU
   createMenu: async (req, res, next) => {
     try {
@@ -80,5 +80,3 @@ const menuController = {
   },
  
 };
-
-export default menuController;

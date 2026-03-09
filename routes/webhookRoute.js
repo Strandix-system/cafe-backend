@@ -1,5 +1,5 @@
 import express from "express";
-import webhookController from "../src/webhooks/controller.js";
+import { webhookController } from "../src/webhooks/controller.js";
 
 const router = express.Router();
 
@@ -9,4 +9,4 @@ router.post(
   webhookController.razorpayWebhook
 );
 
-export default router;
+export const webhookRoutes = router;

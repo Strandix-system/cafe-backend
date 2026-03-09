@@ -27,24 +27,6 @@ const transactionSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    currency: {
-      type: String,
-      default: "INR",
-      trim: true,
-    },
-    status: {
-      type: String,
-      enum: [
-        "created",
-        "authorized",
-        "captured",
-        "failed",
-        "pending",
-        "refunded",
-      ],
-      default: "created",
-      index: true,
-    },
     method: {
       type: String,
       default: null,
@@ -55,26 +37,7 @@ const transactionSchema = new mongoose.Schema(
       default: null,
       trim: true,
     },
-    invoiceId: {
-      type: String,
-      default: null,
-      trim: true,
-    },
-    errorCode: {
-      type: String,
-      default: null,
-      trim: true,
-    },
-    errorDescription: {
-      type: String,
-      default: null,
-      trim: true,
-    },
     paidAt: {
-      type: Date,
-      default: null,
-    },
-    capturedAt: {
       type: Date,
       default: null,
     },
@@ -119,4 +82,4 @@ const transactionSchema = new mongoose.Schema(
 );
 transactionSchema.plugin(paginate);
 
-export default mongoose.model("Transaction", transactionSchema);
+export const Transaction = mongoose.model("Transaction", transactionSchema);

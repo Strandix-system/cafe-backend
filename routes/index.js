@@ -2,11 +2,11 @@ import express from "express";
 import authRoute from "./authRoute.js";
 import adminUserRoute from "./admin/adminRoute.js";
 import stateRoute from "./stateRoute.js"
-import menuRoute from "./menuRoute.js"
+import { menuRoutes } from "./menuRoute.js"
 import layoutRoute from "./layoutRoute.js";
 import profileRoute from "./profileRoute.js";
 import customerRoute from "./customerRoute.js";
-import categoryRoute from "./categoryRoute.js";
+import { categoryRoutes } from "./categoryRoute.js";
 import orderRoute from "./orderRoute.js";
 import qrRoute from "./qrRoute.js";
 // import dashboardRoute from "./dashboardRoute.js";
@@ -14,7 +14,7 @@ import demoRoute from "./demoRoute.js";
 import issueReportedRoute from "./issueReportedRoute.js";
 
 
-import signUp from "./signUp.js";
+import { signUpRoutes } from "./signUp.js";
 const router = express.Router();
 
 const defaultRoutes = [
@@ -36,7 +36,7 @@ const defaultRoutes = [
   },
   {
     path: "/menu",
-    route: menuRoute,
+    route: menuRoutes,
   },
   {
     path: "/layout",
@@ -47,7 +47,7 @@ const defaultRoutes = [
     route: customerRoute,
   }, {
     path: "/category",
-    route: categoryRoute,
+    route: categoryRoutes,
   },
   {
     path: "/qr",
@@ -59,7 +59,7 @@ const defaultRoutes = [
   },
   {
     path: "/signup",
-    route: signUp,
+    route: signUpRoutes,
   },
   {
     path: "/demo",

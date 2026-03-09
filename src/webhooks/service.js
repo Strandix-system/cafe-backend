@@ -1,7 +1,7 @@
 import crypto from "crypto";
-import Transaction from "../../model/transaction.js";
+import { Transaction } from "../../model/transaction.js";
 
-const webhookService = {
+export const webhookService = {
   verifySignature: (rawBody, signature) => {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
@@ -22,16 +22,16 @@ const webhookService = {
       const startDate = subscription.start_at
         ? new Date(subscription.start_at * 1000)
         : subscription.current_start
-        ? new Date(subscription.current_start * 1000)
-        : subscription.charge_at
-        ? new Date(subscription.charge_at * 1000)
-        : null;
+          ? new Date(subscription.current_start * 1000)
+          : subscription.charge_at
+            ? new Date(subscription.charge_at * 1000)
+            : null;
 
       const endDate = subscription.current_end
         ? new Date(subscription.current_end * 1000)
         : subscription.end_at
-        ? new Date(subscription.end_at * 1000)
-        : null;
+          ? new Date(subscription.end_at * 1000)
+          : null;
 
       const transactionUpdate = {
         subscriptionStatus: subscription.status || null,
@@ -51,6 +51,32 @@ const webhookService = {
         }
       );
 
+    }
+    if (eventType === "invoice.paid") {
+      const invoice = eventData.payload?.invoice?.entity;
+
+      if (!invoice?.subscription_id) return;
+
+      const startDate = invoice.billing_start
+        ? new Date(invoice.billing_start * 1000)
+        : null;
+
+      const endDate = invoice.billing_end
+        ? new Date(invoice.billing_end * 1000)
+        : null;
+
+      await Transaction.findOneAndUpdate(
+        { razorpaySubscriptionId: invoice.subscription_id },
+        {
+          $set: {
+            subscriptionStartDate: startDate,
+            subscriptionEndDate: endDate,
+            subscriptionStatus: "active",
+            source: "webhook",
+            raw: invoice,
+          },
+        }
+      );
     }
 
     if (eventType === "payment.failed") {
@@ -76,5 +102,3 @@ const webhookService = {
     return true;
   },
 };
-
-export default webhookService;

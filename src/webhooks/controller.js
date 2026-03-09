@@ -1,14 +1,16 @@
-import webhookService from "./service.js";
+import { webhookService } from "./service.js";
 import { ApiError } from "../../utils/apiError.js";
 
-const webhookController = {
+export const webhookController = {
 
   razorpayWebhook: async (req, res, next) => {
     try {
       const signature = req.headers["x-razorpay-signature"];
 
+      const rawBody = req.body.toString();
+
       const isValid = webhookService.verifySignature(
-        req.body,
+        rawBody,
         signature
       );
 
@@ -28,5 +30,3 @@ const webhookController = {
     }
   },
 };
-
-export default webhookController;

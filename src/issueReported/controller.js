@@ -15,7 +15,10 @@ const issueController = {
         try {
             const filter = pick(req.query, ["search", "status", "ticketId", "adminId"]);
             const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
-            const data = await issueService.getTickets(req.user, filter, options);
+            if (req.user.role === "admin") {
+                filter.adminId = req.user._id;
+            }
+            const data = await issueService.getTickets(filter, options);
             sendSuccessResponse(res, 200, "Tickets fetched", data);
         } catch (err) {
             next(err);

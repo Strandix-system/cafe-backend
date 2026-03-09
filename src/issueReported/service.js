@@ -16,26 +16,14 @@ const issueService = {
             title: data.title,
             description: data.description,
             images,
-            admin: adminId,
+            adminId,
             ticketId: generateTicketId(),
             status: "pending",
         });
 
         return ticket;
     },
-    getTickets: async (user, filter, options) => {
-        if (user.role === "admin") {
-            filter.admin = user._id;
-        } else if (user.role === "superadmin") {
-            if (filter.adminId) {
-                filter.admin = filter.adminId;
-            }
-        } else {
-            const error = new Error("Access denied");
-            error.statusCode = 403;
-            throw error;
-        }
-
+    getTickets: async (filter, options) => {
         if (filter.search) {
             filter.$or = [
                 { title: { $regex: filter.search, $options: "i" } },
@@ -44,18 +32,8 @@ const issueService = {
             ];
             delete filter.search;
         }
-        delete filter.adminId;
 
-        const paginateOptions = {
-            ...options,
-            sortBy: options.sortBy || "createdAt:desc",
-        };
-
-        if (user.role === "superadmin") {
-            paginateOptions.populate = options.populate || "admin";
-        }
-
-        return IssueReported.paginate(filter, paginateOptions);
+        return await IssueReported.paginate(filter, options);
     },
     updateStatus: async (ticketId, status) => {
         const ticket = await IssueReported.findOneAndUpdate(

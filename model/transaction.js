@@ -17,7 +17,6 @@ const transactionSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
-   
     razorpaySubscriptionId: {
       type: String,
       trim: true,
@@ -118,5 +117,6 @@ const transactionSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-transactionSchema.plugin(paginate)
+transactionSchema.plugin(paginate);
+
 export default mongoose.model("Transaction", transactionSchema);

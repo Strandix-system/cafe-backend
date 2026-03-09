@@ -12,6 +12,7 @@ import { uploadAdminImages } from "../../middleware/upload.js";
 import { parseJSONFields } from "../../utils/helper.js";
 import dashboardController from "../../src/admin/dashboard/controller.js";
 import visitController from "../../src/admin/visit/controller.js";
+import { portfolioController } from "../../src/portfolio/controller.js";
 
 const router = express.Router();
 
@@ -143,5 +144,26 @@ router.get("/total",
   tokenVerification,
   allowRoles("superadmin"),
   visitController.getTotalVisits);
+
+router.get(
+  "/get-feedback",
+  tokenVerification,
+  allowRoles("admin"),
+  portfolioController.getCustomerFeedbacks
+);
+
+router.delete(
+  "/delete-feedback/:id",
+  tokenVerification,
+  allowRoles("admin"),
+  portfolioController.deleteCustomerFeedback
+);
+
+router.patch(
+  "/feedback-selection",
+  tokenVerification,
+  allowRoles("admin"),
+  portfolioController.updatePortfolioFeedbackSelection
+);
 
 export default router;

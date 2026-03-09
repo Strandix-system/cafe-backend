@@ -12,6 +12,7 @@ import qrRoute from "./qrRoute.js";
 // import dashboardRoute from "./dashboardRoute.js";
 import demoRoute from "./demoRoute.js";
 import issueReportedRoute from "./issueReportedRoute.js";
+import portfolioRoute from "./portfolioRoute.js";
 
 
 import signUp from "./signUp.js";
@@ -68,6 +69,10 @@ const defaultRoutes = [
   {
     path: "/issue-reported",
     route: issueReportedRoute,
+  },
+  {
+    path: "/portfolio",
+    route: portfolioRoute,
   },
 ];
 

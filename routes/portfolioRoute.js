@@ -5,9 +5,10 @@ import {
   aboutStatsValidator,
   createCustomerFeedbackValidator,
   topCustomerFeedbackValidator,
-} from "../validations/portfolioValidation.js";
+} from "../validations/portfolio.validation.js";
 
 const router = express.Router();
+export const portfolioRoute = router;
 
 router.get(
   "/about-stats/:adminId",
@@ -24,4 +25,3 @@ router.get(
   validate(topCustomerFeedbackValidator),
   portfolioController.getTopCustomerFeedbacks
 );
-export default router;

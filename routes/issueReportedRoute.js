@@ -1,5 +1,5 @@
 import express from "express";
-import issueController from "../src/issueReported/controller.js";
+import { issueController } from "../src/issueReported/controller.js";
 import { tokenVerification } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/permission.js";
 import { uploadQueryImage } from "../middleware/upload.js";
@@ -8,11 +8,11 @@ import {
     raiseIssueValidator,
     getIssueTicketsValidator,
     updateIssueStatusValidator,
-} from "../validations/issueReportedValidation.js";
+} from "../validations/issue-reported.validation.js";
 
-const router = express.Router();
+export const issueReportedRoute = express.Router();
 
-router.post(
+issueReportedRoute.post(
     "/raise",
     tokenVerification,
     allowRoles("admin"),
@@ -20,14 +20,14 @@ router.post(
     validate(raiseIssueValidator),
     issueController.raiseTicket
 );
-router.get(
+issueReportedRoute.get(
     "/get-tickets",
     tokenVerification,
     allowRoles("admin", "superadmin"),
     validate(getIssueTicketsValidator),
     issueController.getTickets
 );
-router.patch(
+issueReportedRoute.patch(
     "/status/:ticketId",
     tokenVerification,
     allowRoles("superadmin"),
@@ -35,4 +35,3 @@ router.patch(
     issueController.updateStatus
 );
 
-export default router;

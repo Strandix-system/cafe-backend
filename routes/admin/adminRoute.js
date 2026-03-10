@@ -13,6 +13,7 @@ import { parseJSONFields } from "../../utils/helper.js";
 import dashboardController from "../../src/admin/dashboard/controller.js";
 import visitController from "../../src/admin/visit/controller.js";
 import { portfolioController } from "../../src/portfolio/controller.js";
+import { updatePortfolioFeedbackSelectionValidator } from "../../validations/portfolio.validation.js";
 
 const router = express.Router();
 
@@ -160,9 +161,10 @@ router.delete(
 );
 
 router.patch(
-  "/feedback-selection",
+  "/feedback-selection/:feedbackId",
   tokenVerification,
   allowRoles("admin"),
+  validate(updatePortfolioFeedbackSelectionValidator),
   portfolioController.updatePortfolioFeedbackSelection
 );
 

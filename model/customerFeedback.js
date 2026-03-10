@@ -27,16 +27,10 @@ const customerFeedbackSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    portfolioSelection: {
-      type: Number,
-      default: null,
-      min: 1,
-      max: 5,
-    },
   },
   { timestamps: true }
 );
 customerFeedbackSchema.plugin(paginate);
-customerFeedbackSchema.index({ adminId: 1, isPortfolioFeatured: 1, portfolioSelection: 1 });
+customerFeedbackSchema.index({ adminId: 1, isPortfolioFeatured: 1 });
 
-export default mongoose.model("CustomerFeedback", customerFeedbackSchema);
+export const CustomerFeedback = mongoose.model("CustomerFeedback", customerFeedbackSchema);

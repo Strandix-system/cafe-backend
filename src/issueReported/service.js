@@ -1,12 +1,9 @@
-import crypto from "crypto";
-import IssueReported from "../../model/issueReported.js";
+import { IssueReported } from "../../model/issueReported.js";
+import { generateTicketId } from "../../utils/generateTicketId.js";
+import { ApiError } from "../../utils/apiError.js";
+import { ISSUE_STATUSES } from "../../utils/constants.js";
 
-const generateTicketId = () => {
-    const randomPart = crypto.randomBytes(4).toString("hex").toUpperCase();
-    return `TKT-${Date.now()}-${randomPart}`;
-};
-
-const issueService = {
+export const issueService = {
     raiseTicket: async (data, adminId, files = []) => {
         const images = (Array.isArray(files) ? files : [])
             .map((file) => file?.location)
@@ -18,7 +15,7 @@ const issueService = {
             images,
             adminId,
             ticketId: generateTicketId(),
-            status: "pending",
+            status: ISSUE_STATUSES.PENDING,
         });
 
         return ticket;
@@ -43,13 +40,9 @@ const issueService = {
         );
 
         if (!ticket) {
-            const error = new Error("Ticket not found");
-            error.statusCode = 404;
-            throw error;
+            throw new ApiError(404, "Ticket not found");
         }
 
         return ticket;
     },
 };
-
-export default issueService;

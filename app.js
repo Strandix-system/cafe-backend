@@ -1,14 +1,12 @@
 import express from "express";
+import "express-async-errors";
 import env from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
-
-import errorHandler from "./middleware/errorHandler.js";
+import { errorHandler, notFoundError } from "./middleware/errorHandler.js";
 import connectDB from "./database/dbConnect.js";
 import routes from "./routes/index.js";
-import { notFoundError } from "./middleware/errorHandler.js";
-
 
 env.config();
 
@@ -16,8 +14,6 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-
-// HTTPS redirect (optional)
 app.use((req, res, next) => {
 
   if (
@@ -31,7 +27,6 @@ app.use((req, res, next) => {
 
   next();
 });
-
 
 app.use(helmet());
 app.use("/api/signup/webhook", express.raw({ type: "application/json" }));
@@ -57,21 +52,13 @@ app.use(compression());
 app.get("/", (req, res) => {
   res.status(200).send("OK");
 });
-// Routes
+
 app.use("/api", routes);
 
-
-// 404
 app.use(notFoundError);
 
-
-// Error Handler
 app.use(errorHandler);
 
-
-// DB
 connectDB();
 
-
-// ✅ ONLY export app
 export default app;

@@ -1,19 +1,9 @@
 import Customer from "../../model/customer.js";
 import Menu from "../../model/menu.js";
-import CustomerFeedback from "../../model/customerFeedback.js";
+import { CustomerFeedback } from "../../model/customerFeedback.js";
+import { ApiError } from "../../utils/apiError.js";
 
-const MAX_PORTFOLIO_FEEDBACKS = 5;
-
-const normalizeFeedbackIds = (feedbackIds) => {
-  if (feedbackIds === undefined || feedbackIds === null) {
-    throw Object.assign(new Error("feedbackIds is required"), { statusCode: 400 });
-  }
-
-  const ids = Array.isArray(feedbackIds) ? feedbackIds : feedbackIds ? [feedbackIds] : [];
-  return [...new Set(ids.map((id) => String(id)))];
-};
-
-const portfolioService = {
+export const portfolioService = {
   aboutStats: async (filter = {}) => {
     const adminId = filter.adminId;
 
@@ -32,7 +22,7 @@ const portfolioService = {
     const customer = await Customer.findById(body.customerId).select("_id");
 
     if (!customer) {
-      throw Object.assign(new Error("Customer not found"), { statusCode: 404 }); // throe new APIError 
+      throw new ApiError(404, "Customer not found");
     }
 
     return await CustomerFeedback.create(body);
@@ -43,10 +33,10 @@ const portfolioService = {
       isPortfolioFeatured: true,
     })
       .populate("customerId", "name phoneNumber")
-      .sort({ portfolioSelection: 1, createdAt: -1 })
-      .limit(MAX_PORTFOLIO_FEEDBACKS);
+      .sort({ createdAt: -1 })
+      .limit(5);
 
-    const remainingSlots = MAX_PORTFOLIO_FEEDBACKS - featuredFeedbacks.length;
+    const remainingSlots = 5 - featuredFeedbacks.length;
     if (remainingSlots <= 0) {
       return featuredFeedbacks;
     }
@@ -62,69 +52,29 @@ const portfolioService = {
 
     return [...featuredFeedbacks, ...fallbackFeedbacks];
   },
-  updatePortfolioFeedbackSelection: async (adminId, feedbackIds) => {
-    const newSelectionIds = normalizeFeedbackIds(feedbackIds);
+  updatePortfolioFeedbackSelection: async (adminId, feedbackId, isPortfolioFeatured = true) => {
+    if (!feedbackId) throw new ApiError(400, "feedbackId is required");
 
-    const currentSelected = await CustomerFeedback.find({
+    const feedback = await CustomerFeedback.findOne({
+      _id: feedbackId,
       adminId,
-      isPortfolioFeatured: true,
     })
-      .sort({ portfolioSelection: 1, createdAt: -1 })
-      .select("_id");
 
-    const currentSelectedIds = currentSelected.map((item) => String(item._id));
-    const mergedSelectionIds = [...new Set([...currentSelectedIds, ...newSelectionIds])];
+    if (!feedback) throw new ApiError(404, "Customer feedback not found");
 
-    if (newSelectionIds.length > 0) {
-      const existingFeedbacks = await CustomerFeedback.find({
-        _id: { $in: newSelectionIds },
+    if (isPortfolioFeatured && !feedback.isPortfolioFeatured) {
+      const selectedCount = await CustomerFeedback.countDocuments({
         adminId,
-      }).select("_id");
+        isPortfolioFeatured: true,
+      });
 
-      if (existingFeedbacks.length !== newSelectionIds.length) {
-        throw Object.assign(
-          new Error("One or more customer feedbacks were not found for this admin"),
-          { statusCode: 404 }
-        );
+      if (selectedCount >= 5) {
+        throw new ApiError(400, "You can select a maximum of 5 customer feedbacks");
       }
     }
 
-    if (mergedSelectionIds.length > MAX_PORTFOLIO_FEEDBACKS) {
-      throw Object.assign(
-        new Error(`You can select a maximum of ${MAX_PORTFOLIO_FEEDBACKS} customer feedbacks`),
-        { statusCode: 400 }
-      );
-    }
-
-    await CustomerFeedback.updateMany(
-      { adminId },
-      {
-        $set: {
-          isPortfolioFeatured: false,
-          portfolioSelection: null,
-        },
-      }
-    );
-
-    if (newSelectionIds.length === 0) {
-      return await portfolioService.getTopCustomerFeedbacks({ adminId });
-    }
-
-    if (mergedSelectionIds.length > 0) {
-      const bulkOperations = mergedSelectionIds.map((feedbackId, index) => ({
-        updateOne: {
-          filter: { _id: feedbackId, adminId },
-          update: {
-            $set: {
-              isPortfolioFeatured: true,
-              portfolioSelection: index + 1,
-            },
-          },
-        },
-      }));
-
-      await CustomerFeedback.bulkWrite(bulkOperations);
-    }
+    feedback.isPortfolioFeatured = isPortfolioFeatured;
+    await feedback.save();
 
     return await portfolioService.getTopCustomerFeedbacks({ adminId });
   },
@@ -153,9 +103,7 @@ const portfolioService = {
     });
 
     if (!feedback) {
-      throw Object.assign(new Error("Customer feedback not found"), { statusCode: 404 });
+      throw new ApiError(404, "Customer feedback not found");
     }
   },
 };
-
-export default portfolioService;

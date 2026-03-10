@@ -22,12 +22,11 @@ const topCustomerFeedbackValidator = {
 };
 
 const updatePortfolioFeedbackSelectionValidator = {
+  params: Joi.object({
+    feedbackId: Joi.string().hex().length(24).required(),
+  }),
   body: Joi.object({
-    feedbackIds: Joi.array()
-      .items(Joi.string().hex().length(24))
-      .max(5)
-      .required()
-      .unique(),
+    isPortfolioFeatured: Joi.boolean().optional().default(true),
   }),
 };
 

@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { ISSUE_STATUSES } from "../utils/constants.js";
 
 const raiseIssueValidator = {
   body: Joi.object({
@@ -12,7 +13,7 @@ const getIssueTicketsValidator = {
     search: Joi.string().trim().optional(),
     status: Joi.string()
       .trim()
-      .valid("pending", "in_progress", "resolve")
+      .valid(...Object.values(ISSUE_STATUSES))
       .optional(),
     ticketId: Joi.string().trim().optional(),
     adminId: Joi.string().hex().length(24).optional(),
@@ -30,7 +31,7 @@ const updateIssueStatusValidator = {
   body: Joi.object({
     status: Joi.string()
       .trim()
-      .valid("pending", "in_progress", "resolve")
+      .valid(...Object.values(ISSUE_STATUSES))
       .required(),
   }),
 };

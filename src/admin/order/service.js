@@ -60,7 +60,7 @@ const orderService = {
         quantity: item.quantity,
       };
     });
- 
+
     const gstAmount = (subTotal * gstPercent) / 100;
 
     const finalTotal = subTotal + gstAmount;
@@ -91,6 +91,9 @@ const orderService = {
     return order;
   },
   getOrders: async (adminId, filter, options) => {
+    if (filter.orderStatus) {
+      filter.orderStatus = filter.orderStatus;
+    }
     return await Order.paginate({ adminId, ...filter }, options
     );
   },

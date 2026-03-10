@@ -12,7 +12,7 @@ import { uploadAdminImages } from "../../middleware/upload.js";
 import { parseJSONFields } from "../../utils/helper.js";
 import dashboardController from "../../src/admin/Dashboard/controller.js";
 import visitController from "../../src/admin/visit/controller.js";
-
+import { blockExpiredSubscription } from "../../middleware/block.Expired.Subscription.js";
 const router = express.Router();
 
 router.post(
@@ -85,18 +85,19 @@ router.get(
   "/dashboard/stats",
   tokenVerification,
   allowRoles("admin", "superadmin"),
+  blockExpiredSubscription,
   dashboardController.getStats
 );
 
 router.get(
   "/dashboard/sales",
   tokenVerification,
-  allowRoles("admin", "superadmin"), dashboardController.getSalesChart
+  allowRoles("admin", "superadmin"),blockExpiredSubscription, dashboardController.getSalesChart
 );
 
 router.get(
   "/dashboard/items-performance",
-  tokenVerification, allowRoles("admin", "superadmin"),
+  tokenVerification, allowRoles("admin", "superadmin"), blockExpiredSubscription,
   dashboardController.getItemPerformance
 );
 
@@ -104,6 +105,7 @@ router.get(
   "/dashboard/peak-time",
   tokenVerification,
   allowRoles("admin", "superadmin"),
+  blockExpiredSubscription,
   dashboardController.getPeakTime
 );
 
@@ -117,6 +119,7 @@ router.get(
   "/dashboard/top-customers",
   tokenVerification,
   allowRoles("admin", "superadmin"),
+  blockExpiredSubscription,
   dashboardController.getTopCustomers
 );
 router.get(

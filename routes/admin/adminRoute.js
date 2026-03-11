@@ -10,10 +10,21 @@ import {
 } from "../../validations/createValidation.js";
 import { uploadAdminImages } from "../../middleware/upload.js";
 import { parseJSONFields } from "../../utils/helper.js";
-import dashboardController from "../../src/admin/dashboard/controller.js";
+import { dashboardController } from "../../src/admin/dashboard/controller.js";
 import visitController from "../../src/admin/visit/controller.js";
 import { portfolioController } from "../../src/portfolio/controller.js";
 import { updatePortfolioFeedbackSelectionValidator } from "../../validations/portfolio.validation.js";
+import {
+  dashboardAdminAnalyticsValidator,
+  dashboardItemPerformanceValidator,
+  dashboardPeakTimeValidator,
+  dashboardPlatformSalesValidator,
+  dashboardSalesValidator,
+  dashboardStatsValidator,
+  dashboardTablePerformanceValidator,
+  dashboardTopCafesValidator,
+  dashboardTopCustomersValidator,
+} from "../../validations/dashboard.validation.js";
 
 const router = express.Router();
 
@@ -87,18 +98,23 @@ router.get(
   "/dashboard/stats",
   tokenVerification,
   allowRoles("admin", "superadmin"),
+  validate(dashboardStatsValidator),
   dashboardController.getStats
 );
 
 router.get(
   "/dashboard/sales",
   tokenVerification,
-  allowRoles("admin", "superadmin"), dashboardController.getSalesChart
+  allowRoles("admin", "superadmin"),
+  validate(dashboardSalesValidator),
+  dashboardController.getSalesChart
 );
 
 router.get(
   "/dashboard/items-performance",
-  tokenVerification, allowRoles("admin", "superadmin"),
+  tokenVerification,
+  allowRoles("admin", "superadmin"),
+  validate(dashboardItemPerformanceValidator),
   dashboardController.getItemPerformance
 );
 
@@ -106,6 +122,7 @@ router.get(
   "/dashboard/peak-time",
   tokenVerification,
   allowRoles("admin", "superadmin"),
+  validate(dashboardPeakTimeValidator),
   dashboardController.getPeakTime
 );
 
@@ -113,18 +130,21 @@ router.get(
   "/dashboard/tables",
   tokenVerification,
   allowRoles("admin", "superadmin"),
+  validate(dashboardTablePerformanceValidator),
   dashboardController.getTablePerformance
 );
 router.get(
   "/dashboard/top-customers",
   tokenVerification,
   allowRoles("admin", "superadmin"),
+  validate(dashboardTopCustomersValidator),
   dashboardController.getTopCustomers
 );
 router.get(
   "/dashboard/top-cafes",
   tokenVerification,
   allowRoles("superadmin"),
+  validate(dashboardTopCafesValidator),
   dashboardController.getTopCafes
 );
 
@@ -132,12 +152,14 @@ router.get(
   "/dashboard/platform-sales",
   tokenVerification,
   allowRoles("superadmin"),
+  validate(dashboardPlatformSalesValidator),
   dashboardController.getPlatformSales
 );
 router.get(
   "/dashboard/admin-analytics",
   tokenVerification,
   allowRoles("superadmin"),
+  validate(dashboardAdminAnalyticsValidator),
   dashboardController.getAdminAnalytics
 );
 router.post("/track", visitController.trackVisit);

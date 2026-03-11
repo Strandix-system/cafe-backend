@@ -303,10 +303,6 @@ export const signUpService = {
       throw new ApiError(404, "Payment not found");
     }
 
-    if (payment.status !== "captured") {
-      throw new ApiError(400, "Payment not successful");
-    }
-
     // 3 Fetch Subscription
     const subscription = await razorpay.subscriptions.fetch(
       razorpay_subscription_id

@@ -7,20 +7,21 @@ import {
   topCustomerFeedbackValidator,
 } from "../validations/portfolio.validation.js";
 
-const router = express.Router();
-export const portfolioRoute = router;
+export const portfolioRoute = express.Router();
 
-router.get(
+portfolioRoute.get(
   "/about-stats/:adminId",
   validate(aboutStatsValidator),
   portfolioController.aboutStats
 );
-router.post(
+
+portfolioRoute.post(
   "/customer-feedback",
   validate(createCustomerFeedbackValidator),
   portfolioController.createCustomerFeedback
 );
-router.get(
+
+portfolioRoute.get(
   "/top-feedback/:adminId",
   validate(topCustomerFeedbackValidator),
   portfolioController.getTopCustomerFeedbacks

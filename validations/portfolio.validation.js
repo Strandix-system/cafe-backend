@@ -21,7 +21,7 @@ const topCustomerFeedbackValidator = {
   }),
 };
 
-const updatePortfolioFeedbackSelectionValidator = {
+const updateFeedbackValidator = {
   params: Joi.object({
     feedbackId: Joi.string().hex().length(24).required(),
   }),
@@ -34,5 +34,5 @@ export {
   aboutStatsValidator,
   createCustomerFeedbackValidator,
   topCustomerFeedbackValidator,
-  updatePortfolioFeedbackSelectionValidator,
+  updateFeedbackValidator,
 };

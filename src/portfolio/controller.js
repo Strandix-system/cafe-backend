@@ -17,11 +17,11 @@ export const portfolioController = {
     const data = await portfolioService.getTopCustomerFeedbacks(filter);
     sendSuccessResponse(res, 200, "Top customer feedback fetched", data);
   },
-  updatePortfolioFeedbackSelection: async (req, res) => {
-    const data = await portfolioService.updatePortfolioFeedbackSelection(
+  updateFeedback: async (req, res) => {
+    const data = await portfolioService.updateFeedback(
       req.user._id,
       req.params.feedbackId,
-      req.body.isPortfolioFeatured
+      req.body
     );
     sendSuccessResponse(res, 200, "Portfolio feedback selection updated", data);
   },
@@ -38,6 +38,6 @@ export const portfolioController = {
       req.params.id,
       req.user._id
     );
-    sendSuccessResponse(res, 200, "Customer feedback deleted", null);
+    sendSuccessResponse(res, 200, "Customer feedback deleted", undefined);
   },
 };

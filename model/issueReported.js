@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { paginate } from "../model/plugin/paginate.plugin.js";
+import { ISSUE_STATUSES } from "../utils/constants.js";
 
 const issueReportedSchema = new mongoose.Schema(
     {
@@ -26,10 +27,10 @@ const issueReportedSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ["pending", "in_progress", "resolve"],
-            default: "pending",
+            enum: Object.values(ISSUE_STATUSES),
+            default: ISSUE_STATUSES.PENDING,
         },
-        admin: {
+        adminId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             required: true,
@@ -40,4 +41,4 @@ const issueReportedSchema = new mongoose.Schema(
 
 issueReportedSchema.plugin(paginate);
 
-export default mongoose.model("IssueReported", issueReportedSchema);
+export const IssueReported = mongoose.model("IssueReported", issueReportedSchema);

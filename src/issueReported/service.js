@@ -1,5 +1,5 @@
 import { IssueReported } from "../../model/issueReported.js";
-import { generateTicketId } from "../../utils/generateTicketId.js";
+import { generateTicketId } from "../../utils/utils.js";
 import { ApiError } from "../../utils/apiError.js";
 import { ISSUE_STATUSES } from "../../utils/constants.js";
 
@@ -10,8 +10,7 @@ export const issueService = {
             .slice(0, 3);
 
         const ticket = await IssueReported.create({
-            title: data.title,
-            description: data.description,
+            ...data,
             images,
             adminId,
             ticketId: generateTicketId(),

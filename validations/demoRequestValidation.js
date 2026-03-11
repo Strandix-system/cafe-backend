@@ -33,12 +33,7 @@ const updateDemoStatus = {
       .required(),
   }),
 };
-
-
-
-
 export default {
   createDemoRequest,
   updateDemoStatus,
-
 };

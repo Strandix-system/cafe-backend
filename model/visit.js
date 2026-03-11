@@ -10,4 +10,5 @@ const visitSchema = new mongoose.Schema({
   },
 });
 visitSchema.plugin(paginate);
-export default mongoose.model("Visit", visitSchema);
+
+export const Visit = mongoose.model("Visit", visitSchema);

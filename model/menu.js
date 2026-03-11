@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { paginate } from "../model/plugin/paginate.plugin.js"
 
-const menuSchema = new mongoose.Schema(
+ const menuSchema = new mongoose.Schema(
     {
         adminId: {
             type: mongoose.Schema.Types.ObjectId,
@@ -41,4 +41,7 @@ const menuSchema = new mongoose.Schema(
     { timestamps: true }
 );
 menuSchema.plugin(paginate)
-export default mongoose.model("Menu", menuSchema);
+
+export const Menu = mongoose.model("Menu", menuSchema);
+
+

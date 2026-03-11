@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { paginate } from "../model/plugin/paginate.plugin.js"
-const cafeLayoutSchema = new mongoose.Schema(
+ const cafeLayoutSchema = new mongoose.Schema(
   {
     adminId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -45,4 +45,6 @@ cafeLayoutSchema.virtual('menus', {
 
 cafeLayoutSchema.plugin(paginate)
 
-export default mongoose.model("CafeLayout", cafeLayoutSchema);
+export const CafeLayout = mongoose.model("CafeLayout", cafeLayoutSchema);
+
+

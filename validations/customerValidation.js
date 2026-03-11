@@ -1,6 +1,6 @@
 import Joi from "joi";
 
-const customerValidation = {
+export const customerValidation = {
 
   create: Joi.object({
 
@@ -17,4 +17,3 @@ const customerValidation = {
   }),
 };
 
-export default customerValidation;

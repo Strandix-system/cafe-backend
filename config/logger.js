@@ -12,7 +12,7 @@ const enumerateErrorFormat = winston.format((info) => {
 });
 
 // Define the logger
-const logger = winston.createLogger({
+export const logger = winston.createLogger({
     level: 'info', // Default log level
     format: winston.format.combine(
         enumerateErrorFormat(),          // Include error stack trace
@@ -39,6 +39,3 @@ const logger = winston.createLogger({
     ],
 });
 
-export {
-    logger
-};

@@ -1,6 +1,6 @@
-import Visit from "../../../model/visit.js";
+import { Visit } from "../../../model/visit.js";
 
-const visitService = {
+export const visitService = {
   trackVisit: async (req) => {
     const visit = await Visit.create({
       ip: req.ip,
@@ -16,4 +16,3 @@ const visitService = {
   },
 };
 
-export default visitService;

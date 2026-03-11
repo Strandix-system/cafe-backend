@@ -1,11 +1,11 @@
-import CafeLayout from "../../../model/layout.js";
+import { CafeLayout } from "../../../model/layout.js";
 import { deleteUploadedFiles } from "../../../utils/s3utils.js";
 import { deleteSingleFile } from "../../../utils/s3utils.js";
-import Qr from "../../../model/qr.js"
+import { Qr } from "../../../model/qr.js"
 import mongoose from "mongoose";
 import { ApiError } from "../../../utils/apiError.js";
 
-const layoutService = {
+export const layoutService = {
   createCafeLayout: async (adminId, body, files, role) => {
     const homeImage = files?.homeImage?.[0]?.location;
     const aboutImage = files?.aboutImage?.[0]?.location;
@@ -19,8 +19,8 @@ const layoutService = {
     const layout = await CafeLayout.create({
       ...body,
       adminId,
-      homeImage, // S3 URL
-      aboutImage, // S3 URL
+      homeImage, 
+      aboutImage, 
       defaultLayout,
       active: !haveLayout
     });
@@ -32,7 +32,6 @@ const layoutService = {
       throw new ApiError("Cafe layout not found");
     }
 
-    // ✅ Home Image Update
     if (files?.homeImage?.[0]?.location) {
       if (layout.homeImage) {
         await deleteSingleFile(layout.homeImage)
@@ -41,7 +40,6 @@ const layoutService = {
       layout.homeImage = files.homeImage[0].location;
     }
 
-    // ✅ About Image Update
     if (files?.aboutImage?.[0]?.location) {
       if (layout.aboutImage) {
         await deleteSingleFile(layout.aboutImage)
@@ -50,7 +48,6 @@ const layoutService = {
       layout.aboutImage = files.aboutImage[0].location;
     }
 
-    // ✅ Directly assign all body fields
     Object.assign(layout, body);
 
     await layout.save();
@@ -128,4 +125,3 @@ const layoutService = {
     return result;
   },
 };
-export default layoutService;

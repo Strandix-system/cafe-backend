@@ -1,8 +1,8 @@
-import customerService from "./customerServer.js";
+import { customerService } from "./customerServer.js";
 import { pick } from "../../../utils/pick.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
 
-const customerController = {
+export const customerController = {
   createCustomer: async (req, res, next) => {
     try {
 
@@ -56,4 +56,3 @@ const customerController = {
   },
 };
 
-export default customerController;

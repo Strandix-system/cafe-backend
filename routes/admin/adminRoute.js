@@ -1,5 +1,5 @@
 import express from "express";
-import controller from "../../src/admin/controller.js";
+import { adminController } from "../../src/admin/controller.js";
 import { validate } from "../../middleware/validate.js";
 import { tokenVerification } from "../../middleware/auth.js";
 import { allowRoles } from "../../middleware/permission.js";
@@ -10,15 +10,15 @@ import {
 } from "../../validations/createValidation.js";
 import { uploadAdminImages } from "../../middleware/upload.js";
 import { parseJSONFields } from "../../utils/helper.js";
-import dashboardController from "../../src/admin/dashboard/controller.js";
-import visitController from "../../src/admin/visit/controller.js";
+import dashboardController from "../../src/admin/Dashboard/controller.js";
+import { visitController } from "../../src/admin/visit/controller.js";
 import { blockExpiredSubscription } from "../../middleware/block.Expired.Subscription.js";
 import { portfolioController } from "../../src/portfolio/controller.js";
-import { updatePortfolioFeedbackSelectionValidator } from "../../validations/portfolio.validation.js";
+import { updateFeedbackValidator } from "../../validations/portfolio.validation.js";
 
-const router = express.Router();
+export const adminRoute = express.Router();
 
-router.post(
+adminRoute.post(
   "/create",
   tokenVerification,
   allowRoles("superadmin"),
@@ -28,10 +28,10 @@ router.post(
   ]),
   parseJSONFields(["socialLinks", "hours"]),
   validate(createAdminValidator),
-  controller.createAdmin
+  adminController.createAdmin
 );
 
-router.patch(
+adminRoute.patch(
   "/update/:id",
   tokenVerification,
   allowRoles("superadmin", "admin"),
@@ -41,33 +41,33 @@ router.patch(
   ]),
   parseJSONFields(["socialLinks", "hours"]),
   validate(updateAdminValidator),
-  controller.updateAdmin
+  adminController.updateAdmin
 );
 
 
-router.delete(
+adminRoute.delete(
   "/delete/:id",
   tokenVerification,
   allowRoles("superadmin"),
   validate(deleteAdminValidator),
-  controller.deleteAdmin
+  adminController.deleteAdmin
 );
 
-router.get(
+adminRoute.get(
   "/get-users",
   tokenVerification,
   allowRoles("superadmin"),
-  controller.listAdmins
+  adminController.listAdmins
 );
 
-router.get(
+adminRoute.get(
   "/get-user/:id",
   tokenVerification,
   allowRoles("superadmin"),
-  controller.getByAdmin
+  adminController.getByAdmin
 );
-//only for super admin 
-router.patch(
+
+adminRoute.patch(
   "/superadmin/:id",
   tokenVerification,
   allowRoles("superadmin"),
@@ -75,16 +75,16 @@ router.patch(
     { name: "profileImage", maxCount: 1 }
   ]),
   validate(updateSuperAdmin),
-  controller.updateSuperAdmin
+  adminController.updateSuperAdmin
 );
 
-router.patch(
+adminRoute.patch(
   "/update-status/:id",
   tokenVerification,
   allowRoles("superadmin"),
-  controller.updateAdminStatus
+  adminController.updateAdminStatus
 );
-router.get(
+adminRoute.get(
   "/dashboard/stats",
   tokenVerification,
   allowRoles("admin", "superadmin"),
@@ -92,19 +92,19 @@ router.get(
   dashboardController.getStats
 );
 
-router.get(
+adminRoute.get(
   "/dashboard/sales",
   tokenVerification,
-  allowRoles("admin", "superadmin"),blockExpiredSubscription, dashboardController.getSalesChart
+  allowRoles("admin", "superadmin"), blockExpiredSubscription, dashboardController.getSalesChart
 );
 
-router.get(
+adminRoute.get(
   "/dashboard/items-performance",
   tokenVerification, allowRoles("admin", "superadmin"), blockExpiredSubscription,
   dashboardController.getItemPerformance
 );
 
-router.get(
+adminRoute.get(
   "/dashboard/peak-time",
   tokenVerification,
   allowRoles("admin", "superadmin"),
@@ -112,64 +112,61 @@ router.get(
   dashboardController.getPeakTime
 );
 
-router.get(
+adminRoute.get(
   "/dashboard/tables",
   tokenVerification,
   allowRoles("admin", "superadmin"),
   dashboardController.getTablePerformance
 );
-router.get(
+adminRoute.get(
   "/dashboard/top-customers",
   tokenVerification,
   allowRoles("admin", "superadmin"),
   blockExpiredSubscription,
   dashboardController.getTopCustomers
 );
-router.get(
+adminRoute.get(
   "/dashboard/top-cafes",
   tokenVerification,
   allowRoles("superadmin"),
   dashboardController.getTopCafes
 );
 
-router.get(
+adminRoute.get(
   "/dashboard/platform-sales",
   tokenVerification,
   allowRoles("superadmin"),
   dashboardController.getPlatformSales
 );
-router.get(
+adminRoute.get(
   "/dashboard/admin-analytics",
   tokenVerification,
   allowRoles("superadmin"),
   dashboardController.getAdminAnalytics
 );
-router.post("/track", visitController.trackVisit);
-router.get("/total",
+adminRoute.post("/track", visitController.trackVisit);
+adminRoute.get("/total",
   tokenVerification,
   allowRoles("superadmin"),
-  visitController.getTotalVisits);
-
-router.get(
+  visitController.getTotalVisits
+);
+adminRoute.get(
   "/get-feedback",
   tokenVerification,
   allowRoles("admin"),
   portfolioController.getCustomerFeedbacks
 );
-
-router.delete(
+adminRoute.delete(
   "/delete-feedback/:id",
   tokenVerification,
   allowRoles("admin"),
   portfolioController.deleteCustomerFeedback
 );
-
-router.patch(
+adminRoute.patch(
   "/feedback-selection/:feedbackId",
   tokenVerification,
   allowRoles("admin"),
-  validate(updatePortfolioFeedbackSelectionValidator),
-  portfolioController.updatePortfolioFeedbackSelection
+  validate(updateFeedbackValidator),
+  portfolioController.updateFeedback
 );
 
-export default router;

@@ -1,11 +1,11 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import User from "../../model/user.js";
+import { User } from "../../model/user.js";
 import { sendResetEmail } from "../../utils/email.js";
 import dotenv from "dotenv";
 dotenv.config();
 
-const authService = {
+export const authService = {
   register: async (data) => {
     const { email, password, role = "superadmin" } = data;
 
@@ -148,4 +148,3 @@ const authService = {
   },
 };
 
-export default authService;

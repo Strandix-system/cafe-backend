@@ -1,6 +1,6 @@
-import User from "../../../model/user.js";
+import { User } from "../../../model/user.js";
 
-const profileService = {
+export const profileService = {
   getMyProfile: async (userId) => {
     const user = await User.findById(userId).select(
       "firstName lastName email phoneNumber profileImage role socialLinks hours"
@@ -70,4 +70,3 @@ const profileService = {
   },
 };
 
-export default profileService;

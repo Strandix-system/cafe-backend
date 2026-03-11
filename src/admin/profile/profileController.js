@@ -1,7 +1,7 @@
-import profileService from "./profileService.js";
+import { profileService } from "./profileService.js";
 import  {sendSuccessResponse } from "../../../utils/response.js";
 
-const profileController = {
+export const profileController = {
   getMyProfile: async (req, res, next) => {
     try {
       const result = await profileService.getMyProfile(req.user._id);
@@ -33,4 +33,3 @@ const profileController = {
 };
 
 
-export default profileController;

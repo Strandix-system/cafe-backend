@@ -1,7 +1,7 @@
-import Customer from "../../../model/customer.js";
+import { Customer } from "../../../model/customer.js";
 import mongoose from "mongoose";
 
-const customerService = {
+export const customerService = {
   createCustomer: async (body) => {
     const { name, phoneNumber, adminId } = body;
 
@@ -221,4 +221,3 @@ const customerService = {
   },
 };
 
-export default customerService;

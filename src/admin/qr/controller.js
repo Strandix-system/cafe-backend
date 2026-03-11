@@ -1,10 +1,10 @@
-import qrService from "./service.js";
+import { qrService } from "./service.js";
 import { pick } from "../../../utils/pick.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
 import { get } from "http";
 
-const qrController = {
-  // Admin creates QR
+export const qrController = {
+  
   createQr: async (req, res, next) => {
     try {
       const { totalTables } = req.body;
@@ -18,7 +18,6 @@ const qrController = {
       next(err);
     }
   },
-  // Customer scans QR
   scanQr: async (req, res, next) => {
     try {
       const { qrId } = req.params;
@@ -54,4 +53,3 @@ const qrController = {
   },
 };
 
-export default qrController;

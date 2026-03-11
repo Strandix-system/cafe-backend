@@ -1,43 +1,43 @@
 import express from "express";
-import controller from "../src/auth/controller.js";
+import { authController } from "../src/auth/controller.js";
 import { tokenVerification } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { registerValidator, loginValidator, logoutValidator, } from "../validations/authValidation.js";
 import { allowRoles } from "../middleware/permission.js";
 import { checkSubscription } from "../middleware/checkSubscription.js";
-const router = express.Router();
 
-router.post(
+export const authRoute = express.Router();
+
+authRoute.post(
   "/register",
   validate(registerValidator),
-  controller.register
+  authController.register
 );
-router.post(
+authRoute.post(
   "/login",
   validate(loginValidator),
-  controller.login
+  authController.login
 );
-router.post(
+authRoute.post(
   "/logout",
   tokenVerification,
   validate(logoutValidator),
-  controller.logout
+  authController.logout
 );
 
-router.post("/forgot-password", controller.forgotPassword);
-router.post("/reset-password/:token", controller.resetPassword);
-router.get(
+authRoute.post("/forgot-password", authController.forgotPassword);
+authRoute.post("/reset-password/:token", authController.resetPassword);
+authRoute.get(
   "/me",
   tokenVerification,
   allowRoles("admin", "superadmin"),
   checkSubscription,
-  controller.me
+  authController.me
 );
-router.post(
+authRoute.post(
   "/change-password",
   tokenVerification,
   allowRoles("admin", "superadmin"),
-  controller.changePassword
+  authController.changePassword
 );
 
-export default router;

@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import User from "../../model/user.js";
-import razorpay from "../../config/razorpay.js";
+import { User } from "../../model/user.js";
+import { razorpay } from "../../config/razorpay.js";
 import { Transaction } from "../../model/transaction.js";
 import { ApiError } from "../../utils/apiError.js";
 import { toDate } from "../../utils/toDate.signUp.js"; 
@@ -114,7 +114,7 @@ export const signUpService = {
           method: payment.method,
           razorpayCustomerId: subscription?.customer_id,
           subscriptionPlanId: subscription?.plan_id,
-          subscriptionStatus: payment.subscriptionStatus,
+          subscriptionStatus: subscription?.status || "active",
           subscriptionStartDate: startDate,
           subscriptionEndDate: endDate,
           description: "Subscription payment",
@@ -365,7 +365,7 @@ export const signUpService = {
           method: payment.method,
           razorpayCustomerId: subscription?.customer_id,
           subscriptionPlanId: subscription?.plan_id,
-          subscriptionStatus: payment.subscriptionStatus,
+          subscriptionStatus: subscription?.status || "active",
           subscriptionStartDate: startDate,
           subscriptionEndDate: endDate,
           description: "Subscription renewal payment",

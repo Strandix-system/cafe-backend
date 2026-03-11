@@ -6,12 +6,12 @@ import helmet from "helmet";
 import compression from "compression";
 import { webhookRoutes } from "./routes/webhookRoute.js";
 import { errorHandler, notFoundError } from "./middleware/errorHandler.js";
-import connectDB from "./database/dbConnect.js";
-import routes from "./routes/index.js";
+import { connectDB } from "./database/dbConnect.js";
+import { routes } from "./routes/index.js";
 
 env.config();
 
-const app = express();
+export const app = express();
 
 app.set("trust proxy", 1);
 
@@ -42,6 +42,8 @@ app.use(
       "https://portfolio.aeternis.in",
       "http://localhost:5173",
       "http://localhost:5174",
+      "http://localhost:8080",
+      "http://localhost:8081",
     ],
     // origin: "*",
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -62,4 +64,4 @@ app.use(errorHandler);
 
 connectDB();
 
-export default app;
+

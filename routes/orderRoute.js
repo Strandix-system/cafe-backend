@@ -1,17 +1,17 @@
 import express from "express";
-import orderController from "../src/admin/order/controller.js";
+import { orderController } from "../src/admin/order/controller.js";
 import { tokenVerification } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/permission.js";
 import { blockExpiredSubscription } from "../middleware/block.Expired.Subscription.js";
 
-const router = express.Router();
+export const orderRoute = express.Router();
 
-router.post(
+orderRoute.post(
   "/public/create",
   orderController.createPublicOrder
 );
 
-router.get(
+orderRoute.get(
   "/get-all",
   tokenVerification,
   allowRoles("admin"),
@@ -19,32 +19,32 @@ router.get(
   orderController.getOrders
 );
 
-router.patch(
+orderRoute.patch(
   "/status",
   tokenVerification,
   allowRoles("admin"),
   orderController.updateStatus
 );
 
-router.get(
+orderRoute.get(
   "/items/:orderId",
   tokenVerification,
   allowRoles("admin"),
   orderController.getItems
 );
 
-router.get(
+orderRoute.get(
   "/my-orders",
   orderController.getMyOrders
 );
 
-router.patch(
+orderRoute.patch(
   "/payment-status",
   tokenVerification,
   allowRoles("admin"),
   orderController.updatePaymentStatus
 );
-router.get(
+orderRoute.get(
   "/bill/:id",
   tokenVerification,
   allowRoles("admin","superadmin"),
@@ -52,4 +52,3 @@ router.get(
 );
 
 
-export default router;

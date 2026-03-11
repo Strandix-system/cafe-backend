@@ -1,4 +1,4 @@
-import Menu from "../../../model/menu.js";
+import { Menu } from "../../../model/menu.js";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../../../config/s3.js";
 import { Category } from "../../../model/category.js";

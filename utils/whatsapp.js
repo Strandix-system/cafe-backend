@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const sendWhatsAppMessage = async ({ to, message }) => {
+export const sendWhatsAppMessage = async ({ to, message }) => {
   try {
     const response = await axios.post(
       `https://graph.facebook.com/v18.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
@@ -27,4 +27,3 @@ const sendWhatsAppMessage = async ({ to, message }) => {
   }
 };
 
-export default sendWhatsAppMessage;

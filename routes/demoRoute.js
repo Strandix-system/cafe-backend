@@ -1,30 +1,28 @@
 import express from "express";
-import controller from "../src/demoRequest/controller.js";
+import { demoController } from "../src/demoRequest/controller.js";
 import { allowRoles } from "../middleware/permission.js";
 import { tokenVerification } from "../middleware/auth.js";
 
-const router = express.Router();
+export const demoRoute = express.Router();
 
-router.post("/create", controller.createDemoRequest);
+demoRoute.post("/create", demoController.createDemoRequest);
 
-router.patch(
+demoRoute.patch(
   "/status/:id",
  tokenVerification,
  allowRoles("superadmin"),
-  controller.updateDemoStatus
+  demoController.updateDemoStatus
 );
 
-router.get(
+demoRoute.get(
   "/all",
  tokenVerification,
  allowRoles("superadmin"),
- controller.getAllDemoRequests
+ demoController.getAllDemoRequests
 );
-router.get(
+demoRoute.get(
   "/getbyid/:id",
  tokenVerification,
  allowRoles("superadmin"),
- controller.getDemoRequestById
+ demoController.getDemoRequestById
 )
-
-export default router;

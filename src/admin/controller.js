@@ -1,11 +1,11 @@
-import service from "./service.js";
+import { adminService } from "./service.js";
 import { sendSuccessResponse } from "../../utils/response.js";
 import { pick } from "../../utils/pick.js"
 
-export default {
+export const adminController = {
   createAdmin: async (req, res, next) => {
     try {
-      const result = await service.createAdmin(req.body, req.files);
+      const result = await adminService.createAdmin(req.body, req.files);
       sendSuccessResponse(res, 201, "Admin created successfully", result);
     } catch (err) {
       next(err);
@@ -13,7 +13,7 @@ export default {
   },
   updateAdmin: async (req, res, next) => {
     try {
-      const result = await service.updateAdmin(req.params.id, req.body, req.files);
+      const result = await adminService.updateAdmin(req.params.id, req.body, req.files);
       sendSuccessResponse(res, 200, "Admin updated successfully", result);
     } catch (error) {
       next(error);
@@ -21,7 +21,7 @@ export default {
   },
   deleteAdmin: async (req, res, next) => {
     try {
-      await service.deleteAdmin(req.params.id);
+      await adminService.deleteAdmin(req.params.id);
       sendSuccessResponse(res, 200, "Admin deleted successfully", null);
     } catch (error) {
       next(error);
@@ -34,7 +34,7 @@ export default {
       if (filter.isActive !== undefined) {
         filter.isActive = filter.isActive === "true";
       }
-      const result = await service.listAdmins(filter, options, req.query);
+      const result = await adminService.listAdmins(filter, options, req.query);
       sendSuccessResponse(res, 200, "Admins fetched successfully", result);
     } catch (error) {
       next(error);
@@ -42,7 +42,7 @@ export default {
   },
   getByAdmin: async (req, res, next) => {
     try {
-      const admins = await service.getByAdmin(req.params.id);
+      const admins = await adminService.getByAdmin(req.params.id);
       sendSuccessResponse(res, 200, "Admins fetched successfully", admins);
     } catch (error) {
       next(error);
@@ -57,7 +57,7 @@ export default {
         return next(Object.assign(new Error("isActive must be boolean"), { statusCode: 400 }));
       }
 
-      const result = await service.updateAdminStatus(adminId, isActive);
+      const result = await adminService.updateAdminStatus(adminId, isActive);
       sendSuccessResponse(res, 200, "Admin status updated successfully", result);
     } catch (error) {
       next(error);
@@ -65,7 +65,7 @@ export default {
   },
     updateSuperAdmin: async (req, res, next) => {
     try {
-      const result = await service.updateSuperAdmin(req.params.id,req.body,req.files);
+      const result = await adminService.updateSuperAdmin(req.params.id,req.body,req.files);
       sendSuccessResponse(res,200,"SuperAdmin updated successfully",result);
     } catch (error) {
       next(error);

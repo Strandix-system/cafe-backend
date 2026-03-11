@@ -1,4 +1,4 @@
-const aggregatePaginate = (schema) => {
+export const aggregatePaginate = (schema) => {
     schema.statics.aggregatePaginate = async function (filter, options) {
         let sort = {};
 
@@ -51,4 +51,3 @@ const aggregatePaginate = (schema) => {
     };
 };
 
-export { aggregatePaginate };

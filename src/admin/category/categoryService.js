@@ -1,5 +1,5 @@
 import { Category } from "../../../model/category.js";
-import Menu from "../../../model/menu.js";
+import { Menu } from "../../../model/menu.js";
 export const categoryService = {
   createCategory: async (data) => {
     const exists = await Category.findOne({ name: data.name });

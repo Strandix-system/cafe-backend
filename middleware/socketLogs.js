@@ -1,6 +1,6 @@
-import SocketLog from "../model/socketLogs.js";
+import { SocketLog } from "../model/socketLogs.js";
 
-const saveSocketLog = async (logData) => {
+export const saveSocketLog = async (logData) => {
     try {
         const log = new SocketLog(logData);
         await log.save();
@@ -9,4 +9,4 @@ const saveSocketLog = async (logData) => {
     };
 };
 
-export default saveSocketLog;
+

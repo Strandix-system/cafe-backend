@@ -1,6 +1,6 @@
-import User from "../../model/user.js";
+import { User } from "../../model/user.js";
 import { deleteSingleFile } from "../../utils/s3utils.js";
-const adminService = {
+export const adminService = {
   createAdmin: async (body, files) => {
     const exists = await User.findOne({ email: body.email });
     if (exists) {
@@ -202,4 +202,3 @@ const adminService = {
 },
 };
 
-export default adminService;

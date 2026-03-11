@@ -32,4 +32,6 @@ customerSchema.index(
     { unique: true }
 );
 
-export default mongoose.model("Customer", customerSchema);
+export const Customer = mongoose.model("Customer", customerSchema);
+
+

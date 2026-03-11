@@ -5,10 +5,10 @@ import { s3 } from "../config/s3.js";
 const commonOptions = {
   s3,
   bucket: process.env.S3_BUCKET_NAME,
-  contentType: multerS3.AUTO_CONTENT_TYPE, // ✅ auto image/jpeg, png, etc
+  contentType: multerS3.AUTO_CONTENT_TYPE,
   metadata: (req, file, cb) => {
     cb(null, {
-      "Content-Disposition": "inline", // ✅ force open in browser
+      "Content-Disposition": "inline",
     });
   },
 };
@@ -21,6 +21,7 @@ const uploadMenu = multer({
     },
   }), limits: { fileSize: 10 * 1024 * 1024 },
 });
+
 const uploadAdminImages = multer({
   storage: multerS3({
     ...commonOptions,
@@ -34,6 +35,7 @@ const uploadAdminImages = multer({
     },
   }), limits: { fileSize: 10 * 1024 * 1024 },
 });
+
 const uploadLayoutImages = multer({
   storage: multerS3({
     ...commonOptions,

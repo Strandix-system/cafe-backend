@@ -1,8 +1,8 @@
-import demoService from "./service.js";
+import { demoService } from "./service.js";
 import { pick } from "../../utils/pick.js"
 import { sendSuccessResponse } from "../../utils/response.js";
 
-const demoController = {
+export const demoController = {
 
   createDemoRequest: async (req, res, next) => {
     try {
@@ -47,4 +47,3 @@ const demoController = {
     }
   },
 }
-export default demoController;

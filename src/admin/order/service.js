@@ -1,11 +1,11 @@
-import Order from "../../../model/order.js";
-import Menu from "../../../model/menu.js";
-import Customer from "../../../model/customer.js";
-import User from "../../../model/user.js";
+import { Order } from "../../../model/order.js";
+import { Menu } from "../../../model/menu.js";
+import { Customer } from "../../../model/customer.js";
+import { User } from "../../../model/user.js";
 import { getIO } from "../../../socket.js";
-import sendWhatsAppMessage from "../../../utils/whatsapp.js";
+import { sendWhatsAppMessage } from "../../../utils/whatsapp.js";
 
-const orderService = {
+export const orderService = {
   createOrderByCustomerId: async (body) => {
     const { items, specialInstruction, customerId, tableNumber } = body;
 
@@ -311,4 +311,3 @@ See you again!
   },
 };
 
-export default orderService;

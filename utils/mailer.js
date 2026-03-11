@@ -22,7 +22,7 @@ var sendMail = async (mailOptions) => {
     };
 };
 
-export default {
+export const mailer = {
     sendOtp: (email, otp, subject) => {
         var mailOptions = {
             from: process.env.EMAIL_SMTP,

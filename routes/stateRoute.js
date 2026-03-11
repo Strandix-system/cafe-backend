@@ -1,9 +1,9 @@
 import express from "express";
-import indiaStates from "../config/indiaStates.js";
+import { indiaStates } from "../config/indiaStates.js";
 
-const router = express.Router();
+export const stateRoute = express.Router();
 
-router.get("/", (req, res) => {
+stateRoute.get("/", (req, res) => {
   res.status(200).json({
     success: true,
     count: indiaStates.length,
@@ -11,4 +11,3 @@ router.get("/", (req, res) => {
   });
 });
 
-export default router;

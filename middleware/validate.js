@@ -2,7 +2,7 @@ import Joi from 'joi';
 import { ApiError } from '../utils/apiError.js';
 import { pick } from '../utils/pick.js';
 
-const validate = (schema) => (req, res, next) => {
+export const validate = (schema) => (req, res, next) => {
     const validSchema = pick(schema, ['params', 'query', 'body']);
     const object = pick(req, Object.keys(validSchema));
     const { value, error } = Joi.compile(validSchema)
@@ -17,6 +17,3 @@ const validate = (schema) => (req, res, next) => {
     return next();
 };
 
-export {
-    validate
-};

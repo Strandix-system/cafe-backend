@@ -1,13 +1,13 @@
-import DemoRequest from "../../model/demoRequest.js";
+import { DemoRequest } from "../../model/demoRequest.js";
 
-const demoService = {
+export const demoService = {
     createDemoRequest: async (body) => {
         const result = await DemoRequest.create(body);
         return result;
     },
 
     updateDemoStatus: async (id, status) => {
-        const allowedStatus = ["requested", "full_filled", "inquiry","not_interested"];
+        const allowedStatus = ["requested", "full_filled", "inquiry", "not_interested"];
 
         if (!allowedStatus.includes(status)) {
             throw Object.assign(new Error("Invalid status value"), { statusCode: 400 });
@@ -38,7 +38,7 @@ const demoService = {
             ];
             delete filter.search;
         }
-        
+
         const result = await DemoRequest.paginate(filter, options);
         return result;
     },
@@ -50,4 +50,3 @@ const demoService = {
         return demoUser;
     },
 }
-export default demoService;

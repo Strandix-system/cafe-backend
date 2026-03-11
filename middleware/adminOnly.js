@@ -1,4 +1,4 @@
-const superAdminOnly = (req, res, next) => {
+export const superAdminOnly = (req, res, next) => {
   if (!req.user || ![ "superadmin"].includes(req.user.role)) {
     return res.status(403).json({
       message: "Super Admin access only",
@@ -6,4 +6,4 @@ const superAdminOnly = (req, res, next) => {
   }
   next();
 };
-export default superAdminOnly;
+ 

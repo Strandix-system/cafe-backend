@@ -34,12 +34,15 @@ const demoRequestSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["requested", "full_filled", "inquiry","not_interested"],
+      enum: ["requested", "full_filled", "inquiry", "not_interested"],
       default: "requested",
     },
   },
   { timestamps: true }
 );
- 
+
 demoRequestSchema.plugin(paginate)
-export default mongoose.model("demoRequest",demoRequestSchema);
+
+export const DemoRequest = mongoose.model("demoRequest", demoRequestSchema);
+
+

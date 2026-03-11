@@ -1,8 +1,8 @@
-import layoutService from "./service.js";
+import { layoutService } from "./service.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
 import { pick } from "../../../utils/pick.js";
 
-const cafeLayoutController = {
+export const cafeLayoutController = {
   createCafeLayout: async (req, res, next) => {
     try {
       if (typeof req.body.hours === 'string') {
@@ -12,7 +12,7 @@ const cafeLayoutController = {
         req.user._id,
         req.body,
         req.files,
-        req.user.role // 🔥 pass role
+        req.user.role 
       );
       sendSuccessResponse(res, 201, "Cafe layout created successfully", result);
     } catch (err) {
@@ -102,4 +102,3 @@ const cafeLayoutController = {
   },
 };
 
-export default cafeLayoutController;

@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
-import User from "../../../model/user.js";
-import Order from "../../../model/order.js";
-import Customer from "../../../model/customer.js";
-import demoRequest from "../../../model/demoRequest.js";
+import { User } from "../../../model/user.js";
+import { Order } from "../../../model/order.js";
+import { Customer } from "../../../model/customer.js";
+import { DemoRequest } from "../../../model/demoRequest.js";
 
 const dashboardService = {
   resolveTargetAdminId: async (user, requestedAdminId, { requireForSuperadmin = false } = {}) => {
@@ -38,7 +38,7 @@ const dashboardService = {
         User.countDocuments({ role: "admin" }),
         User.countDocuments({ role: "admin", isActive: true }),
         User.countDocuments({ role: "admin", isActive: false }),
-        demoRequest.countDocuments(),
+        DemoRequest.countDocuments(),
         Order.aggregate([
           {
             $match: { orderStatus: "completed" }

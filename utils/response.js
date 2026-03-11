@@ -1,4 +1,4 @@
-const sendSuccessResponse = (res, statusCode, message, result) => {
+export const sendSuccessResponse = (res, statusCode, message, result) => {
     return res.status(statusCode).json({
         success: true,
         message: message,
@@ -6,6 +6,3 @@ const sendSuccessResponse = (res, statusCode, message, result) => {
     });
 };
 
-export {
-    sendSuccessResponse
-};

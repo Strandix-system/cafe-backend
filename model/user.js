@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import { paginate } from "../model/plugin/paginate.plugin.js"
-import indiaStates from "../config/indiaStates.js";
+import { indiaStates } from "../config/indiaStates.js";
 import bcrypt from "bcryptjs";
+
 const userSchema = new mongoose.Schema(
   {
     firstName: {
@@ -109,5 +110,6 @@ userSchema.pre("save", async function (next) {
     next(error);
   }
 });
-userSchema.plugin(paginate)
-export default mongoose.model("User", userSchema);
+userSchema.plugin(paginate);
+
+export const User = mongoose.model("User", userSchema);

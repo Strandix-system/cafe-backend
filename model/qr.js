@@ -23,4 +23,5 @@ const qrSchema = new mongoose.Schema(
 
 qrSchema.plugin(paginate);
 qrSchema.index({ adminId: 1, tableNumber: 1 }, { unique: true });
-export default mongoose.model("Qr", qrSchema);
+
+export const Qr = mongoose.model("Qr", qrSchema);

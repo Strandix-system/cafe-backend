@@ -73,5 +73,6 @@ const orderSchema = new mongoose.Schema(
 
 orderSchema.plugin(paginate);
 
+export const Order = mongoose.model("Order", orderSchema);
 
-export default mongoose.model("Order", orderSchema);
+

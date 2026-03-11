@@ -1,4 +1,4 @@
-const paginate = (schema) => {
+export const paginate = (schema) => {
     schema.statics.paginate = async function (filter, options) {
         let sort = '';
         if (options.sortBy) {
@@ -54,4 +54,3 @@ let docsPromise = this.find(filter)
     };
 };
 
-export { paginate };

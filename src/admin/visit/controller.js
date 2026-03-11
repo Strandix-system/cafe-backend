@@ -1,6 +1,6 @@
-import visitService from "./service.js";
+import { visitService } from "./service.js";
 
-const visitController = {
+export const visitController = {
   trackVisit: async (req, res) => {
     try {
       await visitService.trackVisit(req);
@@ -34,4 +34,3 @@ const visitController = {
   },
 };
 
-export default visitController;

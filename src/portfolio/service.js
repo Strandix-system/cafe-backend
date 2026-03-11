@@ -68,31 +68,29 @@ export const portfolioService = {
 
     return [...featuredFeedbacks, ...fallbackFeedbacks];
   },
-  updatePortfolioFeedbackSelection: async (adminId, feedbackId, isPortfolioFeatured = true) => {
-    if (!feedbackId) throw new ApiError(400, "feedbackId is required");
-
+  updateFeedback: async (adminId, feedbackId, body) => {
     const feedback = await CustomerFeedback.findOne({
       _id: feedbackId,
       adminId,
-    })
+    });
 
     if (!feedback) throw new ApiError(404, "Customer feedback not found");
 
-    if (isPortfolioFeatured && !feedback.isPortfolioFeatured) {
+    if (body.isPortfolioFeatured === true) {
       const selectedCount = await CustomerFeedback.countDocuments({
         adminId,
         isPortfolioFeatured: true,
       });
 
-      if (selectedCount >= 5) {
+      if (selectedCount >= 5 && !feedback.isPortfolioFeatured) {
         throw new ApiError(400, "You can select a maximum of 5 customer feedbacks");
       }
     }
 
-    feedback.isPortfolioFeatured = isPortfolioFeatured;
+    Object.assign(feedback, body);
     await feedback.save();
 
-    return await portfolioService.getTopCustomerFeedbacks({ adminId });
+    return feedback;
   },
   getCustomerFeedbacks: async (filter = {}, options = {}) => {
     if (filter.search) {

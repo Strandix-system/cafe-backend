@@ -10,8 +10,8 @@ import categoryRoute from "./categoryRoute.js";
 import orderRoute from "./orderRoute.js";
 import qrRoute from "./qrRoute.js";
 import demoRoute from "./demoRoute.js";
-import { issueReportedRoute } from "./issueReportedRoute.js";
-import { portfolioRoute } from "./portfolioRoute.js";
+import { issueReportedRoute } from "./issueReported.route.js";
+import { portfolioRoute } from "./portfolio.route.js";
 
 import signUp from "./signUp.js";
 const router = express.Router();

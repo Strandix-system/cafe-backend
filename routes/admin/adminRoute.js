@@ -13,7 +13,6 @@ import { parseJSONFields } from "../../utils/helper.js";
 import { dashboardController } from "../../src/admin/dashboard/controller.js";
 import visitController from "../../src/admin/visit/controller.js";
 import { portfolioController } from "../../src/portfolio/controller.js";
-import { updatePortfolioFeedbackSelectionValidator } from "../../validations/portfolio.validation.js";
 import {
   dashboardAdminAnalyticsValidator,
   dashboardItemPerformanceValidator,
@@ -25,6 +24,7 @@ import {
   dashboardTopCafesValidator,
   dashboardTopCustomersValidator,
 } from "../../validations/dashboard.validation.js";
+import { updateFeedbackValidator } from "../../validations/portfolio.validation.js";
 
 const router = express.Router();
 
@@ -186,8 +186,8 @@ router.patch(
   "/feedback-selection/:feedbackId",
   tokenVerification,
   allowRoles("admin"),
-  validate(updatePortfolioFeedbackSelectionValidator),
-  portfolioController.updatePortfolioFeedbackSelection
+  validate(updateFeedbackValidator),
+  portfolioController.updateFeedback
 );
 
 export default router;

@@ -7,13 +7,13 @@ import { layoutRoute } from "./layoutRoute.js";
 import { profileRoute } from "./profileRoute.js";
 import { customerRoute } from "./customerRoute.js";
 import { categoryRoutes } from "./categoryRoute.js";
-import orderRoute from "./orderRoute.js";
-import qrRoute from "./qrRoute.js";
-import demoRoute from "./demoRoute.js";
+import {orderRoute} from "./orderRoute.js";
+import {qrRoute} from "./qrRoute.js";
+import { demoRoute } from "./demoRoute.js";
 import { issueReportedRoute } from "./issueReported.route.js";
 import { portfolioRoute } from "./portfolio.route.js";
-
 import { signUpRoutes } from "./signUp.js";
+
 export const routes = express.Router();
 
 const defaultRoutes = [

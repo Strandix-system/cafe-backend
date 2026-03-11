@@ -1,21 +1,21 @@
-// 404 Not Found middleware
+import { ApiError } from "../utils/apiError.js";
+
 export const notFoundError = (req, res, next) => {
-  res.status(404).json({
-    success: false,
-    message: `Route not found - ${req.originalUrl}`,
-  });
+  next(new ApiError(404, `Route not found - ${req.originalUrl}`));
 };
 
-// Global error handler
-const errorHandler = (err, req, res, next) => {
-  const statusCode =
-    err?.statusCode ||
-    (res.statusCode && res.statusCode !== 200 ? res.statusCode : 500);
+export const errorHandler = (err, req, res, next) => {
+  let statusCode = err.statusCode || 500;
+
+  let message = err.message || "Internal Server Error";
+
+  if (!(err instanceof ApiError)) {
+    statusCode = 500;
+    message = err.message;
+  }
 
   res.status(statusCode).json({
     success: false,
-    message: err.message || "Server Error",
+    message,
   });
 };
-
-export default errorHandler;

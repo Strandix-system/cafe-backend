@@ -10,9 +10,12 @@ import {
 } from "../../validations/createValidation.js";
 import { uploadAdminImages } from "../../middleware/upload.js";
 import { parseJSONFields } from "../../utils/helper.js";
-import dashboardController from "../../src/admin/Dashboard/controller.js";
+import dashboardController from "../../src/admin/dashboard/controller.js";
 import visitController from "../../src/admin/visit/controller.js";
 import { blockExpiredSubscription } from "../../middleware/block.Expired.Subscription.js";
+import { portfolioController } from "../../src/portfolio/controller.js";
+import { updatePortfolioFeedbackSelectionValidator } from "../../validations/portfolio.validation.js";
+
 const router = express.Router();
 
 router.post(
@@ -146,5 +149,27 @@ router.get("/total",
   tokenVerification,
   allowRoles("superadmin"),
   visitController.getTotalVisits);
+
+router.get(
+  "/get-feedback",
+  tokenVerification,
+  allowRoles("admin"),
+  portfolioController.getCustomerFeedbacks
+);
+
+router.delete(
+  "/delete-feedback/:id",
+  tokenVerification,
+  allowRoles("admin"),
+  portfolioController.deleteCustomerFeedback
+);
+
+router.patch(
+  "/feedback-selection/:feedbackId",
+  tokenVerification,
+  allowRoles("admin"),
+  validate(updatePortfolioFeedbackSelectionValidator),
+  portfolioController.updatePortfolioFeedbackSelection
+);
 
 export default router;

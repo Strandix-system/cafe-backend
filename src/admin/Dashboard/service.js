@@ -3,31 +3,37 @@ import { User } from "../../../model/user.js";
 import { Order } from "../../../model/order.js";
 import { Customer } from "../../../model/customer.js";
 import { DemoRequest } from "../../../model/demoRequest.js";
+import { ApiError } from "../../../utils/apiError.js";
+import {
+  getCurrentUtcDayRange,
+  getCurrentUtcYearRange,
+  getUtcDateRange,
+} from "../../../utils/dateRange.js";
 
-const dashboardService = {
-  resolveTargetAdminId: async (user, requestedAdminId, { requireForSuperadmin = false } = {}) => {
+export const dashboardService = {
+  resolveDashboardAdminId: async (user, requestedAdminId, { requireForSuperadmin = false } = {}) => {
     if (user.role === "admin") {
       return user._id;
     }
 
     if (user.role !== "superadmin") {
-      throw Object.assign(new Error("Access Denied"), { statusCode: 403 });
+      throw new ApiError(403, "Access Denied");
     }
 
     if (!requestedAdminId) {
       if (requireForSuperadmin) {
-        throw Object.assign(new Error("adminId query parameter is required"), { statusCode: 400 });
+        throw new ApiError(400, "adminId query parameter is required");
       }
       return null;
     }
 
     if (!mongoose.Types.ObjectId.isValid(requestedAdminId)) {
-      throw Object.assign(new Error("Invalid adminId"), { statusCode: 400 });
+      throw new ApiError(400, "Invalid adminId");
     }
 
     const admin = await User.findOne({ _id: requestedAdminId, role: "admin" }).select("_id");
     if (!admin) {
-      throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
+      throw new ApiError(404, "Admin not found");
     }
 
     return admin._id;
@@ -61,22 +67,7 @@ const dashboardService = {
     };
   },
   adminStats: async (adminId) => {
-    const id = adminId;
-    const now = new Date();
-
-    const start = new Date(Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      0, 0, 0, 0
-    ));
-
-    const end = new Date(Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      23, 59, 59, 999
-    ));
+    const { start, end } = getCurrentUtcDayRange();
 
     const [
       totalCustomer,
@@ -88,21 +79,19 @@ const dashboardService = {
       todayIncomeAgg,
     ] = await Promise.all([
 
-      // TOTAL
-      Customer.countDocuments({ adminId: id }),
+      Customer.countDocuments({ adminId }),
       Order.countDocuments({
-        adminId: id, orderStatus: "completed"
+        adminId, orderStatus: "completed"
       }),
       Order.aggregate([
-        { $match: { adminId: id, orderStatus: "completed" } },
+        { $match: { adminId, orderStatus: "completed" } },
         { $group: { _id: null, total: { $sum: "$totalAmount" } } }
       ]),
 
-      // TODAY
       Order.aggregate([
         {
           $match: {
-            adminId: id,
+            adminId,
             createdAt: { $gte: start, $lte: end }
           }
         },
@@ -111,14 +100,14 @@ const dashboardService = {
         }
       ]),
       Order.countDocuments({
-        adminId: id,
+        adminId,
         orderStatus: "completed",
         createdAt: { $gte: start, $lte: end }
       }),
       Order.aggregate([
         {
           $match: {
-            adminId: id,
+            adminId,
             createdAt: { $gte: start, $lte: end }
           }
         },
@@ -142,15 +131,10 @@ const dashboardService = {
     };
   },
   salesChart: async (adminId, startDate, endDate) => {
-    const id = adminId;
     let start, end, groupId, labelFormatter;
 
-    // ✅ DEFAULT: YEARLY (current year, month-wise)
     if (!startDate || !endDate) {
-      const now = new Date();
-
-      start = new Date(now.getFullYear(), 0, 1); // Jan 1
-      end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999); // Dec 31
+      ({ start, end } = getCurrentUtcYearRange());
 
       groupId = {
         year: { $year: "$createdAt" },
@@ -159,21 +143,13 @@ const dashboardService = {
 
       labelFormatter = (id) => `${id.month}-${id.year}`;
     }
-    // ✅ Custom date range
     else {
-      // 🔥 FIX START
-      start = new Date(startDate);
-      start.setUTCHours(0, 0, 0, 0);
-
-      end = new Date(endDate);
-      end.setUTCHours(23, 59, 59, 999);
-      // 🔥 FIX END
+      ({ start, end } = getUtcDateRange(startDate, endDate));
 
       const diffDays = Math.ceil(
         (end - start) / (1000 * 60 * 60 * 24)
       );
 
-      // Day-wise (short range)
       if (diffDays <= 45) {
         groupId = {
           date: {
@@ -183,7 +159,6 @@ const dashboardService = {
 
         labelFormatter = (id) => id.date;
       }
-      // Month-wise (long range)
       else {
         groupId = {
           year: { $year: "$createdAt" },
@@ -197,7 +172,7 @@ const dashboardService = {
     const sales = await Order.aggregate([
       {
         $match: {
-          adminId: id,
+          adminId,
           createdAt: { $gte: start, $lte: end },
         },
       },
@@ -216,10 +191,8 @@ const dashboardService = {
     }));
   },
   itemPerformance: async (adminId) => {
-    const id = adminId;
-
     const pipeline = (sortOrder) => [
-      { $match: { adminId: id } },
+      { $match: { adminId } },
       { $unwind: "$items" },
       {
         $group: {
@@ -265,39 +238,19 @@ const dashboardService = {
     };
   },
   peakTime: async (adminId, startDate, endDate) => {
-    const id = adminId;
-
     let start, end;
 
     if (!startDate || !endDate) {
-      const now = new Date();
-
-      start = new Date(Date.UTC(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate(),
-        0, 0, 0, 0
-      ));
-
-      end = new Date(Date.UTC(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate(),
-        23, 59, 59, 999
-      ));
+      ({ start, end } = getCurrentUtcDayRange());
     } else {
       // 🔥 FIX START
-      start = new Date(startDate);
-      start.setUTCHours(0, 0, 0, 0);
-
-      end = new Date(endDate);
-      end.setUTCHours(23, 59, 59, 999);
+      ({ start, end } = getUtcDateRange(startDate, endDate));
       // 🔥 FIX END
     }
     const raw = await Order.aggregate([
       {
         $match: {
-          adminId: id,
+          adminId,
           createdAt: { $gte: start, $lte: end },
         },
       },
@@ -318,7 +271,7 @@ const dashboardService = {
     raw.forEach(r => (hourMap[r._id] = r.orders));
 
     const result = [];
-    for (let hour = 8; hour <= 24; hour++) {
+    for (let hour = 8; hour <= 23; hour++) {
       result.push({
         hour:
           hour === 12
@@ -332,13 +285,25 @@ const dashboardService = {
 
     return result;
   },
-  topCustomers: async (adminId) => {
-    const id = adminId;
+  topCustomers: async (adminId, filter = {}) => {
+    const sortBy = filter.sortBy;
+
+    let sortStage = {
+      totalOrders: -1,
+      totalAmount: -1,
+    };
+
+    if (sortBy === "amount") {
+      sortStage = {
+        totalAmount: -1,
+        totalOrders: -1,
+      };
+    }
 
     const customers = await Order.aggregate([
       {
         $match: {
-          adminId: id,
+          adminId,
           orderStatus: "completed",
         },
       },
@@ -359,19 +324,31 @@ const dashboardService = {
       },
       { $unwind: "$customer" },
       {
+        $addFields: {
+          customerStatus: {
+            $switch: {
+              branches: [
+                { case: { $gt: ["$totalAmount", 5000] }, then: "vip" },
+                { case: { $gt: ["$totalOrders", 1] }, then: "frequent" },
+              ],
+              default: "new",
+            },
+          },
+        },
+      },
+      {
         $project: {
           _id: 0,
           customerId: "$_id",
           name: "$customer.name",
+          phoneNumber: "$customer.phoneNumber",
           totalOrders: 1,
           totalAmount: 1,
+          customerStatus: 1,
         },
       },
       {
-        $sort: {
-          totalOrders: -1,
-          totalAmount: -1,
-        },
+        $sort: sortStage,
       },
       { $limit: 10 },
     ]);
@@ -379,10 +356,8 @@ const dashboardService = {
     return customers;
   },
   tablePerformance: async (adminId) => {
-    const id = adminId;
-
     return Order.aggregate([
-      { $match: { adminId: id } },
+      { $match: { adminId } },
       {
         $group: {
           _id: "$tableNumber",
@@ -398,10 +373,7 @@ const dashboardService = {
 
     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     if (!startDate || !endDate) {
-      const now = new Date();
-
-      start = new Date(Date.UTC(now.getUTCFullYear(), 0, 1, 0, 0, 0, 0));
-      end = new Date(Date.UTC(now.getUTCFullYear(), 11, 31, 23, 59, 59, 999));
+      ({ start, end } = getCurrentUtcYearRange());
 
       groupId = {
         year: { $year: "$createdAt" },
@@ -412,11 +384,7 @@ const dashboardService = {
     }
 
     else {
-      start = new Date(startDate);
-      start.setUTCHours(0, 0, 0, 0);
-
-      end = new Date(endDate);
-      end.setUTCHours(23, 59, 59, 999);
+      ({ start, end } = getUtcDateRange(startDate, endDate));
 
       const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
 
@@ -469,7 +437,29 @@ const dashboardService = {
       revenue: c.revenue,
     }));
   },
-  topCafes: async () => {
+  topCafes: async (filter = {}) => {
+    const sortBy = filter.sortBy;
+
+    let sortStage = {
+      totalOrders: -1,
+      totalAmount: -1,
+    };
+
+    if (sortBy === "amount") {
+      sortStage = {
+        totalAmount: -1,
+        totalOrders: -1,
+      };
+    }
+
+    if (sortBy === "rating") {
+      sortStage = {
+        averageRating: -1,
+        totalOrders: -1,
+        totalAmount: -1,
+      };
+    }
+
     const cafes = await Order.aggregate([
       {
         $match: {
@@ -493,19 +483,36 @@ const dashboardService = {
       },
       { $unwind: "$admin" },
       {
+        $lookup: {
+          from: "customerfeedbacks",
+          localField: "_id",
+          foreignField: "adminId",
+          as: "feedbacks",
+        },
+      },
+      {
+        $addFields: {
+          averageRating: {
+            $cond: [
+              { $gt: [{ $size: "$feedbacks" }, 0] },
+              { $avg: "$feedbacks.rate" },
+              0,
+            ],
+          },
+        },
+      },
+      {
         $project: {
           _id: 0,
           cafeId: "$admin._id",
           cafeName: "$admin.cafeName", // ✅ FIX HERE
           totalOrders: 1,
           totalAmount: 1,
+          averageRating: { $round: ["$averageRating", 1] },
         },
       },
       {
-        $sort: {
-          totalOrders: -1,
-          totalAmount: -1,
-        },
+        $sort: sortStage,
       },
       { $limit: 5 },
     ]);
@@ -513,5 +520,3 @@ const dashboardService = {
     return cafes;
   },
 };
-
-export default dashboardService;

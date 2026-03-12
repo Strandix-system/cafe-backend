@@ -1,7 +1,7 @@
 import Joi from "joi";
 
 const objectIdRule = Joi.string().hex().length(24);
-const phoneRule = Joi.string().trim().pattern(/^[0-9]{10}$/);
+const phoneRule = Joi.number().min(6000000000).max(9999999999).strict();
 const razorpayPaymentIdRule = Joi.string().trim().pattern(/^pay_[A-Za-z0-9]+$/);
 const razorpaySubscriptionIdRule = Joi.string().trim().pattern(/^sub_[A-Za-z0-9]+$/);
 const razorpaySignatureRule = Joi.string().trim().pattern(/^[a-fA-F0-9]{64}$/);
@@ -32,12 +32,12 @@ export const verifySubscriptionValidation = {
 export const getTransactionsValidation = {
   query: Joi.object().keys({
     status: Joi.string().valid("created", "active", "cancelled", "completed", "expired").optional(),
-    adminId: objectIdRule.optional(),
+    userId: objectIdRule.optional(),
     search: Joi.string().trim().optional(),
     fromDate: Joi.date().iso().optional(),
     toDate: Joi.date().iso().optional(),
-    page: Joi.number().integer().min(1).optional(),
-    limit: Joi.number().integer().min(1).max(100).optional(),
+    page: Joi.number().integer().min(0).optional(),
+    limit: Joi.number().integer().min(0).max(100).optional(),
     sortBy: Joi.string().trim().optional(),
     populate: Joi.string().trim().optional(),
   }),

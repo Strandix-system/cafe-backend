@@ -44,6 +44,16 @@ const changePasswordValidator = {
     newPassword: Joi.string().min(6).max(30).required(),
   }),
 };
+const checkEmailValidation = {
+  body: Joi.object()
+    .keys({
+      email: Joi.string().email().required(),
+      firstName: Joi.string().optional(),
+      lastName: Joi.string().optional(),
+      password: Joi.string().min(6).optional(),
+      phoneNumber: phoneRule.required(),
+    })
+};
 
 export {
   registerValidator,
@@ -51,5 +61,6 @@ export {
   logoutValidator,
   forgotPasswordValidator,
   resetPasswordValidator,
-  changePasswordValidator
+  changePasswordValidator,
+  checkEmailValidation,
 };

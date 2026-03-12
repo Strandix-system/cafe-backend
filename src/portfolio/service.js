@@ -6,16 +6,31 @@ import { ApiError } from "../../utils/apiError.js";
 export const portfolioService = {
   aboutStats: async (filter = {}) => {
     const adminId = filter.adminId;
+    const adminObjectId = new mongoose.Types.ObjectId(adminId);
 
-    const [totalCustomer, totalMenuItem] = await Promise.all([
+    const [totalCustomer, totalMenuItem, ratingAgg] = await Promise.all([
       Customer.countDocuments({ adminId }),
       Menu.countDocuments({ adminId }),
+      CustomerFeedback.aggregate([
+        {
+          $match: { adminId: adminObjectId },
+        },
+        {
+          $group: {
+            _id: null,
+            averageRating: { $avg: "$rate" },
+          },
+        },
+      ]),
     ]);
 
     return {
       adminId,
       totalCustomer,
       totalMenuItem,
+      averageRating: ratingAgg[0]?.averageRating
+        ? Number(ratingAgg[0].averageRating.toFixed(1))
+        : 0,
     };
   },
   createCustomerFeedback: async (body = {}) => {

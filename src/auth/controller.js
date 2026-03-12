@@ -22,6 +22,7 @@ export const authController = {
   me: async (req, res, next) => {
     try {
       const user = req.user.toObject();
+      // Check profile completion
       const isProfileComplete =
         new Date(user.createdAt).getTime() !==
         new Date(user.updatedAt).getTime();

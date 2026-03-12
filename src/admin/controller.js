@@ -1,6 +1,7 @@
 import service from "./service.js";
 import { sendSuccessResponse } from "../../utils/response.js";
-import { pick } from "../../utils/pick.js"
+import { pick } from "../../utils/pick.js";
+import { ApiError } from "../../utils/apiError.js";
 
 export default {
   createAdmin: async (req, res, next) => {
@@ -30,7 +31,7 @@ export default {
   listAdmins: async (req, res, next) => {
     try {
       const filter = pick(req.query, ["search", "isActive"]);
-      const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
+      const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
       if (filter.isActive !== undefined) {
         filter.isActive = filter.isActive === "true";
       }
@@ -54,7 +55,7 @@ export default {
       const { isActive } = req.body;
 
       if (typeof isActive !== "boolean") {
-        return next(Object.assign(new Error("isActive must be boolean"), { statusCode: 400 }));
+        throw new ApiError(400, "isActive must be boolean");
       }
 
       const result = await service.updateAdminStatus(adminId, isActive);
@@ -63,10 +64,10 @@ export default {
       next(error);
     }
   },
-    updateSuperAdmin: async (req, res, next) => {
+  updateSuperAdmin: async (req, res, next) => {
     try {
-      const result = await service.updateSuperAdmin(req.params.id,req.body,req.files);
-      sendSuccessResponse(res,200,"SuperAdmin updated successfully",result);
+      const result = await service.updateSuperAdmin(req.params.id, req.body, req.files);
+      sendSuccessResponse(res, 200, "SuperAdmin updated successfully", result);
     } catch (error) {
       next(error);
     }

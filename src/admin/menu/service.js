@@ -3,6 +3,7 @@ import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../../../config/s3.js";
 import Category from "../../../model/category.js";
 import { deleteSingleFile } from "../../../utils/s3utils.js";
+import { ApiError } from "../../../utils/apiError.js";
 
 const getS3Key = (value) => {
   if (!value) return null;
@@ -14,15 +15,13 @@ const getS3Key = (value) => {
 const menuService = {
   createMenu: async (adminId, body, file) => {
     if (!file) {
-      throw Object.assign(new Error("Image is required"), { statusCode: 400 });
+      throw new ApiError(400, "Image is required");
     }
     const categoryExists = await Category.findOne({
       name: { $regex: new RegExp(`^${body.category}$`, "i") }
     });
     if (!categoryExists) {
-      throw Object.assign(new Error(`Category '${body.category}' does not exist`), {
-        statusCode: 404
-      });
+      throw new ApiError(404, `Category '${body.category}' does not exist`);
     }
     const menu = await Menu.create({
       ...body,
@@ -37,7 +36,7 @@ const menuService = {
   updateMenu: async (menuId, body, file) => {
     const menu = await Menu.findById(menuId);
     if (!menu) {
-      throw Object.assign(new Error("Menu not found"), { statusCode: 404 });
+      throw new ApiError(404, "Menu not found");
     }
     if (file?.location) {
       if (menu.image) {
@@ -56,7 +55,7 @@ const menuService = {
   deleteMenu: async (menuId) => {
     const menu = await Menu.findById(menuId);
     if (!menu) {
-      throw Object.assign(new Error("Menu not found"), { statusCode: 404 });
+      throw new ApiError(404, "Menu not found");
     }
     if (menu.image) {
       const key = getS3Key(menu.image);

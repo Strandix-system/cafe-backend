@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../../model/user.js";
 import { sendResetEmail } from "../../utils/email.js";
+import { ApiError } from "../../utils/apiError.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -11,7 +12,7 @@ const authService = {
 
     const exists = await User.findOne({ email });
     if (exists) {
-      throw new Error("User already exists");
+      throw new ApiError(409, "User already exists");
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -34,7 +35,7 @@ const authService = {
     const { email, phoneNumber, password } = data;
 
     if ((!email && !phoneNumber) || !password) {
-      throw new Error("Email or phoneNumber and password are required");
+      throw new ApiError(400, "Email or phoneNumber and password are required");
     }
     const user = await User.findOne({
       $or: [
@@ -45,14 +46,14 @@ const authService = {
     }).select("+password");
 
     if (!user) {
-      throw new Error("Invalid credentials");
+      throw new ApiError(401, "Invalid credentials");
     }
     if (!user.isActive) {
-      throw new Error("Your account is inactive. Please contact admin.");
+      throw new ApiError(403, "Your account is inactive. Please contact admin.");
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      throw new Error("Invalid credentials");
+      throw new ApiError(401, "Invalid credentials");
     }
     const token = jwt.sign(
       { id: user._id, role: user.role },
@@ -67,7 +68,7 @@ const authService = {
 
   logout: async (userId) => {
     const user = await User.findById(userId);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new ApiError(404, "User not found");
     user.tokenVersion += 1;
     await user.save();
     return { message: "Logged out successfully" };
@@ -76,7 +77,7 @@ const authService = {
   forgotPassword: async (email) => {
     const user = await User.findOne({ email });
     if (!user) {
-      throw new Error("User not found");
+      throw new ApiError(404, "User not found");
     }
     const token = jwt.sign(
       { email: user.email, purpose: "reset-password" },
@@ -91,30 +92,30 @@ const authService = {
   resetPassword : async (token, newPassword) => {
 
     if (!token) {
-      throw new Error("No token provided");
+      throw new ApiError(400, "No token provided");
     }
 
     if (!newPassword) {
-      throw new Error("New password is required");
+      throw new ApiError(400, "New password is required");
     }
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (error) {
-      throw new Error("Invalid or expired token");
+      throw new ApiError(400, "Invalid or expired token");
     }
 
     if (decoded.purpose !== "reset-password") {
-      throw new Error("Invalid reset token");
+      throw new ApiError(400, "Invalid reset token");
     }
     const user = await User.findOne({ email: decoded.email }).select("+password");
 
     if (!user) {
-      throw new Error("User not found");
+      throw new ApiError(404, "User not found");
     }
     const isSamePassword = await bcrypt.compare(newPassword, user.password);
     if (isSamePassword) {
-      throw new Error("New password cannot be same as old password");
+      throw new ApiError(400, "New password cannot be same as old password");
     }
     user.password = newPassword;
     await user.save();
@@ -124,22 +125,22 @@ const authService = {
   changePassword: async (adminId, currentPassword, newPassword) => {
 
     if (!currentPassword || !newPassword) {
-      throw new Error("Both current and new password are required");
+      throw new ApiError(400, "Both current and new password are required");
     }
     const user = await User.findById(adminId).select("+password");
     if (!user) {
-      throw new Error("User not found");
+      throw new ApiError(404, "User not found");
     }
     if (!user.password) {
-      throw new Error("User password not found");
+      throw new ApiError(400, "User password not found");
     }
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
-      throw new Error("Current password is incorrect");
+      throw new ApiError(401, "Current password is incorrect");
     }
     const isSamePassword = await bcrypt.compare(newPassword, user.password);
     if (isSamePassword) {
-      throw new Error("New password cannot be same as old password");
+      throw new ApiError(400, "New password cannot be same as old password");
     }
     user.password = newPassword;
     await user.save();

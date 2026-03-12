@@ -36,7 +36,6 @@ export const dashboardController = {
       req.query.adminId,
       { requireForSuperadmin: true }
     );
-
     const data = await dashboardService.itemPerformance(adminId);
     sendSuccessResponse(res, 200, "Item performance fetched", data);
   },
@@ -73,7 +72,6 @@ export const dashboardController = {
       req.query.adminId,
       { requireForSuperadmin: true }
     );
-
     const data = await dashboardService.tablePerformance(adminId);
     sendSuccessResponse(res, 200, "Table performance fetched", data);
   },
@@ -93,7 +91,7 @@ export const dashboardController = {
     sendSuccessResponse(res, 200, "Platform sales chart fetched successfully", data);
   },
   getAdminAnalytics: async (req, res) => {
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, sortBy } = req.query;
     const adminId = await dashboardService.resolveDashboardAdminId(
       req.user,
       req.query.adminId,
@@ -113,7 +111,7 @@ export const dashboardController = {
       dashboardService.itemPerformance(adminId),
       dashboardService.peakTime(adminId, startDate, endDate),
       dashboardService.tablePerformance(adminId),
-      dashboardService.topCustomers(adminId),
+      dashboardService.topCustomers(adminId, { sortBy }),
     ]);
 
     sendSuccessResponse(res, 200, "Admin analytics fetched successfully", {

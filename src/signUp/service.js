@@ -1,10 +1,10 @@
-// signup service
 
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../../model/user.js";
 import razorpay from "../../config/razorpay.js";
+import { ApiError } from "../../utils/apiError.js";
 
 const SIGNUP_AMOUNT = 10; 
 
@@ -42,12 +42,12 @@ const signUpService = {
       .digest("hex");
 
     if (expectedSignature !== razorpay_signature) {
-      throw new Error("Payment verification failed");
+      throw new ApiError(400, "Payment verification failed");
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      throw new Error("User already exists");
+      throw new ApiError(409, "User already exists");
     }
     const user = await User.create({
       firstName,
@@ -68,13 +68,11 @@ const signUpService = {
       token,
     };
   },
-   checkEmailExists: async (email) => {
+  checkEmailExists: async (email) => {
     const existingUser = await User.findOne({ email: email.toLowerCase() });
 
     if (existingUser) {
-      const error = new Error("Email already registered.");
-      error.statusCode = 409;
-      throw error;
+      throw new ApiError(409, "Email already registered.");
     }
 
     return {

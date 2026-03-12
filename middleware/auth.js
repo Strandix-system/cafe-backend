@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../model/user.js";
+import { ApiError } from "../utils/apiError.js";
 
 export const generateToken = (id) => {
   return jwt.sign(
@@ -12,21 +13,23 @@ export const generateToken = (id) => {
 export const tokenVerification = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
+
     if (!token) {
-      return res.status(401).json({ message: "No token provided" });
+      throw new ApiError(401, "No token provided");
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await User.findById(decoded.id);
+
     if (!user) {
-      return res.status(401).json({ message: "User not found" });
+      throw new ApiError(401, "User not found");
     }
-      if (!user.isActive) {
-      return res.status(403).json({
-        message: "Your account is inactive. Please purchase subscription",
-      });
+
+    if (!user.isActive) {
+      throw new ApiError(403, "Your account is inactive. Please purchase subscription");
     }
+
     req.user = user;
     next();
   } catch (error) {

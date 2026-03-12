@@ -17,7 +17,7 @@ const createDemoRequest = {
 
     city: Joi.string().trim().min(2).max(50).required(),
 
-    message: Joi.string().trim().max(500).optional().allow(""),
+    message: Joi.string().trim().min(30).max(500).optional().allow(""),
   }),
 };
 

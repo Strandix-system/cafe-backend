@@ -22,7 +22,8 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
-      unique: true
+      unique: true,
+      lowercase: true,
     },
     phoneNumber: {
       type: Number,
@@ -33,7 +34,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      select: false 
+      select: false
     },
     address: {
       type: String,
@@ -82,7 +83,7 @@ const userSchema = new mongoose.Schema(
       required: true
     },
     hours: {
-      weekdays: { type: String,  default: null },
+      weekdays: { type: String, default: null },
       weekends: { type: String, default: null },
     },
     socialLinks: {
@@ -90,7 +91,6 @@ const userSchema = new mongoose.Schema(
       facebook: { type: String, default: null },
       twitter: { type: String, default: null },
     },
-    
   },
   {
     timestamps: true,

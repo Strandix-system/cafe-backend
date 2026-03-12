@@ -60,7 +60,7 @@ const orderService = {
         quantity: item.quantity,
       };
     });
- 
+
     const gstAmount = (subTotal * gstPercent) / 100;
 
     const finalTotal = subTotal + gstAmount;

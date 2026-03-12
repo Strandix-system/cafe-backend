@@ -2,7 +2,6 @@ import CafeLayout from "../../../model/layout.js";
 import { deleteUploadedFiles } from "../../../utils/s3utils.js";
 import { deleteSingleFile } from "../../../utils/s3utils.js";
 import Qr from "../../../model/qr.js"
-import mongoose from "mongoose";
 import { ApiError } from "../../../utils/apiError.js";
 
 const layoutService = {

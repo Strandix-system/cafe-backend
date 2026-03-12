@@ -1,7 +1,7 @@
 import Menu from "../../../model/menu.js";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../../../config/s3.js";
-import Category from "../../../model/category.js";
+import { Category } from "../../../model/category.js";
 import { deleteSingleFile } from "../../../utils/s3utils.js";
 
 const getS3Key = (value) => {
@@ -11,7 +11,7 @@ const getS3Key = (value) => {
   return url.pathname.substring(1);
 };
 
-const menuService = {
+export const menuService = {
   createMenu: async (adminId, body, file) => {
     if (!file) {
       throw Object.assign(new Error("Image is required"), { statusCode: 400 });
@@ -126,4 +126,3 @@ getAdminUsedCategories: async (adminId, filter, options) => {
   return result;
 },
 };
-export default menuService;

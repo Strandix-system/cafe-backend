@@ -9,10 +9,9 @@ import customerRoute from "./customerRoute.js";
 import { categoryRoutes } from "./categoryRoute.js";
 import orderRoute from "./orderRoute.js";
 import qrRoute from "./qrRoute.js";
-// import dashboardRoute from "./dashboardRoute.js";
 import demoRoute from "./demoRoute.js";
-import issueReportedRoute from "./issueReportedRoute.js";
-
+import { issueReportedRoute } from "./issueReported.route.js";
+import { portfolioRoute } from "./portfolio.route.js";
 
 import { signUpRoutes } from "./signUp.js";
 const router = express.Router();
@@ -68,6 +67,10 @@ const defaultRoutes = [
   {
     path: "/issue-reported",
     route: issueReportedRoute,
+  },
+  {
+    path: "/portfolio",
+    route: portfolioRoute,
   },
 ];
 

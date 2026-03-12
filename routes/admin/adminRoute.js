@@ -10,9 +10,23 @@ import {
 } from "../../validations/createValidation.js";
 import { uploadAdminImages } from "../../middleware/upload.js";
 import { parseJSONFields } from "../../utils/helper.js";
-import dashboardController from "../../src/admin/Dashboard/controller.js";
+import { dashboardController } from "../../src/admin/dashboard/controller.js";
 import visitController from "../../src/admin/visit/controller.js";
 import { blockExpiredSubscription } from "../../middleware/block.Expired.Subscription.js";
+import { portfolioController } from "../../src/portfolio/controller.js";
+import {
+  dashboardAdminAnalyticsValidator,
+  dashboardItemPerformanceValidator,
+  dashboardPeakTimeValidator,
+  dashboardPlatformSalesValidator,
+  dashboardSalesValidator,
+  dashboardStatsValidator,
+  dashboardTablePerformanceValidator,
+  dashboardTopCafesValidator,
+  dashboardTopCustomersValidator,
+} from "../../validations/dashboard.validation.js";
+import { updateFeedbackValidator } from "../../validations/portfolio.validation.js";
+
 const router = express.Router();
 
 router.post(
@@ -86,18 +100,25 @@ router.get(
   tokenVerification,
   allowRoles("admin", "superadmin"),
   blockExpiredSubscription,
+  validate(dashboardStatsValidator),
   dashboardController.getStats
 );
 
 router.get(
   "/dashboard/sales",
   tokenVerification,
-  allowRoles("admin", "superadmin"),blockExpiredSubscription, dashboardController.getSalesChart
+  allowRoles("admin", "superadmin"),
+  blockExpiredSubscription,
+  validate(dashboardSalesValidator),
+  dashboardController.getSalesChart
 );
 
 router.get(
   "/dashboard/items-performance",
-  tokenVerification, allowRoles("admin", "superadmin"), blockExpiredSubscription,
+  tokenVerification,
+  allowRoles("admin", "superadmin"),
+  blockExpiredSubscription,
+  validate(dashboardItemPerformanceValidator),
   dashboardController.getItemPerformance
 );
 
@@ -106,6 +127,7 @@ router.get(
   tokenVerification,
   allowRoles("admin", "superadmin"),
   blockExpiredSubscription,
+  validate(dashboardPeakTimeValidator),
   dashboardController.getPeakTime
 );
 
@@ -113,6 +135,7 @@ router.get(
   "/dashboard/tables",
   tokenVerification,
   allowRoles("admin", "superadmin"),
+  validate(dashboardTablePerformanceValidator),
   dashboardController.getTablePerformance
 );
 router.get(
@@ -120,12 +143,14 @@ router.get(
   tokenVerification,
   allowRoles("admin", "superadmin"),
   blockExpiredSubscription,
+  validate(dashboardTopCustomersValidator),
   dashboardController.getTopCustomers
 );
 router.get(
   "/dashboard/top-cafes",
   tokenVerification,
   allowRoles("superadmin"),
+  validate(dashboardTopCafesValidator),
   dashboardController.getTopCafes
 );
 
@@ -133,12 +158,14 @@ router.get(
   "/dashboard/platform-sales",
   tokenVerification,
   allowRoles("superadmin"),
+  validate(dashboardPlatformSalesValidator),
   dashboardController.getPlatformSales
 );
 router.get(
   "/dashboard/admin-analytics",
   tokenVerification,
   allowRoles("superadmin"),
+  validate(dashboardAdminAnalyticsValidator),
   dashboardController.getAdminAnalytics
 );
 router.post("/track", visitController.trackVisit);
@@ -146,5 +173,27 @@ router.get("/total",
   tokenVerification,
   allowRoles("superadmin"),
   visitController.getTotalVisits);
+
+router.get(
+  "/get-feedback",
+  tokenVerification,
+  allowRoles("admin"),
+  portfolioController.getCustomerFeedbacks
+);
+
+router.delete(
+  "/delete-feedback/:id",
+  tokenVerification,
+  allowRoles("admin"),
+  portfolioController.deleteCustomerFeedback
+);
+
+router.patch(
+  "/feedback-selection/:feedbackId",
+  tokenVerification,
+  allowRoles("admin"),
+  validate(updateFeedbackValidator),
+  portfolioController.updateFeedback
+);
 
 export default router;

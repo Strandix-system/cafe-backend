@@ -1,14 +1,13 @@
 import express from "express";
+import "express-async-errors";
 import env from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import { webhookRoutes } from "./routes/webhookRoute.js";
-import errorHandler from "./middleware/errorHandler.js";
+import { errorHandler, notFoundError } from "./middleware/errorHandler.js";
 import connectDB from "./database/dbConnect.js";
 import routes from "./routes/index.js";
-import { notFoundError } from "./middleware/errorHandler.js";
-
 
 env.config();
 
@@ -16,8 +15,6 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-
-// HTTPS redirect (optional)
 app.use((req, res, next) => {
 
   if (
@@ -32,7 +29,6 @@ app.use((req, res, next) => {
   next();
 });
 
-
 app.use(helmet());
 app.use("/api", webhookRoutes);
 app.use(express.json({ limit: "15mb" }));
@@ -46,6 +42,8 @@ app.use(
       "https://portfolio.aeternis.in",
       "http://localhost:5173",
       "http://localhost:5174",
+      "http://localhost:8080",
+      "http://localhost:8081",
     ],
     // origin: "*",
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -57,21 +55,13 @@ app.use(compression());
 app.get("/", (req, res) => {
   res.status(200).send("OK");
 });
-// Routes
+
 app.use("/api", routes);
 
-
-// 404
 app.use(notFoundError);
 
-
-// Error Handler
 app.use(errorHandler);
 
-
-// DB
 connectDB();
 
-
-// ✅ ONLY export app
 export default app;

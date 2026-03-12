@@ -91,9 +91,6 @@ const orderService = {
     return order;
   },
   getOrders: async (adminId, filter, options) => {
-    if (filter.orderStatus) {
-      filter.orderStatus = filter.orderStatus;
-    }
     return await Order.paginate({ adminId, ...filter }, options
     );
   },

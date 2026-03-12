@@ -2,7 +2,7 @@ import express from "express";
 import orderController from "../src/admin/order/controller.js";
 import { tokenVerification } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/permission.js";
-import { blockExpiredSubscription } from "../middleware/block.Expired.Subscription.js";
+import { blockExpiredSubscription } from "../middleware/checkSubscription.js";
 
 const router = express.Router();
 

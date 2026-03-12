@@ -12,7 +12,6 @@ import { uploadAdminImages } from "../../middleware/upload.js";
 import { parseJSONFields } from "../../utils/helper.js";
 import { dashboardController } from "../../src/admin/dashboard/controller.js";
 import visitController from "../../src/admin/visit/controller.js";
-import { blockExpiredSubscription } from "../../middleware/block.Expired.Subscription.js";
 import { portfolioController } from "../../src/portfolio/controller.js";
 import {
   dashboardAdminAnalyticsValidator,
@@ -99,7 +98,6 @@ router.get(
   "/dashboard/stats",
   tokenVerification,
   allowRoles("admin", "superadmin"),
-  blockExpiredSubscription,
   validate(dashboardStatsValidator),
   dashboardController.getStats
 );
@@ -108,7 +106,6 @@ router.get(
   "/dashboard/sales",
   tokenVerification,
   allowRoles("admin", "superadmin"),
-  blockExpiredSubscription,
   validate(dashboardSalesValidator),
   dashboardController.getSalesChart
 );
@@ -117,7 +114,6 @@ router.get(
   "/dashboard/items-performance",
   tokenVerification,
   allowRoles("admin", "superadmin"),
-  blockExpiredSubscription,
   validate(dashboardItemPerformanceValidator),
   dashboardController.getItemPerformance
 );
@@ -126,7 +122,6 @@ router.get(
   "/dashboard/peak-time",
   tokenVerification,
   allowRoles("admin", "superadmin"),
-  blockExpiredSubscription,
   validate(dashboardPeakTimeValidator),
   dashboardController.getPeakTime
 );
@@ -142,7 +137,6 @@ router.get(
   "/dashboard/top-customers",
   tokenVerification,
   allowRoles("admin", "superadmin"),
-  blockExpiredSubscription,
   validate(dashboardTopCustomersValidator),
   dashboardController.getTopCustomers
 );

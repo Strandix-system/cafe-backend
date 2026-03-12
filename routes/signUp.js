@@ -3,7 +3,7 @@ import { signUpController } from "../src/signUp/controller.js";
 import { tokenVerification } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/permission.js";
 import{ validate } from "../middleware/validate.js";
-import { checkEmailValidation } from "../validations/checkValidation.js";
+import { checkEmailValidation } from "../validations/authValidation.js";
 import {
   createSubscriptionValidation,
   verifySubscriptionValidation,

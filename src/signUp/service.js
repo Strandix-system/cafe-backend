@@ -4,16 +4,31 @@ import User from "../../model/user.js";
 import razorpay from "../../config/razorpay.js";
 import { Transaction } from "../../model/transaction.js";
 import { ApiError } from "../../utils/apiError.js";
-import { toDate } from "../../utils/toDate.signUp.js"; 
 
 const PLAN_ID = process.env.RAZORPAY_PLAN_ID;
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+const verifySubscriptionSignature = (
+  razorpay_payment_id,
+  razorpay_subscription_id,
+  razorpay_signature
+) => {
+  const body = `${razorpay_payment_id}|${razorpay_subscription_id}`;
+
+  const expectedSignature = crypto
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+    .update(body)
+    .digest("hex");
+
+  if (expectedSignature !== razorpay_signature) {
+    throw new ApiError(400, "Subscription payment verification failed");
+  }
+};
 
 export const signUpService = {
 
   createSubscription: async (data) => {
-    const { firstName, lastName, email, phoneNumber, planId } = data;
-    const selectedPlanId = planId || PLAN_ID;
+    const { firstName, lastName, email, phoneNumber } = data;
+    const selectedPlanId = PLAN_ID;
 
     if (!selectedPlanId) {
       throw new ApiError(400, "Razorpay plan ID is missing");
@@ -41,7 +56,6 @@ export const signUpService = {
       customer,
     };
   },
-
   verifySubscriptionAndCreateUser: async (data) => {
     const {
       razorpay_payment_id,
@@ -54,16 +68,11 @@ export const signUpService = {
       password,
     } = data;
 
-    const body = `${razorpay_payment_id}|${razorpay_subscription_id}`;
-
-    const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(body)
-      .digest("hex");
-
-    if (expectedSignature !== razorpay_signature) {
-      throw new ApiError(400, "Subscription payment verification failed");
-    }
+    verifySubscriptionSignature(
+      razorpay_payment_id,
+      razorpay_subscription_id,
+      razorpay_signature
+    );
 
     const existingUser = await User.findOne({
       email: email,
@@ -72,15 +81,14 @@ export const signUpService = {
       throw new ApiError(409, "User already exists");
     }
     const payment = await razorpay.payments.fetch(razorpay_payment_id);
-    if (payment.status !== "captured") {
-      throw new ApiError(400, "Payment not captured");
-    }
 
     const subscription = await razorpay.subscriptions.fetch(
       razorpay_subscription_id
     );
 
-    const startDate = toDate(payment?.created_at);
+    const startDate = payment?.created_at
+      ? new Date(payment.created_at * 1000)
+      : null;
 
     let endDate = null;
 
@@ -91,13 +99,13 @@ export const signUpService = {
 
       if (plan.period === "monthly") {
         endDate.setMonth(endDate.getMonth() + plan.interval);
-      } 
+      }
     }
 
     const user = await User.create({
       firstName,
       lastName,
-      email: email,
+      email,
       phoneNumber,
       password,
       role: "admin",
@@ -118,7 +126,7 @@ export const signUpService = {
           subscriptionStartDate: startDate,
           subscriptionEndDate: endDate,
           description: "Subscription payment",
-          paidAt: toDate(payment.created_at),
+          paidAt: new Date(payment.created_at * 1000),
           source: "signup",
           raw: payment,
         },
@@ -134,34 +142,27 @@ export const signUpService = {
 
     return { user, token };
   },
-  checkEmailExists: async (email, phoneNumber) => {
-    if (!email && !phoneNumber) {
-      throw new ApiError(400, "At least email or phone number is required");
-    }
-    const query = {
-      $or: []
-    };
-    if (email) {
-      query.$or.push({ email: email });
-    }
-    if (phoneNumber) {
-      query.$or.push({ phoneNumber });
-    }
-    const existingUser = await User.findOne(query);
-    if (existingUser) {
+  checkEmail: async (email, phoneNumber) => {
+    const orFilters = [
+      email ? { email } : null,
+      phoneNumber ? { phoneNumber } : null,
+    ].filter(Boolean);
 
-      if (email && existingUser.email === email) {
-        throw new ApiError(409, "Email already exists.");
-      }
-      if (phoneNumber && existingUser.phoneNumber === phoneNumber) {
-        throw new ApiError(409, "Phone number already exists.");
+    const existingUser = await User.findOne({ $or: orFilters });
+    if (existingUser) {
+      const emailExists = email && existingUser.email === email;
+      const phoneExists = phoneNumber && existingUser.phoneNumber === phoneNumber;
+
+      if (emailExists || phoneExists) {
+        throw new ApiError(409, "Email or phone number already exists.");
       }
     }
-    return {
-      message: "Email and phone number are available.",
-    };
   },
   getTransactions: async (filter, options, userId) => {
+    if (userId && !filter.user) {
+      filter.user = userId;
+    }
+
     if (filter.fromDate || filter.toDate) {
       filter.createdAt = {};
 
@@ -174,7 +175,6 @@ export const signUpService = {
         toDate.setHours(23, 59, 59, 999);
         filter.createdAt.$lte = toDate;
       }
-
       delete filter.fromDate;
       delete filter.toDate;
     }
@@ -187,49 +187,10 @@ export const signUpService = {
       ];
       delete filter.search;
     }
-
     options.populate = "user";
-
     const transactions = await Transaction.paginate(filter, options);
-
-    let subscriptionAlert = null;
-
-    if (userId) {
-      const latestSubscriptionTransaction = await Transaction.findOne({
-        user: userId,
-        subscriptionEndDate: { $ne: null },
-      }).sort({ subscriptionEndDate: -1 });
-
-      if (latestSubscriptionTransaction?.subscriptionEndDate) {
-        const today = new Date();
-        const endDate = latestSubscriptionTransaction.subscriptionEndDate;
-        const daysRemaining = Math.ceil(
-          (endDate.getTime() - today.getTime()) / ONE_DAY_MS
-        );
-
-        if (daysRemaining < 0) {
-          subscriptionAlert = {
-            type: "expired",
-            message: "Your subscription has expired. Please renew.",
-            endDate,
-            daysRemaining,
-          };
-        } else if (daysRemaining <= 7) {
-          subscriptionAlert = {
-            type: "expiring_soon",
-            message: `Your subscription will expire in ${daysRemaining} day(s). Please renew soon.`,
-            endDate,
-            daysRemaining,
-          };
-        }
-      }
-    }
-
-    return {
-      ...transactions,
-      subscriptionAlert,
-    };
-  },
+    return transactions;
+},
   getAllPlansService: async () => {
     const razorpayPlanIds = [
       process.env.RAZORPAY_PLAN_ID,
@@ -285,26 +246,17 @@ export const signUpService = {
     } = data;
 
     //-1 Verify Signature (Correct Order)
-    const body = `${razorpay_payment_id}|${razorpay_subscription_id}`;
-
-    const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(body)
-      .digest("hex");
-
-    if (expectedSignature !== razorpay_signature) {
-      throw new ApiError(400, "Subscription payment verification failed");
-    }
+    verifySubscriptionSignature(
+      razorpay_payment_id,
+      razorpay_subscription_id,
+      razorpay_signature
+    );
 
     // 2 Fetch Payment
     const payment = await razorpay.payments.fetch(razorpay_payment_id);
 
     if (!payment) {
       throw new ApiError(404, "Payment not found");
-    }
-
-    if (payment.status !== "captured") {
-      throw new ApiError(400, "Payment not successful");
     }
 
     // 3 Fetch Subscription
@@ -316,7 +268,9 @@ export const signUpService = {
       throw new ApiError(404, "Subscription not found");
     }
 
-    const startDate = toDate(payment?.created_at);
+    const startDate = payment?.created_at
+      ? new Date(payment.created_at * 1000)
+      : null;
 
     let endDate = null;
 
@@ -327,7 +281,7 @@ export const signUpService = {
 
       if (plan.period === "monthly") {
         endDate.setMonth(endDate.getMonth() + plan.interval);
-      } 
+      }
     }
 
     // 4️ Find Existing User
@@ -351,14 +305,12 @@ export const signUpService = {
       throw new ApiError(403, "Unauthorized renewal verification");
     }
 
-    // 5️ Update User Subscription
-
     // 6️ Log Transaction 
     await Transaction.findOneAndUpdate(
       { razorpayPaymentId: payment.id },
       {
         $set: {
-           user: user._id,
+          user: user._id,
           razorpayPaymentId: payment.id,
           razorpaySubscriptionId: razorpay_subscription_id,
           amount: payment.amount,
@@ -369,7 +321,7 @@ export const signUpService = {
           subscriptionStartDate: startDate,
           subscriptionEndDate: endDate,
           description: "Subscription renewal payment",
-          paidAt: toDate(payment.created_at),
+          paidAt: new Date(payment.created_at * 1000),
           source: "renewal",
           raw: payment,
         },

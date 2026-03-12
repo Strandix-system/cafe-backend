@@ -25,9 +25,6 @@ export const signUpController = {
   checkEmail: async (req, res, next) => {
     try {
       const { email, phoneNumber } = req.body;
-      if (!email) {
-        throw new ApiError(400, "email is required");
-      }
       const result = await signUpService.checkEmailExists(email, phoneNumber);
       return sendSuccessResponse(res, 200, "Email is Valid", result);
     } catch (error) {

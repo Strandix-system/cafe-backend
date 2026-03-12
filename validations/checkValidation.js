@@ -9,5 +9,5 @@ export const checkEmailValidation = {
     phoneNumber: Joi.string()
       .pattern(/^[0-9]{10}$/)
       .optional(),
-  }).or("email", "phoneNumber"), // at least one required
+  }).or("email", "phoneNumber"),
 };

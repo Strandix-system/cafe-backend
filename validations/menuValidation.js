@@ -1,9 +1,11 @@
 import Joi from 'joi';
 
+const objectId = Joi.string().hex().length(24);
+
 const menuSchema = {
   body: Joi.object({
     name: Joi.string().trim().min(2).max(100).required(),
-    category: Joi.string().required(), // Assuming ObjectId string
+    category: Joi.string().required(),
     description: Joi.string().trim().min(10).max(500).required(),
     price: Joi.number().positive().required(),
     discountPrice: Joi.number().min(0).less(Joi.ref('price')).messages({
@@ -14,7 +16,7 @@ const menuSchema = {
 };
 const updateMenuSchema = {
   params: Joi.object({
-    menuId: Joi.string().hex().length(24).required() // Validates MongoDB ObjectId
+    menuId: objectId.required() 
   }),
   body: Joi.object({
     name: Joi.string().trim().min(2).max(100),
@@ -27,4 +29,16 @@ const updateMenuSchema = {
   }).min(0) 
 };
 
-export { menuSchema, updateMenuSchema };
+const menuIdParamSchema = {
+  params: Joi.object({
+    menuId: objectId.required(),
+  }),
+};
+
+const adminIdParamSchema = {
+  params: Joi.object({
+    adminId: objectId.required(),
+  }),
+};
+
+export { menuSchema, updateMenuSchema, menuIdParamSchema, adminIdParamSchema };

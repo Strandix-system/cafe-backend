@@ -23,8 +23,33 @@ const logoutValidator = {
   }).unknown(true),
 };
 
+const forgotPasswordValidator = {
+  body: Joi.object().keys({
+    email: Joi.string().email().trim().required(),
+  }),
+};
+
+const resetPasswordValidator = {
+  params: Joi.object({
+    token: Joi.string().trim().required(),
+  }),
+  body: Joi.object().keys({
+    password: Joi.string().min(6).max(30).required(),
+  }),
+};
+
+const changePasswordValidator = {
+  body: Joi.object().keys({
+    currentPassword: Joi.string().min(6).max(30).required(),
+    newPassword: Joi.string().min(6).max(30).required(),
+  }),
+};
+
 export {
   registerValidator,
   loginValidator,
-  logoutValidator
+  logoutValidator,
+  forgotPasswordValidator,
+  resetPasswordValidator,
+  changePasswordValidator
 };

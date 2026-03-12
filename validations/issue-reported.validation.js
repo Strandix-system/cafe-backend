@@ -3,8 +3,14 @@ import { ISSUE_STATUSES } from "../utils/constants.js";
 
 const raiseIssueValidator = {
   body: Joi.object({
-    title: Joi.string().trim().required(),
-    description: Joi.string().trim().required(),
+   title: Joi.string().trim().min(3).max(100).required().messages({
+      "string.empty": "Title is required",
+      "string.min": "Title must be at least 3 characters",
+    }),
+    description: Joi.string().trim().min(5).max(500).required().messages({
+      "string.empty": "Description is required",
+      "string.min": "Description must be at least 5 characters",
+    }),
   }),
 };
 

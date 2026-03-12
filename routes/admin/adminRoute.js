@@ -6,7 +6,9 @@ import { allowRoles } from "../../middleware/permission.js";
 import {
   createAdminValidator,
   updateAdminValidator,
-  deleteAdminValidator, updateSuperAdmin
+  deleteAdminValidator,
+  updateSuperAdmin,
+  updateAdminStatusValidator
 } from "../../validations/createValidation.js";
 import { uploadAdminImages } from "../../middleware/upload.js";
 import { parseJSONFields } from "../../utils/helper.js";
@@ -64,6 +66,7 @@ adminRoute.get(
   "/get-user/:id",
   tokenVerification,
   allowRoles("superadmin"),
+  validate(deleteAdminValidator),
   adminController.getByAdmin
 );
 
@@ -82,6 +85,7 @@ adminRoute.patch(
   "/update-status/:id",
   tokenVerification,
   allowRoles("superadmin"),
+  validate(updateAdminStatusValidator),
   adminController.updateAdminStatus
 );
 adminRoute.get(

@@ -107,4 +107,19 @@ const updateSuperAdmin = {
      profileImage: Joi.any(),
        }).min(1)
 };
-export { createAdminValidator, updateAdminValidator, deleteAdminValidator, updateProfileValidator,updateSuperAdmin };
+const updateAdminStatusValidator = {
+  params: Joi.object({
+    adminId: objectId.required(),
+  }),
+  body: Joi.object({
+    isActive: Joi.boolean().strict().required(),
+  }),
+};
+export {
+  createAdminValidator,
+  updateAdminValidator,
+  deleteAdminValidator,
+  updateProfileValidator,
+  updateSuperAdmin,
+  updateAdminStatusValidator
+};

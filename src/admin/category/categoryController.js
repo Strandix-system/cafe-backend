@@ -58,12 +58,10 @@ getCategoryById: async (req, res, next) => {
 },
 getUsedCategoriesForDropdown: async (req, res, next) => {
   try {
-    
     const result = await categoryService.getUsedCategoriesForDropdown(
       req.user,
       req.query.adminId
     );
-
     sendSuccessResponse(res, 200, "Used dropdown categories fetched successfully", result);
   } catch (error) {
     next(error);

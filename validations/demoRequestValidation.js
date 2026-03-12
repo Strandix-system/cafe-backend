@@ -29,11 +29,29 @@ const updateDemoStatus = {
 
   body: Joi.object({
     status: Joi.string()
-      .valid("accepted", "rejected")
+      .valid("requested", "full_filled", "inquiry", "not_interested")
       .required(),
   }),
 };
-export default {
+const getDemoRequestById = {
+  params: Joi.object({
+    id: Joi.string().hex().length(24).required(),
+  }),
+};
+
+const getAllDemoRequests = {
+  query: Joi.object({
+    search: Joi.string().trim().optional(),
+    status: Joi.string().trim().lowercase().valid("requested", "full_filled", "inquiry", "not_interested").optional(),
+    page: Joi.number().integer().min(1).optional(),
+    limit: Joi.number().integer().min(1).optional(),
+    sortBy: Joi.string().trim().optional(),
+    populate: Joi.string().trim().optional(),
+  }),
+};
+export {
   createDemoRequest,
   updateDemoStatus,
+  getDemoRequestById,
+  getAllDemoRequests,
 };

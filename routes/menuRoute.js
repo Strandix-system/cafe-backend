@@ -4,7 +4,7 @@ import { tokenVerification } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/permission.js";
 import{ uploadMenu} from "../middleware/upload.js";
 import { validate } from "../middleware/validate.js";
-import { menuSchema , updateMenuSchema } from "../validations/menuValidation.js"; 
+import { menuSchema, updateMenuSchema, menuIdParamSchema, adminIdParamSchema } from "../validations/menuValidation.js"; 
 
 const router = express.Router();
 
@@ -28,6 +28,7 @@ router.delete(
   "/delete/:menuId",
   tokenVerification,
   allowRoles("admin"),
+  validate(menuIdParamSchema),
   menuController.deleteMenu
 );
 router.get(
@@ -46,11 +47,13 @@ router.get(
   "/get-by-id/:menuId",
   tokenVerification,  
   allowRoles("admin"),
+  validate(menuIdParamSchema),
   menuController.getMenuById
 );
 // 🌍 PUBLIC MENU FOR PORTFOLIO
 router.get(
   "/public/:adminId",
+  validate(adminIdParamSchema),
   menuController.getPublicMenus
 );
 

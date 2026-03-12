@@ -53,10 +53,6 @@ export const adminController = {
       const adminId = req.params.id;
       const { isActive } = req.body;
 
-      if (typeof isActive !== "boolean") {
-        return next(Object.assign(new Error("isActive must be boolean"), { statusCode: 400 }));
-      }
-
       const result = await adminService.updateAdminStatus(adminId, isActive);
       sendSuccessResponse(res, 200, "Admin status updated successfully", result);
     } catch (error) {

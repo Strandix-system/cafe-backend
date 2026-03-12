@@ -5,9 +5,7 @@ import { sendSuccessResponse } from "../../../utils/response.js";
 export const customerController = {
   createCustomer: async (req, res, next) => {
     try {
-
-      const customer =
-        await customerService.createCustomer(req.body);
+      const customer = await customerService.createCustomer(req.body);
       sendSuccessResponse(res, 201, "Customer created", customer);
     } catch (err) {
       next(err);
@@ -17,20 +15,17 @@ export const customerController = {
   try {
     const filter = pick(req.query, ["search", "adminId", "status"]);
     const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
-
     const customers = await customerService.getCustomers(
       filter,
       options,
       req.user
     );
-
     sendSuccessResponse(res, 200, "Customers fetched", customers);
   } catch (error) {
     next(error);
   }
 },
   getCustomerById: async (req, res, next) => {
-
     try {
       const customer = await customerService.getCustomerById(req.params.id);
       sendSuccessResponse(res, 200, "Customer fetched", customer);

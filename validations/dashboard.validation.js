@@ -62,6 +62,7 @@ const dashboardAdminAnalyticsValidator = {
     adminId: objectId.optional(),
     startDate: date.optional(),
     endDate: date.optional(),
+    sortBy: Joi.string().valid("order", "amount").optional(),
   }),
 };
 

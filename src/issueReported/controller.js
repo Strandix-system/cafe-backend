@@ -4,6 +4,9 @@ import { pick } from "../../utils/pick.js";
 
 export const issueController = {
     raiseTicket: async (req, res) => {
+        if (req.files && req.files.length > 3) {
+            throw new ApiError(400, "Maximum 3 images are allowed");
+        }
         const data = await issueService.raiseTicket(req.body, req.user._id, req.files);
         sendSuccessResponse(res, 201, "Ticket raised successfully", data);
     },

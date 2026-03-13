@@ -24,8 +24,8 @@ export const cafeLayoutValidation = {
             aboutTitle: Joi.string().trim(),
             aboutDescription: Joi.string().trim().min(10),
             cafeDescription: Joi.string().trim().min(10),
-            homeImage: Joi.any(),
-            aboutImage: Joi.any()
+            homeImage: Joi.any().required(),
+            aboutImage: Joi.any().required()
         }).min(0)
     },
     updateStatus: {

@@ -12,7 +12,7 @@ import {
 } from "../../validations/createValidation.js";
 import { uploadAdminImages } from "../../middleware/upload.js";
 import { parseJSONFields } from "../../utils/helper.js";
-import dashboardController from "../../src/admin/Dashboard/controller.js";
+import {dashboardController} from "../../src/admin/Dashboard/controller.js";
 import { visitController } from "../../src/admin/visit/controller.js";
 import { blockExpiredSubscription } from "../../middleware/block.Expired.Subscription.js";
 import { portfolioController } from "../../src/portfolio/controller.js";

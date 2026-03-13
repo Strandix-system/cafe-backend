@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import User from "../../../model/user.js";
 import Order from "../../../model/order.js";
 import Customer from "../../../model/customer.js";
@@ -25,10 +24,6 @@ export const dashboardService = {
         throw new ApiError(400, "adminId query parameter is required");
       }
       return null;
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(requestedAdminId)) {
-      throw new ApiError(400, "Invalid adminId");
     }
 
     const admin = await User.findOne({ _id: requestedAdminId, role: "admin" }).select("_id");

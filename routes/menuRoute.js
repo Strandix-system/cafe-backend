@@ -4,7 +4,7 @@ import { tokenVerification } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/permission.js";
 import{ uploadMenu} from "../middleware/upload.js";
 import { validate } from "../middleware/validate.js";
-import { menuSchema , updateMenuSchema } from "../validations/menuValidation.js"; 
+import { menuSchema , updateMenuSchema, updateMenuStatusSchema } from "../validations/menuValidation.js"; 
 
 const router = express.Router();
 
@@ -24,11 +24,12 @@ router.patch(
   validate(updateMenuSchema),
   menuController.updateMenu
 );
-router.delete(
-  "/delete/:menuId",
+router.patch(
+  "/status/:menuId",
   tokenVerification,
   allowRoles("admin"),
-  menuController.deleteMenu
+  validate(updateMenuStatusSchema),
+  menuController.updateMenuStatus
 );
 router.get(
   "/all-menu",

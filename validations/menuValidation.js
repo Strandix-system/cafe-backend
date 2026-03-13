@@ -10,6 +10,8 @@ const menuSchema = {
       'number.less': 'Discount price must be less than the original price'
     }),
     isPopular: Joi.boolean(),
+    isActive: Joi.boolean(),
+    inStock: Joi.boolean(),
   })
 };
 const updateMenuSchema = {
@@ -24,7 +26,19 @@ const updateMenuSchema = {
     discountPrice: Joi.number().min(0).less(Joi.ref('price')),
     image: Joi.any(),
     isPopular: Joi.boolean(),
+    isActive: Joi.boolean(),
+    inStock: Joi.boolean(),
   }).min(0) 
 };
 
-export { menuSchema, updateMenuSchema };
+const updateMenuStatusSchema = {
+  params: Joi.object({
+    menuId: Joi.string().hex().length(24).required()
+  }),
+  body: Joi.object({
+    isActive: Joi.boolean(),
+    inStock: Joi.boolean()
+  }).min(1)
+};
+
+export { menuSchema, updateMenuSchema, updateMenuStatusSchema };

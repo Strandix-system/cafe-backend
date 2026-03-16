@@ -75,12 +75,19 @@ export const signUpService = {
     );
 
     const existingUser = await User.findOne({
-      email: email,
+      email,
     });
     if (existingUser) {
       throw new ApiError(409, "User already exists");
     }
     const payment = await razorpay.payments.fetch(razorpay_payment_id);
+    const normalizedStatus =
+      payment.status === "authorized" || payment.status === "captured"
+        ? "captured"
+        : payment.status;
+
+    // overwrite status in payment object
+    payment.status = normalizedStatus;
 
     const subscription = await razorpay.subscriptions.fetch(
       razorpay_subscription_id
@@ -122,7 +129,7 @@ export const signUpService = {
           method: payment.method,
           razorpayCustomerId: subscription?.customer_id,
           subscriptionPlanId: subscription?.plan_id,
-          subscriptionStatus: payment.subscriptionStatus,
+          subscriptionStatus: subscription.status,
           subscriptionStartDate: startDate,
           subscriptionEndDate: endDate,
           description: "Subscription payment",
@@ -143,19 +150,11 @@ export const signUpService = {
     return { user, token };
   },
   checkEmail: async (email, phoneNumber) => {
-    const orFilters = [
-      email ? { email } : null,
-      phoneNumber ? { phoneNumber } : null,
-    ].filter(Boolean);
 
-    const existingUser = await User.findOne({ $or: orFilters });
+    const existingUser = await User.findOne({ email, phoneNumber });
+
     if (existingUser) {
-      const emailExists = email && existingUser.email === email;
-      const phoneExists = phoneNumber && existingUser.phoneNumber === phoneNumber;
-
-      if (emailExists || phoneExists) {
-        throw new ApiError(409, "Email or phone number already exists.");
-      }
+      throw new ApiError(409, "Email and phone number already exist.");
     }
   },
   getTransactions: async (filter, options, userId) => {
@@ -190,7 +189,7 @@ export const signUpService = {
     options.populate = "user";
     const transactions = await Transaction.paginate(filter, options);
     return transactions;
-},
+  },
   getAllPlansService: async () => {
     const razorpayPlanIds = [
       process.env.RAZORPAY_PLAN_ID,
@@ -317,7 +316,7 @@ export const signUpService = {
           method: payment.method,
           razorpayCustomerId: subscription?.customer_id,
           subscriptionPlanId: subscription?.plan_id,
-          subscriptionStatus: payment.subscriptionStatus,
+          subscriptionStatus: subscription.status,
           subscriptionStartDate: startDate,
           subscriptionEndDate: endDate,
           description: "Subscription renewal payment",
@@ -328,7 +327,6 @@ export const signUpService = {
       },
       { upsert: true, new: true }
     );
-
     return user;
   },
 };

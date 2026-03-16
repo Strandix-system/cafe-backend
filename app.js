@@ -8,8 +8,6 @@ import { webhookRoutes } from "./routes/webhookRoute.js";
 import { errorHandler, notFoundError } from "./middleware/errorHandler.js";
 import connectDB from "./database/dbConnect.js";
 import routes from "./routes/index.js";
-import { tokenVerification } from "./middleware/auth.js";
-import { blockExpiredSubscription } from "./middleware/checkSubscription.js";
 
 env.config();
 
@@ -58,7 +56,6 @@ app.get("/", (req, res) => {
   res.status(200).send("OK");
 });
 
-app.use("/api/admin", tokenVerification, blockExpiredSubscription);
 app.use("/api", routes);
 
 app.use(notFoundError);

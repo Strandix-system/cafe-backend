@@ -1,5 +1,6 @@
 import service from "./service.js";
 import { sendSuccessResponse } from "../../utils/response.js";
+
 export default {
   register: async (req, res) => {
     const result = await service.register(req.body);
@@ -11,28 +12,23 @@ export default {
     sendSuccessResponse(res, 200, "Login successful", result);
   },
 
-  me: async (req, res, next) => {
-    try {
-      const user = req.user.toObject();
-      // Check profile completion
-      const isProfileComplete =
-        new Date(user.createdAt).getTime() !==
-        new Date(user.updatedAt).getTime();
+  me: async (req, res) => {
+    const user = req.user.toObject();
+    const isProfileComplete =
+      new Date(user.createdAt).getTime() !==
+      new Date(user.updatedAt).getTime();
 
-      sendSuccessResponse(
-        res,
-        200,
-        "Profile fetched successfully",
-        {
-          id: user._id,
-          ...user,
-          subscriptionAlert: req?.subscriptionAlert,
-          isProfileComplete, // true if profile updated, false if not
-        }
-      );
-    } catch (error) {
-      next(error);
-    }
+    sendSuccessResponse(
+      res,
+      200,
+      "Profile fetched successfully",
+      {
+        id: user._id,
+        ...user,
+        subscriptionAlert: req?.subscriptionAlert,
+        isProfileComplete,
+      }
+    );
   },
   logout: async (req, res) => {
     const result = await service.logout(req.user._id);

@@ -1,4 +1,4 @@
-import menuService from "./service.js";
+import { menuService } from "./service.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
 import { pick } from "../../../utils/pick.js";
 

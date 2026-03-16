@@ -1,6 +1,7 @@
 import CafeLayout from "../../../model/layout.js";
-import { deleteUploadedFiles, deleteSingleFile } from "../../../utils/s3utils.js";
-import Qr from "../../../model/qr.js";
+import { deleteUploadedFiles } from "../../../utils/s3utils.js";
+import { deleteSingleFile } from "../../../utils/s3utils.js";
+import Qr from "../../../model/qr.js"
 import { ApiError } from "../../../utils/apiError.js";
 
 const layoutService = {
@@ -120,8 +121,7 @@ const layoutService = {
   },
   getActiveLayout: async (adminid) => {
     const result = await CafeLayout.findOne({ adminId: adminid, active: true })
-      .populate("adminId")
-      .populate("menus");
+      .populate("adminId").populate({path: "menus", match: { isActive: true }});
     return result;
   },
 };

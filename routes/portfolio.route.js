@@ -6,6 +6,7 @@ import {
   createCustomerFeedbackValidator,
   topCustomerFeedbackValidator,
 } from "../validations/portfolio.validation.js";
+import { tokenVerification } from "../middleware/auth.js";
 
 export const portfolioRoute = express.Router();
 
@@ -17,6 +18,7 @@ portfolioRoute.get(
 
 portfolioRoute.post(
   "/customer-feedback",
+  (req, res, next) => tokenVerification(req, res, next, true),
   validate(createCustomerFeedbackValidator),
   portfolioController.createCustomerFeedback
 );

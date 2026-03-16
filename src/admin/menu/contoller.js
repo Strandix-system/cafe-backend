@@ -1,9 +1,8 @@
-import menuService from "./service.js";
+import { menuService } from "./service.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
 import { pick } from "../../../utils/pick.js"
-import { get } from "http";
 
-const menuController = {
+export const menuController = {
   // ✅ CREATE MENU
   createMenu: async (req, res, next) => {
     try {
@@ -28,17 +27,9 @@ const menuController = {
       next(error);
     }
   },
-  deleteMenu: async (req, res, next) => {
-    try {
-      await menuService.deleteMenu(req.params.menuId);
-      sendSuccessResponse(res, 200, "Menu deleted successfully");
-    } catch (error) {
-      next(error);
-    }
-  },
   getAllMenus: async (req, res, next) => {
     try {
-      const filter = pick(req.query, ["adminId", "search", "category"]);
+      const filter = pick(req.query, ["adminId", "search", "category", "isActive", "inStock"]);
       const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
       const result = await menuService.getAllMenus(filter, options, req.user._id);
       sendSuccessResponse(res, 200, "menu fetched successfully", result);
@@ -50,7 +41,7 @@ const menuController = {
     try {
       const adminId = req.user._id;
       const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
-      const filter = pick(req.query, ["adminId", "search", "category"]);
+      const filter = pick(req.query, ["adminId", "search", "category", "isActive", "inStock"]);
       const result = await menuService.getMenusByAdmin(adminId, filter, options);
       sendSuccessResponse(res, 200, "Admin menus fetched successfully", result);
     } catch (error) {
@@ -77,8 +68,6 @@ const menuController = {
     } catch (error) {
       next(error);
     }
-  },
- 
-};
+  }
 
-export default menuController;
+};

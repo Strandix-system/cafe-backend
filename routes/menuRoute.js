@@ -1,5 +1,5 @@
 import express from "express";
-import menuController from "../src/admin/menu/contoller.js";
+import { menuController } from "../src/admin/menu/contoller.js";
 import { tokenVerification } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/permission.js";
 import{ uploadMenu} from "../middleware/upload.js";
@@ -23,12 +23,6 @@ router.patch(
   uploadMenu.single("image"),
   validate(updateMenuSchema),
   menuController.updateMenu
-);
-router.delete(
-  "/delete/:menuId",
-  tokenVerification,
-  allowRoles("admin"),
-  menuController.deleteMenu
 );
 router.get(
   "/all-menu",
@@ -55,4 +49,4 @@ router.get(
 );
 
 
-export default router;
+export const menuRoutes = router;

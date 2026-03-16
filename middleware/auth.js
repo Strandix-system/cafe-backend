@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../model/user.js";
-import { ApiError } from "../utils/apiError.js";
+import { blockExpiredSubscription } from "./checkSubscription.js";
 
 const subscriptionAllowedRoutes = [
   "/me",
@@ -32,9 +32,8 @@ export const generateToken = (id) => {
 export const tokenVerification = async (req, res, next, isPublic = false) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
-
-    if (!token) {
-      throw new ApiError(401, "No token provided");
+    if (!token && !isPublic) {
+      return res.status(401).json({ message: "No token provided" });
     }
 
     const decoded = isPublic ? { id: req.body.adminId ?? req.params.adminId } : jwt.verify(token, process.env.JWT_SECRET);
@@ -43,9 +42,10 @@ export const tokenVerification = async (req, res, next, isPublic = false) => {
     if (!user) {
       throw new ApiError(401, "User not found");
     }
-
     if (!user.isActive) {
-      throw new ApiError(403, "Your account is inactive. Please purchase subscription");
+      return res.status(403).json({
+        message: "Your account is inactive. Please purchase subscription",
+      });
     }
 
     req.user = user;

@@ -1,5 +1,4 @@
 import Qr from "../../../model/qr.js";
-import layout from "../../../model/layout.js"
 import QRCode from "qrcode";
 import CafeLayout from "../../../model/layout.js";
 
@@ -7,7 +6,7 @@ import CafeLayout from "../../../model/layout.js";
 const qrService = {
   createQr: async (adminId, totalTables) => {
 
-    const layoutExists = await layout.exists({ adminId });
+    const layoutExists = await CafeLayout.exists({ adminId });
     if (!layoutExists) {
       throw new Error("Please create cafe layout before generating Qr")
     }

@@ -11,23 +11,28 @@ export default {
     sendSuccessResponse(res, 200, "Login successful", result);
   },
 
-  me: async (req, res) => {
-    const user = req.user.toObject();
+  me: async (req, res, next) => {
+    try {
+      const user = req.user.toObject();
+      // Check profile completion
+      const isProfileComplete =
+        new Date(user.createdAt).getTime() !==
+        new Date(user.updatedAt).getTime();
 
-    const isProfileComplete =
-      new Date(user.createdAt).getTime() !==
-      new Date(user.updatedAt).getTime();
-
-    sendSuccessResponse(
-      res,
-      200,
-      "Profile fetched successfully",
-      {
-        id: user._id,
-        ...user,
-        isProfileComplete,
-      }
-    );
+      sendSuccessResponse(
+        res,
+        200,
+        "Profile fetched successfully",
+        {
+          id: user._id,
+          ...user,
+          subscriptionAlert: req?.subscriptionAlert,
+          isProfileComplete, // true if profile updated, false if not
+        }
+      );
+    } catch (error) {
+      next(error);
+    }
   },
   logout: async (req, res) => {
     const result = await service.logout(req.user._id);

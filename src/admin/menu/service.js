@@ -122,21 +122,4 @@ export const menuService = {
     const result = await Category.paginate(query, filter, options);
     return result;
   },
-  updateMenuStatus: async (menuId, body) => {
-    const menu = await Menu.findById(menuId);
-    if (!menu) {
-      throw Object.assign(new Error("Menu not found"), { statusCode: 404 });
-    }
-    if (typeof body.isActive === "boolean") {
-      menu.isActive = body.isActive;
-    }
-    if (typeof body.inStock === "boolean") {
-      menu.inStock = body.inStock;
-    }
-    if (menu.isActive === false) {
-      menu.inStock = false;
-    }
-    await menu.save();
-    return menu;
-  },
 };

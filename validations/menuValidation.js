@@ -8,7 +8,7 @@ const menuSchema = {
     price: Joi.number().positive().required(),
     discountPrice: Joi.number().min(0).less(Joi.ref('price')).messages({
       'number.less': 'Discount price must be less than the original price'
-    }),
+    }).optional(),
     isPopular: Joi.boolean(),
     isActive: Joi.boolean(),
     inStock: Joi.boolean(),
@@ -28,17 +28,7 @@ const updateMenuSchema = {
     isPopular: Joi.boolean(),
     isActive: Joi.boolean(),
     inStock: Joi.boolean(),
-  }).min(0) 
+  }).min(0)
 };
 
-const updateMenuStatusSchema = {
-  params: Joi.object({
-    menuId: Joi.string().hex().length(24).required()
-  }),
-  body: Joi.object({
-    isActive: Joi.boolean(),
-    inStock: Joi.boolean()
-  }).min(1)
-};
-
-export { menuSchema, updateMenuSchema, updateMenuStatusSchema };
+export { menuSchema, updateMenuSchema };

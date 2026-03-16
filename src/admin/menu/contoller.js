@@ -68,17 +68,6 @@ export const menuController = {
     } catch (error) {
       next(error);
     }
-  },
-  updateMenuStatus: async (req, res, next) => {
-    try {
-      const result = await menuService.updateMenuStatus(
-        req.params.menuId,
-        req.body
-      );
-      sendSuccessResponse(res, 200, "Menu status updated successfully", result);
-    } catch (error) {
-      next(error);
-    }
-  },
+  }
 
 };

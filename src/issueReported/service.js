@@ -5,9 +5,7 @@ import { ISSUE_STATUSES } from "../../utils/constants.js";
 
 export const issueService = {
     raiseTicket: async (data, adminId, files = []) => {
-        const images = (Array.isArray(files) ? files : [])
-            .map((file) => file?.location)
-            .slice(0, 3);
+        const images = files.map((file) => file?.location).slice(0, 3);
 
         const ticket = await IssueReported.create({
             ...data,

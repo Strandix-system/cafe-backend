@@ -93,7 +93,7 @@ export const dashboardController = {
     sendSuccessResponse(res, 200, "Platform sales chart fetched successfully", data);
   },
   getAdminAnalytics: async (req, res) => {
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, sortBy } = req.query;
     const adminId = await dashboardService.resolveDashboardAdminId(
       req.user,
       req.query.adminId,
@@ -113,7 +113,7 @@ export const dashboardController = {
       dashboardService.itemPerformance(adminId),
       dashboardService.peakTime(adminId, startDate, endDate),
       dashboardService.tablePerformance(adminId),
-      dashboardService.topCustomers(adminId),
+      dashboardService.topCustomers(adminId, { sortBy }),
     ]);
 
     sendSuccessResponse(res, 200, "Admin analytics fetched successfully", {

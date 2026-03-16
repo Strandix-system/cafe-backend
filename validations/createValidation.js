@@ -12,19 +12,19 @@ const emailRule = Joi.string().trim().lowercase().max(100).custom((value, helper
 
 const socialLinksSchema = Joi.object({
   facebook: Joi.string()
-    .uri({ scheme: ['http', 'https'] }).allow('')
+    .uri({ scheme: ['http', 'https'] }).allow('', null)
     .messages({
       "string.uri": "Facebook must be a valid URL starting with http or https",
     }),
 
   instagram: Joi.string()
-    .uri({ scheme: ['http', 'https'] }).allow('')
+    .uri({ scheme: ['http', 'https'] }).allow('', null)
     .messages({
       "string.uri": "Instagram must be a valid URL starting with http or https",
     }),
 
   twitter: Joi.string()
-    .uri({ scheme: ['http', 'https'] }).allow('')
+    .uri({ scheme: ['http', 'https'] }).allow('', null)
     .messages({
       "string.uri": "Twitter must be a valid URL starting with http or https",
     }),

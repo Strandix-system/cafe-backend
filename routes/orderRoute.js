@@ -11,6 +11,11 @@ router.post(
 );
 
 router.get(
+  "/active/:qrId",
+  orderController.getActiveOrderByQr
+);
+
+router.get(
   "/get-all",
   tokenVerification,
   allowRoles("admin"),

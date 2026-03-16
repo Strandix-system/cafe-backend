@@ -13,12 +13,23 @@ const orderSchema = new mongoose.Schema(
       ref: "Customer",
       required: true,
     },
+    customers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Customer",
+      },
+    ],
     tableNumber: {
       type: Number,
       required: true,
     },
     items: [
       {
+        customerId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Customer",
+          required: true,
+        },
         menuId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Menu",
@@ -46,7 +57,7 @@ const orderSchema = new mongoose.Schema(
     },
     orderStatus: {
       type: String,
-      enum: ["pending", "accepted", "completed"],
+      enum: ["pending", "preparing", "served", "completed"],
       default: "pending",
     },
     paymentStatus: {

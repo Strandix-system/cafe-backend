@@ -2,6 +2,7 @@ import Order from "../../../model/order.js";
 import Menu from "../../../model/menu.js";
 import Customer from "../../../model/customer.js";
 import User from "../../../model/user.js";
+import Qr from "../../../model/qr.js";
 import { getIO } from "../../../socket.js";
 import sendWhatsAppMessage from "../../../utils/whatsapp.js";
 
@@ -50,10 +51,10 @@ const orderService = {
         ? menu.discountPrice
         : menu.price;
 
-
       subTotal += price * item.quantity;
 
       return {
+        customerId: item.customerId || customerId,
         menuId: item.menuId,
         name: menu.name,
         price,
@@ -61,32 +62,131 @@ const orderService = {
       };
     });
 
+    if (finalItems.some(item => !item.customerId)) {
+      throw new Error("customerId is required for each item");
+    }
+
     const gstAmount = (subTotal * gstPercent) / 100;
 
     const finalTotal = subTotal + gstAmount;
 
-    const order = await Order.create({
+    const qr = await Qr.findOne({ adminId, tableNumber });
+    if (!qr) {
+      throw new Error("Table not found");
+    }
+
+    const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
+
+    const latestActiveOrder = await Order.findOne({
       adminId,
-      userId: customerId,
       tableNumber,
-      items: finalItems,
-      specialInstruction,
-      totalAmount: Math.round(finalTotal),
-      gstPercent,
-      gstAmount,
-      subTotal
-    });
+      orderStatus: { $ne: "completed" },
+    }).sort({ createdAt: -1 });
+
+    let order = null;
+
+    const isWithinThreeHours =
+      latestActiveOrder &&
+      latestActiveOrder.createdAt &&
+      latestActiveOrder.createdAt >= threeHoursAgo;
+
+    if (qr.occupied && latestActiveOrder) {
+      latestActiveOrder.items = (latestActiveOrder.items || []).map((item) => {
+        const plainItem = item?.toObject ? item.toObject() : item;
+        return {
+          ...plainItem,
+          customerId: plainItem.customerId || latestActiveOrder.userId,
+        };
+      });
+      latestActiveOrder.items = [...latestActiveOrder.items, ...finalItems];
+      if (specialInstruction) {
+        latestActiveOrder.specialInstruction = latestActiveOrder.specialInstruction
+          ? `${latestActiveOrder.specialInstruction}\n${specialInstruction}`
+          : specialInstruction;
+      }
+      latestActiveOrder.subTotal = (latestActiveOrder.subTotal || 0) + subTotal;
+      latestActiveOrder.gstPercent = gstPercent;
+      latestActiveOrder.gstAmount =
+        (latestActiveOrder.subTotal * gstPercent) / 100;
+      latestActiveOrder.totalAmount = Math.round(
+        latestActiveOrder.subTotal + latestActiveOrder.gstAmount
+      );
+      latestActiveOrder.customers = latestActiveOrder.customers || [];
+      if (!latestActiveOrder.customers.find(id => id.toString() === customerId)) {
+        latestActiveOrder.customers.push(customerId);
+      }
+      order = await latestActiveOrder.save();
+    } else if (latestActiveOrder && isWithinThreeHours) {
+      latestActiveOrder.items = (latestActiveOrder.items || []).map((item) => {
+        const plainItem = item?.toObject ? item.toObject() : item;
+        return {
+          ...plainItem,
+          customerId: plainItem.customerId || latestActiveOrder.userId,
+        };
+      });
+      latestActiveOrder.items = [...latestActiveOrder.items, ...finalItems];
+      if (specialInstruction) {
+        latestActiveOrder.specialInstruction = latestActiveOrder.specialInstruction
+          ? `${latestActiveOrder.specialInstruction}\n${specialInstruction}`
+          : specialInstruction;
+      }
+      latestActiveOrder.subTotal = (latestActiveOrder.subTotal || 0) + subTotal;
+      latestActiveOrder.gstPercent = gstPercent;
+      latestActiveOrder.gstAmount =
+        (latestActiveOrder.subTotal * gstPercent) / 100;
+      latestActiveOrder.totalAmount = Math.round(
+        latestActiveOrder.subTotal + latestActiveOrder.gstAmount
+      );
+      latestActiveOrder.customers = latestActiveOrder.customers || [];
+      if (!latestActiveOrder.customers.find(id => id.toString() === customerId)) {
+        latestActiveOrder.customers.push(customerId);
+      }
+      order = await latestActiveOrder.save();
+      if (!qr.occupied) {
+        qr.occupied = true;
+        await qr.save();
+      }
+    } else {
+      if (qr.occupied && !latestActiveOrder) {
+        qr.occupied = false;
+        await qr.save();
+      }
+      order = await Order.create({
+        adminId,
+        userId: customerId,
+        customers: [customerId],
+        tableNumber,
+        items: finalItems,
+        specialInstruction,
+        totalAmount: Math.round(finalTotal),
+        gstPercent,
+        gstAmount,
+        subTotal
+      });
+
+      qr.occupied = true;
+      await qr.save();
+    }
 
     const io = getIO();
 
     const populatedOrder = await Order.findById(order._id)
       .populate("adminId", "name email")
       .populate("userId", "name email phoneNumber")
+      .populate("customers", "name email phoneNumber")
+      .populate("items.customerId", "name email phoneNumber")
       .populate("items.menuId");
 
     io.to(adminId.toString()).emit("newOrder", populatedOrder);
     io.to(adminId.toString()).emit("order:new", populatedOrder);
     io.to(`customer-${customer._id}`).emit("order:new", populatedOrder);
+    if (populatedOrder.customers?.length) {
+      for (const custId of populatedOrder.customers) {
+        const id = custId._id ? custId._id.toString() : custId.toString();
+        if (id === customer._id.toString()) continue;
+        io.to(`customer-${id}`).emit("order:new", populatedOrder);
+      }
+    }
 
     return order;
   },
@@ -98,6 +198,12 @@ const orderService = {
     if (!filter.userId) {
       throw new Error("userId is required to fetch customer's orders");
     }
+    const userId = filter.userId;
+    delete filter.userId;
+    filter.$or = [
+      { userId },
+      { customers: userId },
+    ];
     const result = await Order.paginate(
       filter,
       options
@@ -111,8 +217,11 @@ const orderService = {
         throw new Error("Order status is required");
       }
       status = status.trim().toLowerCase();
+      if (status === "accepted") {
+        status = "preparing";
+      }
 
-      const allowed = ["pending", "accepted", "completed"];
+      const allowed = ["pending", "preparing", "served", "completed"];
 
       if (!allowed.includes(status)) {
         throw new Error("Invalid order status");
@@ -128,6 +237,8 @@ const orderService = {
       )
         .populate("adminId", "name email")
         .populate("userId", "name email phoneNumber")
+        .populate("customers", "name email phoneNumber")
+        .populate("items.customerId", "name email phoneNumber")
         .populate("items.menuId");
 
 
@@ -166,7 +277,24 @@ const orderService = {
           order: updatedOrder,
         });
 
-        if (status === "accepted") {
+        if (updatedOrder.customers?.length) {
+          for (const custId of updatedOrder.customers) {
+            const id = custId.toString();
+            if (id === customerId) continue;
+            io.to(`customer-${id}`).emit("orderStatusUpdate", {
+              orderId: updatedOrder._id,
+              status: status,
+              order: updatedOrder,
+            });
+            io.to(`customer-${id}`).emit("order:statusUpdated", {
+              orderId: updatedOrder._id,
+              status,
+              order: updatedOrder,
+            });
+          }
+        }
+
+        if (status === "preparing") {
           io.to(adminId.toString()).emit("orderAccepted", {
             orderId: updatedOrder._id,
             order: updatedOrder,
@@ -175,6 +303,10 @@ const orderService = {
 
         if (status === "completed") {
           io.to(adminId.toString()).emit("completeOrder", updatedOrder._id);
+          await Qr.findOneAndUpdate(
+            { adminId, tableNumber: updatedOrder.tableNumber },
+            { occupied: false }
+          );
         }
       } catch (socketError) {
         console.error("Socket emission error:", socketError);
@@ -273,7 +405,9 @@ See you again!
       adminId,
     })
       .populate("adminId", "cafeName gst address city state pincode")
-      .populate("userId", "name");
+      .populate("userId", "name")
+      .populate("customers", "name")
+      .populate("items.customerId", "name");
 
     if (!order) {
       throw new Error("Order not found");
@@ -287,17 +421,41 @@ See you again!
 
     const total = Math.round(subTotal + gstAmount);
 
+    const customerMap = new Map();
+    for (const item of order.items) {
+      const custId = item.customerId?._id?.toString() || "unknown";
+      if (!customerMap.has(custId)) {
+        customerMap.set(custId, {
+          customerId: item.customerId?._id || null,
+          name: item.customerId?.name || "Unknown",
+          items: [],
+          subTotal: 0,
+        });
+      }
+      const entry = customerMap.get(custId);
+      entry.items.push({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        amount: item.price * item.quantity,
+      });
+      entry.subTotal += item.price * item.quantity;
+    }
+
     return {
       cafeName: order.adminId.cafeName,
       address: `${order.adminId.address || ""}, ${order.adminId.city || ""}`,
       tableNumber: order.tableNumber,
 
       items: order.items.map(item => ({
+        customerId: item.customerId?._id || null,
+        customerName: item.customerId?.name || "Unknown",
         name: item.name,
         quantity: item.quantity,
         price: item.price,
         amount: item.price * item.quantity,
       })),
+      customers: Array.from(customerMap.values()),
 
       subTotal,
       gstPercent,
@@ -305,6 +463,37 @@ See you again!
       total,
       createdAt: order.createdAt,
     };
+  },
+  getActiveOrderByQr: async (qrId) => {
+    if (!qrId) {
+      throw new Error("qrId is required");
+    }
+
+    const qr = await Qr.findById(qrId).populate("adminId");
+    if (!qr) {
+      throw new Error("Invalid QR");
+    }
+    if (!qr.adminId || !qr.adminId.isActive) {
+      throw new Error("This QR is disabled because the account is inactive");
+    }
+
+    const latestActiveOrder = await Order.findOne({
+      adminId: qr.adminId._id,
+      tableNumber: qr.tableNumber,
+      orderStatus: { $ne: "completed" },
+    })
+      .sort({ createdAt: -1 })
+      .populate("adminId", "name email")
+      .populate("userId", "name email phoneNumber")
+      .populate("customers", "name email phoneNumber")
+      .populate("items.customerId", "name email phoneNumber")
+      .populate("items.menuId");
+
+    if (!latestActiveOrder) {
+      return { active: false, order: null, tableNumber: qr.tableNumber };
+    }
+
+    return { active: true, order: latestActiveOrder, tableNumber: qr.tableNumber };
   },
 };
 

@@ -88,6 +88,16 @@ const orderController = {
       next(err);
     }
   },
+  getActiveOrderByQr: async (req, res, next) => {
+    try {
+      const result = await orderService.getActiveOrderByQr(
+        req.params.qrId
+      );
+      sendSuccessResponse(res, 200, "Active order fetched", result);
+    } catch (err) {
+      next(err);
+    }
+  },
 };
 
 export default orderController;

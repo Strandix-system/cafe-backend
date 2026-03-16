@@ -52,7 +52,7 @@ const checkSubscription = async (req, res, next) => {
     return next(error);
   }
 };
- const blockExpiredSubscription = async (req, res, next) => {
+const blockExpiredSubscription = async (req, res, next) => {
   try {
     // apply only for admin
     if (req.user.role !== "admin") {
@@ -76,10 +76,11 @@ const checkSubscription = async (req, res, next) => {
       today >= endDate ||
       latestSubscriptionTransaction.subscriptionStatus === "expired"
     ) {
-      return new ApiError(403, "Subscription expired. Please renew to continue.");
+      return next(
+        new ApiError(403, "Subscription expired. Please renew to continue.")
+      );
     }
 
-    next();
   } catch (error) {
     next(error);
   }

@@ -36,8 +36,7 @@ export const tokenVerification = async (req, res, next, isPublic = false) => {
       return res.status(401).json({ message: "No token provided" });
     }
 
-    const decoded = isPublic ? { id: req.body.adminId || req.params.adminId } : jwt.verify(token, process.env.JWT_SECRET);
-    console.log("Decoded token:", decoded);
+    const decoded = isPublic ? { id: req.body.adminId ?? req.params.adminId } : jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(401).json({ message: "User not found" });

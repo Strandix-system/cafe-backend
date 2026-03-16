@@ -41,13 +41,10 @@ export const menuService = {
       }
       body.image = file.location;
     }
-    if (body.isActive === false) {
-      body.inStock = false;
-    }
+    if (body.isActive === false) body.inStock = false;
     Object.assign(menu, body);
-    if (menu.isActive === false) {
-      menu.inStock = false;
-    }
+    if (!menu.isActive) menu.inStock = false;
+
     await menu.save();
     return menu;
   },

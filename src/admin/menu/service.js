@@ -1,15 +1,6 @@
 import Menu from "../../../model/menu.js";
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { s3 } from "../../../config/s3.js";
 import { Category } from "../../../model/category.js";
 import { deleteSingleFile } from "../../../utils/s3utils.js";
-
-const getS3Key = (value) => {
-  if (!value) return null;
-  if (!value.startsWith("http")) return value;
-  const url = new URL(value);
-  return url.pathname.substring(1);
-};
 
 export const menuService = {
   createMenu: async (adminId, body, file) => {
@@ -31,6 +22,7 @@ export const menuService = {
       image: file.location,
       price: Number(body.price),
       discountPrice: body.discountPrice ? Number(body.discountPrice) : undefined,
+      inStock: body.isActive === false ? false : body.inStock,
     });
     return menu;
   },
@@ -49,34 +41,30 @@ export const menuService = {
       }
       body.image = file.location;
     }
+    if (body.isActive === false) body.inStock = false;
     Object.assign(menu, body);
+    if (!menu.isActive) menu.inStock = false;
+
     await menu.save();
     return menu;
   },
-  deleteMenu: async (menuId) => {
-    const menu = await Menu.findById(menuId);
-    if (!menu) {
-      throw Object.assign(new Error("Menu not found"), { statusCode: 404 });
-    }
-    if (menu.image) {
-      const key = getS3Key(menu.image);
-      if (key) {
-        await s3.send(
-          new DeleteObjectCommand({
-            Bucket: process.env.S3_BUCKET_NAME,
-            Key: key,
-          })
-        );
-      }
-    }
-    await menu.deleteOne();
-    return true;
-  },
   getAllMenus: async (filter, options) => {
+    if (filter.isActive !== undefined) {
+      filter.isActive = filter.isActive === "true";
+    }
+    if (filter.inStock !== undefined) {
+      filter.inStock = filter.inStock === "true";
+    }
     return await Menu.paginate(filter, options);
   },
   getPublicMenus: async (adminId, query) => {
-    const filter = { adminId };
+    const filter = {
+      adminId,
+      isActive: true,
+    };
+    if (query.inStock !== undefined) {
+      filter.inStock = query.inStock === "true";
+    }
     if (query.category) {
       filter.category = query.category;
     }
@@ -85,7 +73,7 @@ export const menuService = {
     }
     const menus = await Menu.find(filter)
       .select(
-        "name description image price discountPrice category"
+        "name description image price discountPrice category isActive inStock"
       )
       .populate("category", "name")
       .sort({ createdAt: -1 });
@@ -94,7 +82,13 @@ export const menuService = {
   getMenusByAdmin: async (adminId, filter, options) => {
     filter.adminId = adminId;
     if (filter.category) {
-       filter.category = filter.category;
+      filter.category = filter.category;
+    }
+    if (filter.isActive !== undefined) {
+      filter.isActive = filter.isActive === "true";
+    }
+    if (filter.inStock !== undefined) {
+      filter.inStock = filter.inStock === "true";
     }
     if (filter.search) {
       filter.$or = [
@@ -109,20 +103,20 @@ export const menuService = {
     const menu = await Menu.findById(menuId);
     return menu;
   },
-getAdminUsedCategories: async (adminId, filter, options) => {
-  // Step 1: Get categories used by this admin in Menu
-  const usedCategories = await Menu.distinct("category", { adminId });
-  const query = {
-    name: { $in: usedCategories }
-  };
-  if (filter.search) {
-    query.name = { 
-      $in: usedCategories,
-      $regex: filter.search,
-      $options: "i"
+  getAdminUsedCategories: async (adminId, filter, options) => {
+    // Step 1: Get categories used by this admin in Menu
+    const usedCategories = await Menu.distinct("category", { adminId });
+    const query = {
+      name: { $in: usedCategories }
     };
-  }
-  const result = await Category.paginate(query,filter, options);
-  return result;
-},
+    if (filter.search) {
+      query.name = {
+        $in: usedCategories,
+        $regex: filter.search,
+        $options: "i"
+      };
+    }
+    const result = await Category.paginate(query, filter, options);
+    return result;
+  },
 };

@@ -24,12 +24,6 @@ router.patch(
   validate(updateMenuSchema),
   menuController.updateMenu
 );
-router.delete(
-  "/delete/:menuId",
-  tokenVerification,
-  allowRoles("admin"),
-  menuController.deleteMenu
-);
 router.get(
   "/all-menu",
   tokenVerification,

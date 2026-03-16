@@ -123,7 +123,7 @@ const layoutService = {
   },
   getActiveLayout: async (adminid) => {
     const result = await CafeLayout.findOne({ adminId: adminid, active: true })
-      .populate("adminId").populate("menus");
+      .populate("adminId").populate({path: "menus", match: { isActive: true }});
     return result;
   },
 };

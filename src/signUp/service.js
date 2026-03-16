@@ -150,19 +150,11 @@ export const signUpService = {
     return { user, token };
   },
   checkEmail: async (email, phoneNumber) => {
-    const orFilters = [
-      email ? { email } : null,
-      phoneNumber ? { phoneNumber } : null,
-    ].filter(Boolean);
 
-    const existingUser = await User.findOne({ $or: orFilters });
+    const existingUser = await User.findOne({ email, phoneNumber });
+
     if (existingUser) {
-      const emailExists = email && existingUser.email === email;
-      const phoneExists = phoneNumber && existingUser.phoneNumber === phoneNumber;
-
-      if (emailExists || phoneExists) {
-        throw new ApiError(409, "Email or phone number already exists.");
-      }
+      throw new ApiError(409, "Email and phone number already exist.");
     }
   },
   getTransactions: async (filter, options, userId) => {
@@ -335,7 +327,6 @@ export const signUpService = {
       },
       { upsert: true, new: true }
     );
-
     return user;
   },
 };

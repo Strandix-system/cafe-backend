@@ -493,7 +493,12 @@ See you again!
       return { active: false, order: null, tableNumber: qr.tableNumber };
     }
 
-    return { active: true, order: latestActiveOrder, tableNumber: qr.tableNumber };
+    return {
+      active: true,
+      message: "An active order already exists. You can add more items.",
+      order: latestActiveOrder,
+      tableNumber: qr.tableNumber
+    };
   },
 };
 

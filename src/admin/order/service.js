@@ -3,6 +3,7 @@ import Menu from "../../../model/menu.js";
 import Customer from "../../../model/customer.js";
 import User from "../../../model/user.js";
 import Qr from "../../../model/qr.js";
+import OrderItem from "../../../model/orderItem.js";
 import { getIO } from "../../../socket.js";
 import sendWhatsAppMessage from "../../../utils/whatsapp.js";
 
@@ -90,15 +91,50 @@ const orderService = {
       latestActiveOrder.createdAt &&
       latestActiveOrder.createdAt >= threeHoursAgo;
 
+    const ensureOrderItemRefs = async (orderDoc, fallbackCustomerId) => {
+      const existingItems = orderDoc.items || [];
+      const legacyItems = existingItems.filter((item) => item?.menuId);
+
+      if (!legacyItems.length) {
+        return;
+      }
+
+      const created = await OrderItem.insertMany(
+        legacyItems.map((item) => ({
+          orderId: orderDoc._id,
+          menuId: item.menuId,
+          customerId: item.customerId || fallbackCustomerId,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        }))
+      );
+
+      const kept = existingItems.filter((item) => !item?.menuId);
+      orderDoc.items = [...kept, ...created.map((doc) => doc._id)];
+      await orderDoc.save();
+    };
+
+    const createOrderItems = async (orderId, newItems) => {
+      const created = await OrderItem.insertMany(
+        newItems.map((item) => ({
+          ...item,
+          orderId,
+        }))
+      );
+      return created.map((doc) => doc._id);
+    };
+
     if (qr.occupied && latestActiveOrder) {
-      latestActiveOrder.items = (latestActiveOrder.items || []).map((item) => {
-        const plainItem = item?.toObject ? item.toObject() : item;
-        return {
-          ...plainItem,
-          customerId: plainItem.customerId || latestActiveOrder.userId,
-        };
-      });
-      latestActiveOrder.items = [...latestActiveOrder.items, ...finalItems];
+      await ensureOrderItemRefs(latestActiveOrder, customerId);
+      const newItemIds = await createOrderItems(
+        latestActiveOrder._id,
+        finalItems
+      );
+      latestActiveOrder.items = [
+        ...(latestActiveOrder.items || []),
+        ...newItemIds,
+      ];
       if (specialInstruction) {
         latestActiveOrder.specialInstruction = latestActiveOrder.specialInstruction
           ? `${latestActiveOrder.specialInstruction}\n${specialInstruction}`
@@ -111,20 +147,17 @@ const orderService = {
       latestActiveOrder.totalAmount = Math.round(
         latestActiveOrder.subTotal + latestActiveOrder.gstAmount
       );
-      latestActiveOrder.customers = latestActiveOrder.customers || [];
-      if (!latestActiveOrder.customers.find(id => id.toString() === customerId)) {
-        latestActiveOrder.customers.push(customerId);
-      }
       order = await latestActiveOrder.save();
     } else if (latestActiveOrder && isWithinThreeHours) {
-      latestActiveOrder.items = (latestActiveOrder.items || []).map((item) => {
-        const plainItem = item?.toObject ? item.toObject() : item;
-        return {
-          ...plainItem,
-          customerId: plainItem.customerId || latestActiveOrder.userId,
-        };
-      });
-      latestActiveOrder.items = [...latestActiveOrder.items, ...finalItems];
+      await ensureOrderItemRefs(latestActiveOrder, customerId);
+      const newItemIds = await createOrderItems(
+        latestActiveOrder._id,
+        finalItems
+      );
+      latestActiveOrder.items = [
+        ...(latestActiveOrder.items || []),
+        ...newItemIds,
+      ];
       if (specialInstruction) {
         latestActiveOrder.specialInstruction = latestActiveOrder.specialInstruction
           ? `${latestActiveOrder.specialInstruction}\n${specialInstruction}`
@@ -137,10 +170,6 @@ const orderService = {
       latestActiveOrder.totalAmount = Math.round(
         latestActiveOrder.subTotal + latestActiveOrder.gstAmount
       );
-      latestActiveOrder.customers = latestActiveOrder.customers || [];
-      if (!latestActiveOrder.customers.find(id => id.toString() === customerId)) {
-        latestActiveOrder.customers.push(customerId);
-      }
       order = await latestActiveOrder.save();
       if (!qr.occupied) {
         qr.occupied = true;
@@ -153,16 +182,17 @@ const orderService = {
       }
       order = await Order.create({
         adminId,
-        userId: customerId,
-        customers: [customerId],
         tableNumber,
-        items: finalItems,
+        items: [],
         specialInstruction,
         totalAmount: Math.round(finalTotal),
         gstPercent,
         gstAmount,
         subTotal
       });
+      const newItemIds = await createOrderItems(order._id, finalItems);
+      order.items = newItemIds;
+      await order.save();
 
       qr.occupied = true;
       await qr.save();
@@ -172,45 +202,82 @@ const orderService = {
 
     const populatedOrder = await Order.findById(order._id)
       .populate("adminId", "name email")
-      .populate("userId", "name email phoneNumber")
-      .populate("customers", "name email phoneNumber")
-      .populate("items.customerId", "name email phoneNumber")
-      .populate("items.menuId");
+      .populate({
+        path: "items",
+        populate: [
+          { path: "customerId", select: "name email phoneNumber" },
+          { path: "menuId" },
+        ],
+      });
 
     io.to(adminId.toString()).emit("newOrder", populatedOrder);
     io.to(adminId.toString()).emit("order:new", populatedOrder);
-    io.to(`customer-${customer._id}`).emit("order:new", populatedOrder);
-    if (populatedOrder.customers?.length) {
-      for (const custId of populatedOrder.customers) {
-        const id = custId._id ? custId._id.toString() : custId.toString();
-        if (id === customer._id.toString()) continue;
-        io.to(`customer-${id}`).emit("order:new", populatedOrder);
-      }
+    const customerIds = await OrderItem.distinct("customerId", {
+      orderId: order._id,
+    });
+    for (const custId of customerIds) {
+      const id = custId.toString();
+      io.to(`customer-${id}`).emit("order:new", populatedOrder);
     }
 
     return order;
   },
   getOrders: async (adminId, filter, options) => {
-    return await Order.paginate({ adminId, ...filter }, options
-    );
-  },
-  getMyOrders: async (filter, options) => {
-    if (!filter.userId) {
-      throw new Error("userId is required to fetch customer's orders");
-    }
-    const userId = filter.userId;
-    delete filter.userId;
-    filter.$or = [
-      { userId },
-      { customers: userId },
-    ];
-    const result = await Order.paginate(
-      filter,
-      options
-    );
+
+    const { populate: _populate, ...safeOptions } = options || {};
+    const result = await Order.paginate({ adminId, ...filter }, safeOptions);
+
+    result.results = await Order.populate(result.results, [
+      {
+        path: "items",
+        populate: [
+          { path: "customerId", select: "name phoneNumber" },
+          { path: "menuId" }
+        ]
+      }
+    ]);
 
     return result;
   },
+  getMyOrders: async (filter, options) => {
+  if (!filter.userId) {
+    throw new Error("userId is required to fetch customer's orders");
+  }
+
+  const userId = filter.userId;
+  delete filter.userId;
+
+  const orderIds = await OrderItem.distinct("orderId", {
+    customerId: userId,
+  });
+
+  if (!orderIds.length) {
+    return {
+      results: [],
+      page: Number(options?.page) || 0,
+      limit: Number(options?.limit) || 0,
+      totalPages: 0,
+      totalResults: 0,
+    };
+  }
+
+  filter._id = { $in: orderIds };
+
+  const { populate: _populate, ...safeOptions } = options || {};
+  const result = await Order.paginate(filter, safeOptions);
+
+  result.results = await Order.populate(result.results, [
+    {
+      path: "items",
+      populate: [
+        { path: "customerId", select: "name email phoneNumber" },
+        { path: "menuId" }
+      ]
+    }
+  ]);
+
+  return result;
+},
   updateStatus: async (orderId, status, adminId) => {
     try {
       if (!status) {
@@ -236,24 +303,21 @@ const orderService = {
         }
       )
         .populate("adminId", "name email")
-        .populate("userId", "name email phoneNumber")
-        .populate("customers", "name email phoneNumber")
-        .populate("items.customerId", "name email phoneNumber")
-        .populate("items.menuId");
+        .populate({
+          path: "items",
+          populate: [
+            { path: "customerId", select: "name email phoneNumber" },
+            { path: "menuId" },
+          ],
+        });
 
 
       if (!updatedOrder) {
         throw new Error("Order not found");
       }
 
-      if (!updatedOrder.userId || !updatedOrder.userId._id) {
-        console.error("Order missing userId, cannot emit to customer");
-        return updatedOrder;
-      }
-
       try {
         const io = getIO();
-        const customerId = updatedOrder.userId._id.toString();
 
         io.to(adminId.toString()).emit("orderStatusUpdate", {
           orderId: updatedOrder._id,
@@ -266,32 +330,21 @@ const orderService = {
           order: updatedOrder,
         });
 
-        io.to(`customer-${customerId}`).emit("orderStatusUpdate", {
+        const customerIds = await OrderItem.distinct("customerId", {
           orderId: updatedOrder._id,
-          status: status,
-          order: updatedOrder,
         });
-        io.to(`customer-${customerId}`).emit("order:statusUpdated", {
-          orderId: updatedOrder._id,
-          status,
-          order: updatedOrder,
-        });
-
-        if (updatedOrder.customers?.length) {
-          for (const custId of updatedOrder.customers) {
-            const id = custId.toString();
-            if (id === customerId) continue;
-            io.to(`customer-${id}`).emit("orderStatusUpdate", {
-              orderId: updatedOrder._id,
-              status: status,
-              order: updatedOrder,
-            });
-            io.to(`customer-${id}`).emit("order:statusUpdated", {
-              orderId: updatedOrder._id,
-              status,
-              order: updatedOrder,
-            });
-          }
+        for (const custId of customerIds) {
+          const id = custId.toString();
+          io.to(`customer-${id}`).emit("orderStatusUpdate", {
+            orderId: updatedOrder._id,
+            status: status,
+            order: updatedOrder,
+          });
+          io.to(`customer-${id}`).emit("order:statusUpdated", {
+            orderId: updatedOrder._id,
+            status,
+            order: updatedOrder,
+          });
         }
 
         if (status === "preparing") {
@@ -328,8 +381,9 @@ const orderService = {
       throw new Error("Order not found");
     }
 
-    return await Order.find({ orderId })
-      .populate("menuId");
+    return await OrderItem.find({ orderId })
+      .populate("menuId")
+      .populate("customerId", "name email phoneNumber");
   },
   updatePaymentStatus: async (orderId, paymentStatus, adminId) => {
     try {
@@ -358,16 +412,22 @@ const orderService = {
         );
         try {
           const populatedOrder = await Order.findById(orderId)
-            .populate("userId", "name phoneNumber")
             .populate("adminId", "cafeName");
 
-          const customer = populatedOrder.userId;
+          const customerIds = await OrderItem.distinct("customerId", {
+            orderId,
+          });
+          if (customerIds.length) {
+            const customers = await Customer.find({
+              _id: { $in: customerIds },
+            }).select("name phoneNumber");
 
-          if (customer?.phoneNumber) {
+            for (const customer of customers) {
+              if (!customer?.phoneNumber) continue;
 
-            const formattedPhone = `91${customer.phoneNumber}`;
+              const formattedPhone = `91${customer.phoneNumber}`;
 
-            const message = `
+              const message = `
 Hello ${customer.name},
 
 ✅ Payment received successfully.
@@ -382,12 +442,12 @@ Thank you for visiting ${populatedOrder.adminId.cafeName} ☕
 See you again!
           `;
 
-            await sendWhatsAppMessage({
-              to: formattedPhone,
-              message,
-            });
+              await sendWhatsAppMessage({
+                to: formattedPhone,
+                message,
+              });
+            }
           }
-
         } catch (whatsappError) {
           console.error("WhatsApp Error:", whatsappError.message);
         }
@@ -405,9 +465,10 @@ See you again!
       adminId,
     })
       .populate("adminId", "cafeName gst address city state pincode")
-      .populate("userId", "name")
-      .populate("customers", "name")
-      .populate("items.customerId", "name");
+      .populate({
+        path: "items",
+        populate: [{ path: "customerId", select: "name" }],
+      });
 
     if (!order) {
       throw new Error("Order not found");
@@ -484,16 +545,24 @@ See you again!
     })
       .sort({ createdAt: -1 })
       .populate("adminId", "name email")
-      .populate("userId", "name email phoneNumber")
-      .populate("customers", "name email phoneNumber")
-      .populate("items.customerId", "name email phoneNumber")
-      .populate("items.menuId");
+      .populate({
+        path: "items",
+        populate: [
+          { path: "customerId", select: "name email phoneNumber" },
+          { path: "menuId" },
+        ],
+      });
 
     if (!latestActiveOrder) {
       return { active: false, order: null, tableNumber: qr.tableNumber };
     }
 
-    return { active: true, order: latestActiveOrder, tableNumber: qr.tableNumber };
+    return {
+      active: true,
+      message: "An active order already exists. You can add more items.",
+      order: latestActiveOrder,
+      tableNumber: qr.tableNumber
+    };
   },
 };
 

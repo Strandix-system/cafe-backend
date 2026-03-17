@@ -1,5 +1,6 @@
 import User from "../../../model/user.js";
 import Order from "../../../model/order.js";
+import OrderItem from "../../../model/orderItem.js";
 import Customer from "../../../model/customer.js";
 import demoRequest from "../../../model/demoRequest.js";
 import { ApiError } from "../../../utils/apiError.js";
@@ -83,16 +84,23 @@ export const dashboardService = {
         { $group: { _id: null, total: { $sum: "$totalAmount" } } }
       ]),
 
-      Order.aggregate([
+      OrderItem.aggregate([
+        {
+          $lookup: {
+            from: "orders",
+            localField: "orderId",
+            foreignField: "_id",
+            as: "order",
+          },
+        },
+        { $unwind: "$order" },
         {
           $match: {
-            adminId,
-            createdAt: { $gte: start, $lte: end }
-          }
+            "order.adminId": adminId,
+            "order.createdAt": { $gte: start, $lte: end },
+          },
         },
-        {
-          $group: { _id: "$customerId" }
-        }
+        { $group: { _id: "$customerId" } },
       ]),
       Order.countDocuments({
         adminId,
@@ -187,17 +195,26 @@ export const dashboardService = {
   },
   itemPerformance: async (adminId) => {
     const pipeline = (sortOrder) => [
-      { $match: { adminId } },
-      { $unwind: "$items" },
+      {
+        $lookup: {
+          from: "orders",
+          localField: "orderId",
+          foreignField: "_id",
+          as: "order",
+        },
+      },
+      { $unwind: "$order" },
+      { $match: { "order.adminId": adminId } },
       {
         $group: {
-          _id: "$items.name",
-          quantity: { $sum: "$items.quantity" },
+          _id: "$name",
+          quantity: { $sum: "$quantity" },
           revenue: {
             $sum: {
-              $multiply: ["$items.quantity", "$items.price"],
+              $multiply: ["$quantity", "$price"],
             },
           },
+          menuId: { $first: "$menuId" },
         },
       },
       { $sort: { revenue: sortOrder } },
@@ -205,8 +222,8 @@ export const dashboardService = {
       {
         $lookup: {
           from: "menus",
-          localField: "_id",
-          foreignField: "name",
+          localField: "menuId",
+          foreignField: "_id",
           as: "menu",
         },
       },
@@ -223,8 +240,8 @@ export const dashboardService = {
     ];
 
     const [topSelling, lowSelling] = await Promise.all([
-      Order.aggregate(pipeline(-1)), // highest revenue
-      Order.aggregate(pipeline(1)),  // lowest revenue
+      OrderItem.aggregate(pipeline(-1)), // highest revenue
+      OrderItem.aggregate(pipeline(1)),  // lowest revenue
     ]);
 
     return {
@@ -295,16 +312,31 @@ export const dashboardService = {
       };
     }
 
-    const customers = await Order.aggregate([
+    const customers = await OrderItem.aggregate([
+      {
+        $lookup: {
+          from: "orders",
+          localField: "orderId",
+          foreignField: "_id",
+          as: "order",
+        },
+      },
+      { $unwind: "$order" },
       {
         $match: {
-          adminId,
-          orderStatus: "completed",
+          "order.adminId": adminId,
+          "order.orderStatus": "completed",
         },
       },
       {
         $group: {
-          _id: "$userId",
+          _id: { customerId: "$customerId", orderId: "$orderId" },
+          totalAmount: { $first: "$order.totalAmount" },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id.customerId",
           totalOrders: { $sum: 1 },
           totalAmount: { $sum: "$totalAmount" },
         },
@@ -342,9 +374,7 @@ export const dashboardService = {
           customerStatus: 1,
         },
       },
-      {
-        $sort: sortStage,
-      },
+      { $sort: sortStage },
       { $limit: 10 },
     ]);
 

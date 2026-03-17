@@ -242,7 +242,7 @@ const orderService = {
             menuId: item.menuId,
             name: item.menuId?.name || "Unknown",
             quantity: 0,
-            customerIds: new Set(),
+            customers: new Map(),
             price:
               item.menuId?.discountPrice && item.menuId.discountPrice > 0
                 ? item.menuId.discountPrice
@@ -252,12 +252,19 @@ const orderService = {
         const entry = itemMap.get(menuId);
         entry.quantity += item.quantity || 0;
         if (item.customerId?._id) {
-          entry.customerIds.add(item.customerId._id.toString());
+          const id = item.customerId._id.toString();
+          if (!entry.customers.has(id)) {
+            entry.customers.set(id, {
+              _id: item.customerId._id,
+              name: item.customerId.name,
+              phoneNumber: item.customerId.phoneNumber,
+            });
+          }
         }
       }
       const aggregatedItems = Array.from(itemMap.values()).map((entry) => ({
         ...entry,
-        customerIds: Array.from(entry.customerIds),
+        customers: Array.from(entry.customers.values()),
         amount: entry.price * entry.quantity,
       }));
       return {
@@ -315,7 +322,7 @@ const orderService = {
           menuId: item.menuId,
           name: item.menuId?.name || "Unknown",
           quantity: 0,
-          customerIds: new Set(),
+          customers: new Map(),
           price:
             item.menuId?.discountPrice && item.menuId.discountPrice > 0
               ? item.menuId.discountPrice
@@ -325,12 +332,20 @@ const orderService = {
       const entry = itemMap.get(menuId);
       entry.quantity += item.quantity || 0;
       if (item.customerId?._id) {
-        entry.customerIds.add(item.customerId._id.toString());
+        const id = item.customerId._id.toString();
+        if (!entry.customers.has(id)) {
+          entry.customers.set(id, {
+            _id: item.customerId._id,
+            name: item.customerId.name,
+            phoneNumber: item.customerId.phoneNumber,
+            email: item.customerId.email,
+          });
+        }
       }
     }
     const aggregatedItems = Array.from(itemMap.values()).map((entry) => ({
       ...entry,
-      customerIds: Array.from(entry.customerIds),
+      customers: Array.from(entry.customers.values()),
       amount: entry.price * entry.quantity,
     }));
     return {

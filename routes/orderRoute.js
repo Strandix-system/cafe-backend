@@ -36,6 +36,13 @@ router.get(
   orderController.getItems
 );
 
+router.patch(
+  "/item-status",
+  tokenVerification,
+  allowRoles("admin"),
+  orderController.updateItemStatus
+);
+
 router.get(
   "/my-orders",
   orderController.getMyOrders

@@ -116,6 +116,7 @@ const orderService = {
         newItems.map((item) => ({
           ...item,
           orderId,
+          itemStatus: "pending",
         }))
       );
       return created.map((doc) => doc._id);
@@ -460,6 +461,40 @@ const orderService = {
     }
 
     return await OrderItem.find({ orderId })
+      .populate("menuId")
+      .populate("customerId", "name email phoneNumber");
+  },
+  updateOrderItemStatus: async (orderItemId, status, adminId) => {
+    if (!orderItemId) {
+      throw new Error("orderItemId is required");
+    }
+    if (!status) {
+      throw new Error("Item status is required");
+    }
+
+    const allowed = ["pending", "served"];
+    if (!allowed.includes(status)) {
+      throw new Error("Invalid item status");
+    }
+
+    const orderItem = await OrderItem.findById(orderItemId);
+    if (!orderItem) {
+      throw new Error("Order item not found");
+    }
+
+    const order = await Order.findOne({
+      _id: orderItem.orderId,
+      adminId,
+    });
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    orderItem.itemStatus = status;
+    orderItem.servedAt = status === "served" ? new Date() : orderItem.servedAt;
+    await orderItem.save();
+
+    return await OrderItem.findById(orderItem._id)
       .populate("menuId")
       .populate("customerId", "name email phoneNumber");
   },

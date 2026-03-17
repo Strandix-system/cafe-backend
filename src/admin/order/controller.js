@@ -63,6 +63,19 @@ const orderController = {
       next(err);
     }
   },
+  updateItemStatus: async (req, res, next) => {
+    try {
+      const { orderItemId, status } = req.body;
+      const result = await orderService.updateOrderItemStatus(
+        orderItemId,
+        status,
+        req.user._id
+      );
+      sendSuccessResponse(res, 200, "Item status updated", result);
+    } catch (err) {
+      next(err);
+    }
+  },
   updatePaymentStatus: async (req, res, next) => {
     try {
       const { orderId, paymentStatus } = req.body;

@@ -23,6 +23,16 @@ const orderItemSchema = new mongoose.Schema(
       min: 1,
       required: true,
     },
+    itemStatus: {
+      type: String,
+      enum: ["pending", "served"],
+      default: "pending",
+      lowercase: true,
+      trim: true,
+    },
+    servedAt: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );

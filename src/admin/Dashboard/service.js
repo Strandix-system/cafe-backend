@@ -206,20 +206,6 @@ export const dashboardService = {
       { $unwind: "$order" },
       { $match: { "order.adminId": adminId } },
       {
-        $group: {
-          _id: "$name",
-          quantity: { $sum: "$quantity" },
-          revenue: {
-            $sum: {
-              $multiply: ["$quantity", "$price"],
-            },
-          },
-          menuId: { $first: "$menuId" },
-        },
-      },
-      { $sort: { revenue: sortOrder } },
-      { $limit: 1 },
-      {
         $lookup: {
           from: "menus",
           localField: "menuId",
@@ -229,12 +215,35 @@ export const dashboardService = {
       },
       { $unwind: { path: "$menu", preserveNullAndEmptyArrays: true } },
       {
+        $group: {
+          _id: "$menu.name",
+          quantity: { $sum: "$quantity" },
+          revenue: {
+            $sum: {
+              $multiply: [
+                "$quantity",
+                {
+                  $cond: [
+                    { $gt: ["$menu.discountPrice", 0] },
+                    "$menu.discountPrice",
+                    "$menu.price",
+                  ],
+                },
+              ],
+            },
+          },
+          menuImage: { $first: "$menu.image" },
+        },
+      },
+      { $sort: { revenue: sortOrder } },
+      { $limit: 1 },
+      {
         $project: {
           _id: 0,
           name: "$_id",
           quantity: 1,
           revenue: 1,
-          image: "$menu.image",
+          image: "$menuImage",
         },
       },
     ];

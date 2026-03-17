@@ -57,8 +57,6 @@ const orderService = {
       return {
         customerId: item.customerId || customerId,
         menuId: item.menuId,
-        name: menu.name,
-        price,
         quantity: item.quantity,
       };
     });
@@ -104,8 +102,6 @@ const orderService = {
           orderId: orderDoc._id,
           menuId: item.menuId,
           customerId: item.customerId || fallbackCustomerId,
-          name: item.name,
-          price: item.price,
           quantity: item.quantity,
         }))
       );
@@ -237,6 +233,34 @@ const orderService = {
       }
     ]);
 
+    result.results = result.results.map((order) => {
+      const itemMap = new Map();
+      for (const item of order.items || []) {
+        const menuId = item.menuId?._id?.toString() || "unknown";
+        if (!itemMap.has(menuId)) {
+          itemMap.set(menuId, {
+            menuId: item.menuId,
+            name: item.menuId?.name || "Unknown",
+            quantity: 0,
+            price:
+              item.menuId?.discountPrice && item.menuId.discountPrice > 0
+                ? item.menuId.discountPrice
+                : item.menuId?.price || 0,
+          });
+        }
+        const entry = itemMap.get(menuId);
+        entry.quantity += item.quantity || 0;
+      }
+      const aggregatedItems = Array.from(itemMap.values()).map((entry) => ({
+        ...entry,
+        amount: entry.price * entry.quantity,
+      }));
+      return {
+        ...order.toObject(),
+        items: aggregatedItems,
+      };
+    });
+
     return result;
   },
   getMyOrders: async (filter, options) => {
@@ -276,6 +300,34 @@ const orderService = {
       ]
     }
   ]);
+
+  result.results = result.results.map((order) => {
+    const itemMap = new Map();
+    for (const item of order.items || []) {
+      const menuId = item.menuId?._id?.toString() || "unknown";
+      if (!itemMap.has(menuId)) {
+        itemMap.set(menuId, {
+          menuId: item.menuId,
+          name: item.menuId?.name || "Unknown",
+          quantity: 0,
+          price:
+            item.menuId?.discountPrice && item.menuId.discountPrice > 0
+              ? item.menuId.discountPrice
+              : item.menuId?.price || 0,
+        });
+      }
+      const entry = itemMap.get(menuId);
+      entry.quantity += item.quantity || 0;
+    }
+    const aggregatedItems = Array.from(itemMap.values()).map((entry) => ({
+      ...entry,
+      amount: entry.price * entry.quantity,
+    }));
+    return {
+      ...order.toObject(),
+      items: aggregatedItems,
+    };
+  });
 
   return result;
 },
@@ -468,14 +520,21 @@ See you again!
       .populate("adminId", "cafeName gst address city state pincode")
       .populate({
         path: "items",
-        populate: [{ path: "customerId", select: "name" }],
+        populate: [
+          { path: "customerId", select: "name" },
+          { path: "menuId", select: "name price discountPrice" },
+        ],
       });
 
     if (!order) {
       throw new Error("Order not found");
     }
     const subTotal = order.items.reduce((sum, item) => {
-      return sum + item.price * item.quantity;
+      const menu = item.menuId;
+      const price = menu?.discountPrice && menu.discountPrice > 0
+        ? menu.discountPrice
+        : menu?.price || 0;
+      return sum + price * item.quantity;
     }, 0);
 
     const gstPercent = order.adminId.gst;
@@ -490,34 +549,53 @@ See you again!
         customerMap.set(custId, {
           customerId: item.customerId?._id || null,
           name: item.customerId?.name || "Unknown",
-          items: [],
+          items: new Map(),
           subTotal: 0,
         });
       }
       const entry = customerMap.get(custId);
-      entry.items.push({
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        amount: item.price * item.quantity,
-      });
-      entry.subTotal += item.price * item.quantity;
+      const menuId = item.menuId?._id?.toString() || "unknown";
+      if (!entry.items.has(menuId)) {
+        entry.items.set(menuId, {
+          name: item.menuId?.name || "Unknown",
+          quantity: 0,
+          price:
+            item.menuId?.discountPrice && item.menuId.discountPrice > 0
+              ? item.menuId.discountPrice
+              : item.menuId?.price || 0,
+        });
+      }
+      const itemEntry = entry.items.get(menuId);
+      itemEntry.quantity += item.quantity || 0;
+      entry.subTotal += itemEntry.price * (item.quantity || 0);
     }
+
+    const customers = Array.from(customerMap.values()).map((entry) => ({
+      customerId: entry.customerId,
+      name: entry.name,
+      items: Array.from(entry.items.values()).map((i) => ({
+        ...i,
+        amount: i.price * i.quantity,
+      })),
+      subTotal: entry.subTotal,
+    }));
 
     return {
       cafeName: order.adminId.cafeName,
       address: `${order.adminId.address || ""}, ${order.adminId.city || ""}`,
       tableNumber: order.tableNumber,
 
-      items: order.items.map(item => ({
-        customerId: item.customerId?._id || null,
-        customerName: item.customerId?.name || "Unknown",
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        amount: item.price * item.quantity,
-      })),
-      customers: Array.from(customerMap.values()),
+      items: customers.flatMap((c) =>
+        c.items.map((i) => ({
+          customerId: c.customerId || null,
+          customerName: c.name || "Unknown",
+          name: i.name,
+          quantity: i.quantity,
+          price: i.price,
+          amount: i.amount,
+        }))
+      ),
+      customers,
 
       subTotal,
       gstPercent,

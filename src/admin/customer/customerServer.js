@@ -155,8 +155,17 @@ const customerService = {
               },
             },
             {
+              $lookup: {
+                from: "menus",
+                localField: "menuId",
+                foreignField: "_id",
+                as: "menu",
+              },
+            },
+            { $unwind: { path: "$menu", preserveNullAndEmptyArrays: true } },
+            {
               $group: {
-                _id: "$name",
+                _id: "$menu.name",
                 count: { $sum: 1 },
               },
             },

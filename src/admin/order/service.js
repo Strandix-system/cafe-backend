@@ -242,6 +242,7 @@ const orderService = {
             menuId: item.menuId,
             name: item.menuId?.name || "Unknown",
             quantity: 0,
+            customerIds: new Set(),
             price:
               item.menuId?.discountPrice && item.menuId.discountPrice > 0
                 ? item.menuId.discountPrice
@@ -250,9 +251,13 @@ const orderService = {
         }
         const entry = itemMap.get(menuId);
         entry.quantity += item.quantity || 0;
+        if (item.customerId?._id) {
+          entry.customerIds.add(item.customerId._id.toString());
+        }
       }
       const aggregatedItems = Array.from(itemMap.values()).map((entry) => ({
         ...entry,
+        customerIds: Array.from(entry.customerIds),
         amount: entry.price * entry.quantity,
       }));
       return {
@@ -310,6 +315,7 @@ const orderService = {
           menuId: item.menuId,
           name: item.menuId?.name || "Unknown",
           quantity: 0,
+          customerIds: new Set(),
           price:
             item.menuId?.discountPrice && item.menuId.discountPrice > 0
               ? item.menuId.discountPrice
@@ -318,9 +324,13 @@ const orderService = {
       }
       const entry = itemMap.get(menuId);
       entry.quantity += item.quantity || 0;
+      if (item.customerId?._id) {
+        entry.customerIds.add(item.customerId._id.toString());
+      }
     }
     const aggregatedItems = Array.from(itemMap.values()).map((entry) => ({
       ...entry,
+      customerIds: Array.from(entry.customerIds),
       amount: entry.price * entry.quantity,
     }));
     return {

@@ -8,43 +8,14 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Customer",
-      required: true,
-    },
-    customers: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Customer",
-      },
-    ],
     tableNumber: {
       type: Number,
       required: true,
     },
     items: [
       {
-        customerId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Customer",
-          required: true,
-        },
-        menuId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Menu",
-          required: true,
-        },
-
-        name: String,
-
-        price: Number,
-
-        quantity: {
-          type: Number,
-          min: 1,
-          required: true,
-        },
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "OrderItem",
       },
     ],
     specialInstruction: {
@@ -68,11 +39,11 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-     subTotal: {
+    subTotal: {
       type: Number,
       required: true,
     },
-    gstPercent:{
+    gstPercent: {
       type: Number,
       required: true,
     },

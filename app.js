@@ -41,6 +41,7 @@ app.use(
       "https://admin.aeternis.in",
       "https://portfolio.aeternis.in",
       "https://staging.d1o5djpa63pq8h.amplifyapp.com",
+      "https://staging.d2kw487x9mccls.amplifyapp.com",
       "http://localhost:5173",
       "http://localhost:5174",
       "http://localhost:8080",

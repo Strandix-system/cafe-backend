@@ -12,12 +12,6 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    items: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "OrderItem",
-      },
-    ],
     specialInstruction: {
       type: String,
       trim: true,
@@ -26,10 +20,9 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    orderStatus: {
-      type: String,
-      enum: ["pending", "preparing", "served", "completed"],
-      default: "pending",
+    isCompleted: {
+      type: Boolean,
+      default: false,
     },
     paymentStatus: {
       type: Boolean,
@@ -52,8 +45,6 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-
 orderSchema.plugin(paginate);
-
 
 export default mongoose.model("Order", orderSchema);

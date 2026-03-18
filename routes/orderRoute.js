@@ -1,5 +1,6 @@
 import express from "express";
 import orderController from "../src/admin/order/controller.js";
+import orderItemController from "../src/admin/orderItem/orderItem.controller.js";
 import { tokenVerification } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/permission.js";
 
@@ -26,21 +27,33 @@ router.patch(
   "/status",
   tokenVerification,
   allowRoles("admin"),
-  orderController.updateStatus
+  orderController.updateOrderStatus
 );
 
 router.get(
   "/items/:orderId",
   tokenVerification,
   allowRoles("admin"),
-  orderController.getItems
+  orderItemController.getItems
 );
 
 router.patch(
   "/item-status",
   tokenVerification,
   allowRoles("admin"),
-  orderController.updateItemStatus
+  orderItemController.updateItemStatus
+);
+
+router.patch(
+  "/item-quantity",
+  tokenVerification,
+  allowRoles("admin"),
+  orderItemController.updateQuantity
+);
+
+router.patch(
+  "/public/item-quantity",
+  orderItemController.updateQuantity
 );
 
 router.get(

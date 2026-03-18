@@ -35,43 +35,17 @@ const orderController = {
       next(err);
     }
   },
-  updateStatus: async (req, res, next) => {
+  updateOrderStatus: async (req, res, next) => {
     try {
 
       const status = req.body.status ?? req.body.orderStatus;
       const result =
-        await orderService.updateStatus(
+        await orderService.updateOrderStatus(
           req.body.orderId,
           status,
           req.user._id,
         );
       sendSuccessResponse(res, 200, "Status updated", result);
-    } catch (err) {
-      next(err);
-    }
-  },
-  getItems: async (req, res, next) => {
-    try {
-
-      const result =
-        await orderService.getOrderItems(
-          req.params.id,
-          req.user._id
-        );
-      sendSuccessResponse(res, 200, "Order items fetched", result);
-    } catch (err) {
-      next(err);
-    }
-  },
-  updateItemStatus: async (req, res, next) => {
-    try {
-      const { orderItemId, status } = req.body;
-      const result = await orderService.updateOrderItemStatus(
-        orderItemId,
-        status,
-        req.user._id
-      );
-      sendSuccessResponse(res, 200, "Item status updated", result);
     } catch (err) {
       next(err);
     }

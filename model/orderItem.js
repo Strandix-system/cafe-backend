@@ -23,11 +23,10 @@ const orderItemSchema = new mongoose.Schema(
       min: 1,
       required: true,
     },
-    itemStatus: {
+    status: {
       type: String,
-      enum: ["pending", "served"],
+      enum: ["pending", "preparing", "served"],
       default: "pending",
-      lowercase: true,
       trim: true,
     },
     servedAt: {

@@ -7,6 +7,64 @@ import OrderItem from "../../../model/orderItem.js";
 import { getIO } from "../../../socket.js";
 import sendWhatsAppMessage from "../../../utils/whatsapp.js";
 
+const attachOrderItems = async (orders) => {
+  if (!orders || !orders.length) return [];
+  const orderIds = orders.map((o) => o._id);
+  const items = await OrderItem.find({ orderId: { $in: orderIds } })
+    .populate("menuId")
+    .populate("customerId", "name email phoneNumber");
+
+  const grouped = new Map();
+  for (const item of items) {
+    const id = item.orderId.toString();
+    if (!grouped.has(id)) grouped.set(id, []);
+    grouped.get(id).push(item);
+  }
+
+  return orders.map((order) => ({
+    order,
+    orderItems: grouped.get(order._id.toString()) || [],
+  }));
+};
+
+const buildAggregatedItems = (orderItems = []) => {
+  const itemMap = new Map();
+  for (const item of orderItems) {
+    const menuId = item.menuId?._id?.toString() || "unknown";
+    if (!itemMap.has(menuId)) {
+      itemMap.set(menuId, {
+        menuId: item.menuId,
+        name: item.menuId?.name || "Unknown",
+        quantity: 0,
+        customers: new Map(),
+        price:
+          item.menuId?.discountPrice && item.menuId.discountPrice > 0
+            ? item.menuId.discountPrice
+            : item.menuId?.price || 0,
+      });
+    }
+    const entry = itemMap.get(menuId);
+    entry.quantity += item.quantity || 0;
+    if (item.customerId?._id) {
+      const id = item.customerId._id.toString();
+      if (!entry.customers.has(id)) {
+        entry.customers.set(id, {
+          _id: item.customerId._id,
+          name: item.customerId.name,
+          phoneNumber: item.customerId.phoneNumber,
+          email: item.customerId.email,
+        });
+      }
+    }
+  }
+
+  return Array.from(itemMap.values()).map((entry) => ({
+    ...entry,
+    customers: Array.from(entry.customers.values()),
+    amount: entry.price * entry.quantity,
+  }));
+};
+
 const orderService = {
   createOrderByCustomerId: async (body) => {
     const { items, specialInstruction, customerId, tableNumber } = body;
@@ -90,25 +148,20 @@ const orderService = {
       latestActiveOrder.createdAt >= threeHoursAgo;
 
     const createOrderItems = async (orderId, newItems) => {
-      const created = await OrderItem.insertMany(
+      await OrderItem.insertMany(
         newItems.map((item) => ({
           ...item,
           orderId,
           itemStatus: "pending",
         }))
       );
-      return created.map((doc) => doc._id);
     };
 
     if (qr.occupied && latestActiveOrder) {
-      const newItemIds = await createOrderItems(
+      await createOrderItems(
         latestActiveOrder._id,
         finalItems
       );
-      latestActiveOrder.items = [
-        ...(latestActiveOrder.items || []),
-        ...newItemIds,
-      ];
       if (specialInstruction) {
         latestActiveOrder.specialInstruction = latestActiveOrder.specialInstruction
           ? `${latestActiveOrder.specialInstruction}\n${specialInstruction}`
@@ -123,14 +176,10 @@ const orderService = {
       );
       order = await latestActiveOrder.save();
     } else if (latestActiveOrder && isWithinThreeHours) {
-      const newItemIds = await createOrderItems(
+      await createOrderItems(
         latestActiveOrder._id,
         finalItems
       );
-      latestActiveOrder.items = [
-        ...(latestActiveOrder.items || []),
-        ...newItemIds,
-      ];
       if (specialInstruction) {
         latestActiveOrder.specialInstruction = latestActiveOrder.specialInstruction
           ? `${latestActiveOrder.specialInstruction}\n${specialInstruction}`
@@ -156,16 +205,13 @@ const orderService = {
       order = await Order.create({
         adminId,
         tableNumber,
-        items: [],
         specialInstruction,
         totalAmount: Math.round(finalTotal),
         gstPercent,
         gstAmount,
         subTotal
       });
-      const newItemIds = await createOrderItems(order._id, finalItems);
-      order.items = newItemIds;
-      await order.save();
+      await createOrderItems(order._id, finalItems);
 
       qr.occupied = true;
       await qr.save();
@@ -174,23 +220,24 @@ const orderService = {
     const io = getIO();
 
     const populatedOrder = await Order.findById(order._id)
-      .populate("adminId", "name email")
-      .populate({
-        path: "items",
-        populate: [
-          { path: "customerId", select: "name email phoneNumber" },
-          { path: "menuId" },
-        ],
-      });
+      .populate("adminId", "name email");
 
-    io.to(adminId.toString()).emit("newOrder", populatedOrder);
-    io.to(adminId.toString()).emit("order:new", populatedOrder);
+    const [{ orderItems }] = await attachOrderItems([populatedOrder]);
+    const aggregatedItems = buildAggregatedItems(orderItems);
+    const orderWithItems = {
+      ...populatedOrder.toObject(),
+      items: aggregatedItems,
+      orderItems: orderItems.map((i) => i.toObject()),
+    };
+
+    io.to(adminId.toString()).emit("newOrder", orderWithItems);
+    io.to(adminId.toString()).emit("order:new", orderWithItems);
     const customerIds = await OrderItem.distinct("customerId", {
       orderId: order._id,
     });
     for (const custId of customerIds) {
       const id = custId.toString();
-      io.to(`customer-${id}`).emit("order:new", populatedOrder);
+      io.to(`customer-${id}`).emit("order:new", orderWithItems);
     }
 
     return order;
@@ -200,55 +247,12 @@ const orderService = {
     const { populate: _populate, ...safeOptions } = options || {};
     const result = await Order.paginate({ adminId, ...filter }, safeOptions);
 
-    result.results = await Order.populate(result.results, [
-      {
-        path: "items",
-        populate: [
-          { path: "customerId", select: "name phoneNumber" },
-          { path: "menuId" }
-        ]
-      }
-    ]);
-
-    result.results = result.results.map((order) => {
-      const itemMap = new Map();
-      for (const item of order.items || []) {
-        const menuId = item.menuId?._id?.toString() || "unknown";
-        if (!itemMap.has(menuId)) {
-          itemMap.set(menuId, {
-            menuId: item.menuId,
-            name: item.menuId?.name || "Unknown",
-            quantity: 0,
-            customers: new Map(),
-            price:
-              item.menuId?.discountPrice && item.menuId.discountPrice > 0
-                ? item.menuId.discountPrice
-                : item.menuId?.price || 0,
-          });
-        }
-        const entry = itemMap.get(menuId);
-        entry.quantity += item.quantity || 0;
-        if (item.customerId?._id) {
-          const id = item.customerId._id.toString();
-          if (!entry.customers.has(id)) {
-            entry.customers.set(id, {
-              _id: item.customerId._id,
-              name: item.customerId.name,
-              phoneNumber: item.customerId.phoneNumber,
-            });
-          }
-        }
-      }
-      const aggregatedItems = Array.from(itemMap.values()).map((entry) => ({
-        ...entry,
-        customers: Array.from(entry.customers.values()),
-        amount: entry.price * entry.quantity,
-      }));
-      return {
-        ...order.toObject(),
-        items: aggregatedItems,
-      };
-    });
+    const ordersWithItems = await attachOrderItems(result.results);
+    result.results = ordersWithItems.map(({ order, orderItems }) => ({
+      ...order.toObject(),
+      items: buildAggregatedItems(orderItems),
+      orderItems: orderItems.map((i) => i.toObject()),
+    }));
 
     return result;
   },
@@ -279,60 +283,16 @@ const orderService = {
   const { populate: _populate, ...safeOptions } = options || {};
   const result = await Order.paginate(finalFilter, safeOptions);
 
-  result.results = await Order.populate(result.results, [
-    {
-      path: "items",
-      populate: [
-        { path: "customerId", select: "name email phoneNumber" },
-        { path: "menuId" }
-      ]
-    }
-  ]);
-
-  result.results = result.results.map((order) => {
-    const itemMap = new Map();
-    for (const item of order.items || []) {
-      const menuId = item.menuId?._id?.toString() || "unknown";
-      if (!itemMap.has(menuId)) {
-        itemMap.set(menuId, {
-          menuId: item.menuId,
-          name: item.menuId?.name || "Unknown",
-          quantity: 0,
-          customers: new Map(),
-          price:
-            item.menuId?.discountPrice && item.menuId.discountPrice > 0
-              ? item.menuId.discountPrice
-              : item.menuId?.price || 0,
-        });
-      }
-      const entry = itemMap.get(menuId);
-      entry.quantity += item.quantity || 0;
-      if (item.customerId?._id) {
-        const id = item.customerId._id.toString();
-        if (!entry.customers.has(id)) {
-          entry.customers.set(id, {
-            _id: item.customerId._id,
-            name: item.customerId.name,
-            phoneNumber: item.customerId.phoneNumber,
-            email: item.customerId.email,
-          });
-        }
-      }
-    }
-    const aggregatedItems = Array.from(itemMap.values()).map((entry) => ({
-      ...entry,
-      customers: Array.from(entry.customers.values()),
-      amount: entry.price * entry.quantity,
-    }));
-    return {
-      ...order.toObject(),
-      items: aggregatedItems,
-    };
-  });
+  const ordersWithItems = await attachOrderItems(result.results);
+  result.results = ordersWithItems.map(({ order, orderItems }) => ({
+    ...order.toObject(),
+    items: buildAggregatedItems(orderItems),
+    orderItems: orderItems.map((i) => i.toObject()),
+  }));
 
   return result;
 },
-  updateStatus: async (orderId, status, adminId) => {
+  updateOrderStatus: async (orderId, status, adminId) => {
     try {
       if (!status) {
         throw new Error("Order status is required");
@@ -355,20 +315,19 @@ const orderService = {
           new: true,
           runValidators: true,
         }
-      )
-        .populate("adminId", "name email")
-        .populate({
-          path: "items",
-          populate: [
-            { path: "customerId", select: "name email phoneNumber" },
-            { path: "menuId" },
-          ],
-        });
+      ).populate("adminId", "name email");
 
 
       if (!updatedOrder) {
         throw new Error("Order not found");
       }
+
+      const [{ orderItems }] = await attachOrderItems([updatedOrder]);
+      const orderWithItems = {
+        ...updatedOrder.toObject(),
+        items: buildAggregatedItems(orderItems),
+        orderItems: orderItems.map((i) => i.toObject()),
+      };
 
       try {
         const io = getIO();
@@ -376,12 +335,12 @@ const orderService = {
         io.to(adminId.toString()).emit("orderStatusUpdate", {
           orderId: updatedOrder._id,
           status: status,
-          order: updatedOrder,
+          order: orderWithItems,
         });
         io.to(adminId.toString()).emit("order:statusUpdated", {
           orderId: updatedOrder._id,
           status,
-          order: updatedOrder,
+          order: orderWithItems,
         });
 
         const customerIds = await OrderItem.distinct("customerId", {
@@ -392,19 +351,19 @@ const orderService = {
           io.to(`customer-${id}`).emit("orderStatusUpdate", {
             orderId: updatedOrder._id,
             status: status,
-            order: updatedOrder,
+            order: orderWithItems,
           });
           io.to(`customer-${id}`).emit("order:statusUpdated", {
             orderId: updatedOrder._id,
             status,
-            order: updatedOrder,
+            order: orderWithItems,
           });
         }
 
         if (status === "preparing") {
           io.to(adminId.toString()).emit("orderAccepted", {
             orderId: updatedOrder._id,
-            order: updatedOrder,
+            order: orderWithItems,
           });
         }
 
@@ -419,59 +378,11 @@ const orderService = {
         console.error("Socket emission error:", socketError);
       }
 
-      return updatedOrder;
+      return orderWithItems;
     } catch (error) {
 
       throw new Error(`Error updating order: ${error.message}`);
     }
-  },
-  getOrderItems: async (orderId, adminId) => {
-    const order = await Order.findOne({
-      _id: orderId,
-      adminId,
-    });
-
-    if (!order) {
-      throw new Error("Order not found");
-    }
-
-    return await OrderItem.find({ orderId })
-      .populate("menuId")
-      .populate("customerId", "name email phoneNumber");
-  },
-  updateOrderItemStatus: async (orderItemId, status, adminId) => {
-    if (!orderItemId) {
-      throw new Error("orderItemId is required");
-    }
-    if (!status) {
-      throw new Error("Item status is required");
-    }
-
-    const allowed = ["pending", "served"];
-    if (!allowed.includes(status)) {
-      throw new Error("Invalid item status");
-    }
-
-    const orderItem = await OrderItem.findById(orderItemId);
-    if (!orderItem) {
-      throw new Error("Order item not found");
-    }
-
-    const order = await Order.findOne({
-      _id: orderItem.orderId,
-      adminId,
-    });
-    if (!order) {
-      throw new Error("Order not found");
-    }
-
-    orderItem.itemStatus = status;
-    orderItem.servedAt = status === "served" ? new Date() : orderItem.servedAt;
-    await orderItem.save();
-
-    return await OrderItem.findById(orderItem._id)
-      .populate("menuId")
-      .populate("customerId", "name email phoneNumber");
   },
   updatePaymentStatus: async (orderId, paymentStatus, adminId) => {
     try {
@@ -552,19 +463,16 @@ See you again!
       _id: orderId,
       adminId,
     })
-      .populate("adminId", "cafeName gst address city state pincode")
-      .populate({
-        path: "items",
-        populate: [
-          { path: "customerId", select: "name" },
-          { path: "menuId", select: "name price discountPrice" },
-        ],
-      });
+      .populate("adminId", "cafeName gst address city state pincode");
 
     if (!order) {
       throw new Error("Order not found");
     }
-    const subTotal = order.items.reduce((sum, item) => {
+    const orderItems = await OrderItem.find({ orderId })
+      .populate("customerId", "name")
+      .populate("menuId", "name price discountPrice");
+
+    const subTotal = orderItems.reduce((sum, item) => {
       const menu = item.menuId;
       const price = menu?.discountPrice && menu.discountPrice > 0
         ? menu.discountPrice
@@ -578,7 +486,7 @@ See you again!
     const total = Math.round(subTotal + gstAmount);
 
     const customerMap = new Map();
-    for (const item of order.items) {
+    for (const item of orderItems) {
       const custId = item.customerId?._id?.toString() || "unknown";
       if (!customerMap.has(custId)) {
         customerMap.set(custId, {
@@ -658,23 +566,23 @@ See you again!
       orderStatus: { $ne: "completed" },
     })
       .sort({ createdAt: -1 })
-      .populate("adminId", "name email")
-      .populate({
-        path: "items",
-        populate: [
-          { path: "customerId", select: "name email phoneNumber" },
-          { path: "menuId" },
-        ],
-      });
+      .populate("adminId", "name email");
 
     if (!latestActiveOrder) {
       return { active: false, order: null, tableNumber: qr.tableNumber };
     }
 
+    const [{ orderItems }] = await attachOrderItems([latestActiveOrder]);
+    const orderWithItems = {
+      ...latestActiveOrder.toObject(),
+      items: buildAggregatedItems(orderItems),
+      orderItems: orderItems.map((i) => i.toObject()),
+    };
+
     return {
       active: true,
       message: "An active order already exists. You can add more items.",
-      order: latestActiveOrder,
+      order: orderWithItems,
       tableNumber: qr.tableNumber
     };
   },

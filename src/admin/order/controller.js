@@ -63,6 +63,17 @@ const orderController = {
       next(err);
     }
   },
+  deleteOrder: async (req, res, next) => {
+    try {
+      const result = await orderService.deleteOrder(
+        req.params.orderId,
+        req.user._id
+      );
+      sendSuccessResponse(res, 200, "Order deleted", result);
+    } catch (err) {
+      next(err);
+    }
+  },
   getBillDetails: async (req, res, next) => {
     try {
       const result = await orderService.getOrderBillDetails(

@@ -56,6 +56,18 @@ router.patch(
   orderItemController.updateQuantity
 );
 
+router.delete(
+  "/item/:orderItemId",
+  tokenVerification,
+  allowRoles("admin"),
+  orderItemController.deleteItem
+);
+
+router.delete(
+  "/public/item/:orderItemId",
+  orderItemController.deleteItem
+);
+
 router.get(
   "/my-orders",
   orderController.getMyOrders
@@ -72,6 +84,13 @@ router.get(
   tokenVerification,
   allowRoles("admin","superadmin"),
   orderController.getBillDetails
+);
+
+router.delete(
+  "/:orderId",
+  tokenVerification,
+  allowRoles("admin"),
+  orderController.deleteOrder
 );
 
 

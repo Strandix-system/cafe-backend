@@ -46,6 +46,24 @@ const orderItemController = {
       next(err);
     }
   },
+
+  deleteItem: async (req, res, next) => {
+    try {
+      const { customerId, userId } = req.body || {};
+      const role = req.user?.role;
+      const result = await orderItemService.deleteOrderItem(
+        req.params.orderItemId,
+        {
+          role,
+          customerId: customerId || userId,
+          _id: req.user?._id,
+        }
+      );
+      sendSuccessResponse(res, 200, "Order item deleted", result);
+    } catch (err) {
+      next(err);
+    }
+  },
 };
 
 export default orderItemController;

@@ -449,6 +449,28 @@ See you again!
       throw new Error(`Error updating payment status: ${error.message}`);
     }
   },
+  deleteOrder: async (orderId, adminId) => {
+    if (!orderId) {
+      throw new Error("orderId is required");
+    }
+
+    const order = await Order.findOne({ _id: orderId, adminId });
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    await OrderItem.deleteMany({ orderId });
+    await Order.deleteOne({ _id: orderId });
+
+    if (!order.isCompleted) {
+      await Qr.findOneAndUpdate(
+        { adminId, tableNumber: order.tableNumber },
+        { occupied: false }
+      );
+    }
+
+    return order;
+  },
   getOrderBillDetails: async (orderId, adminId) => {
     const order = await Order.findOne({
       _id: orderId,

@@ -35,14 +35,14 @@ const orderController = {
       next(err);
     }
   },
-  updateOrderStatus: async (req, res, next) => {
+  updateIsCompletedStatus: async (req, res, next) => {
     try {
 
-      const status = req.body.isCompleted ?? req.body.status ?? req.body.orderStatus;
+      const isCompleted = req.body.isCompleted;
       const result =
-        await orderService.updateOrderStatus(
+        await orderService.updateIsCompletedStatus(
           req.body.orderId,
-          status,
+          isCompleted,
           req.user._id,
         );
       sendSuccessResponse(res, 200, "Status updated", result);

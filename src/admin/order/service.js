@@ -240,7 +240,7 @@ const orderService = {
       io.to(`customer-${id}`).emit("order:new", orderWithItems);
     }
 
-    return order;
+    return orderWithItems;
   },
   getOrders: async (adminId, filter, options) => {
     if (filter?.isCompleted !== undefined) {
@@ -297,7 +297,7 @@ const orderService = {
 
   return result;
 },
-  updateOrderStatus: async (orderId, isCompleted, adminId) => {
+  updateIsCompletedStatus: async (orderId, isCompleted, adminId) => {
     try {
       if (isCompleted === undefined || isCompleted === null) {
         throw new Error("Order completion status is required");

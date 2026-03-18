@@ -27,7 +27,7 @@ router.patch(
   "/status",
   tokenVerification,
   allowRoles("admin"),
-  orderController.updateOrderStatus
+  orderController.updateIsCompletedStatus
 );
 
 router.get(

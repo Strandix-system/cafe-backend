@@ -89,28 +89,6 @@ const orderService = {
       latestActiveOrder.createdAt &&
       latestActiveOrder.createdAt >= threeHoursAgo;
 
-    const ensureOrderItemRefs = async (orderDoc, fallbackCustomerId) => {
-      const existingItems = orderDoc.items || [];
-      const legacyItems = existingItems.filter((item) => item?.menuId);
-
-      if (!legacyItems.length) {
-        return;
-      }
-
-      const created = await OrderItem.insertMany(
-        legacyItems.map((item) => ({
-          orderId: orderDoc._id,
-          menuId: item.menuId,
-          customerId: item.customerId || fallbackCustomerId,
-          quantity: item.quantity,
-        }))
-      );
-
-      const kept = existingItems.filter((item) => !item?.menuId);
-      orderDoc.items = [...kept, ...created.map((doc) => doc._id)];
-      await orderDoc.save();
-    };
-
     const createOrderItems = async (orderId, newItems) => {
       const created = await OrderItem.insertMany(
         newItems.map((item) => ({
@@ -123,7 +101,6 @@ const orderService = {
     };
 
     if (qr.occupied && latestActiveOrder) {
-      await ensureOrderItemRefs(latestActiveOrder, customerId);
       const newItemIds = await createOrderItems(
         latestActiveOrder._id,
         finalItems
@@ -146,7 +123,6 @@ const orderService = {
       );
       order = await latestActiveOrder.save();
     } else if (latestActiveOrder && isWithinThreeHours) {
-      await ensureOrderItemRefs(latestActiveOrder, customerId);
       const newItemIds = await createOrderItems(
         latestActiveOrder._id,
         finalItems
@@ -281,8 +257,7 @@ const orderService = {
     throw new Error("userId is required to fetch customer's orders");
   }
 
-  const userId = filter.userId;
-  delete filter.userId;
+  const { userId, ...restFilter } = filter;
 
   const orderIds = await OrderItem.distinct("orderId", {
     customerId: userId,
@@ -299,10 +274,10 @@ const orderService = {
     };
   }
 
-  filter._id = { $in: orderIds };
+  const finalFilter = { ...restFilter, _id: { $in: orderIds } };
 
   const { populate: _populate, ...safeOptions } = options || {};
-  const result = await Order.paginate(filter, safeOptions);
+  const result = await Order.paginate(finalFilter, safeOptions);
 
   result.results = await Order.populate(result.results, [
     {

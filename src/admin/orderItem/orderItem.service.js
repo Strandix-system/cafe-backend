@@ -32,7 +32,7 @@ const recalculateOrderTotals = async (orderId) => {
 const syncOrderCompletion = async (orderId) => {
   const remaining = await OrderItem.countDocuments({
     orderId,
-    itemStatus: { $ne: "served" },
+    status: { $ne: "served" },
   });
 
   await Order.findByIdAndUpdate(orderId, {
@@ -79,7 +79,7 @@ const orderItemService = {
       throw new Error("Order not found");
     }
 
-    orderItem.itemStatus = status;
+    orderItem.status = status;
     orderItem.servedAt = status === "served" ? new Date() : orderItem.servedAt;
     await orderItem.save();
 
@@ -103,7 +103,7 @@ const orderItemService = {
       throw new Error("Order item not found");
     }
 
-    if (orderItem.itemStatus === "served") {
+    if (orderItem.status === "served") {
       throw new Error("Served items cannot be edited");
     }
 
@@ -116,7 +116,7 @@ const orderItemService = {
       if (order.adminId.toString() !== user?._id?.toString()) {
         throw new Error("Unauthorized to edit this order");
       }
-      if (!["pending", "preparing"].includes(orderItem.itemStatus)) {
+      if (!["pending", "preparing"].includes(orderItem.status)) {
         throw new Error("Item cannot be edited in this status");
       }
     } else {
@@ -127,7 +127,7 @@ const orderItemService = {
       if (orderItem.customerId.toString() !== customerId.toString()) {
         throw new Error("You can only edit your own items");
       }
-      if (orderItem.itemStatus !== "pending") {
+      if (orderItem.status !== "pending") {
         throw new Error("Only pending items can be edited");
       }
     }

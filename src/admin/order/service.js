@@ -152,7 +152,7 @@ const orderService = {
         newItems.map((item) => ({
           ...item,
           orderId,
-          itemStatus: "pending",
+          status: "pending",
         }))
       );
     };

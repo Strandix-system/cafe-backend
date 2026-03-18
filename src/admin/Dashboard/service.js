@@ -43,7 +43,7 @@ export const dashboardService = {
         demoRequest.countDocuments(),
         Order.aggregate([
           {
-            $match: { orderStatus: "completed" }
+            $match: { isCompleted: true }
           },
           {
             $group: {
@@ -77,10 +77,10 @@ export const dashboardService = {
 
       Customer.countDocuments({ adminId }),
       Order.countDocuments({
-        adminId, orderStatus: "completed"
+        adminId, isCompleted: true
       }),
       Order.aggregate([
-        { $match: { adminId, orderStatus: "completed" } },
+        { $match: { adminId, isCompleted: true } },
         { $group: { _id: null, total: { $sum: "$totalAmount" } } }
       ]),
 
@@ -104,7 +104,7 @@ export const dashboardService = {
       ]),
       Order.countDocuments({
         adminId,
-        orderStatus: "completed",
+        isCompleted: true,
         createdAt: { $gte: start, $lte: end }
       }),
       Order.aggregate([
@@ -334,7 +334,7 @@ export const dashboardService = {
       {
         $match: {
           "order.adminId": adminId,
-          "order.orderStatus": "completed",
+          "order.isCompleted": true,
         },
       },
       {
@@ -451,7 +451,7 @@ export const dashboardService = {
     const chartAgg = await Order.aggregate([
       {
         $match: {
-          orderStatus: "completed",
+          isCompleted: true,
           createdAt: { $gte: start, $lte: end },
         },
       },
@@ -497,7 +497,7 @@ export const dashboardService = {
     const cafes = await Order.aggregate([
       {
         $match: {
-          orderStatus: "completed",
+          isCompleted: true,
         },
       },
       {

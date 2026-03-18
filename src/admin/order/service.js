@@ -137,7 +137,7 @@ const orderService = {
     const latestActiveOrder = await Order.findOne({
       adminId,
       tableNumber,
-      orderStatus: { $ne: "completed" },
+      isCompleted: false,
     }).sort({ createdAt: -1 });
 
     let order = null;
@@ -243,6 +243,11 @@ const orderService = {
     return order;
   },
   getOrders: async (adminId, filter, options) => {
+    if (filter?.isCompleted !== undefined) {
+      if (typeof filter.isCompleted === "string") {
+        filter.isCompleted = filter.isCompleted.toLowerCase() === "true";
+      }
+    }
 
     const { populate: _populate, ...safeOptions } = options || {};
     const result = await Order.paginate({ adminId, ...filter }, safeOptions);
@@ -292,25 +297,18 @@ const orderService = {
 
   return result;
 },
-  updateOrderStatus: async (orderId, status, adminId) => {
+  updateOrderStatus: async (orderId, isCompleted, adminId) => {
     try {
-      if (!status) {
-        throw new Error("Order status is required");
+      if (isCompleted === undefined || isCompleted === null) {
+        throw new Error("Order completion status is required");
       }
-      status = status.trim().toLowerCase();
-      if (status === "accepted") {
-        status = "preparing";
-      }
-
-      const allowed = ["pending", "preparing", "served", "completed"];
-
-      if (!allowed.includes(status)) {
-        throw new Error("Invalid order status");
+      if (typeof isCompleted !== "boolean") {
+        throw new Error("isCompleted must be true or false");
       }
 
       const updatedOrder = await Order.findOneAndUpdate(
         { _id: orderId, adminId },
-        { orderStatus: status },
+        { isCompleted },
         {
           new: true,
           runValidators: true,
@@ -334,12 +332,12 @@ const orderService = {
 
         io.to(adminId.toString()).emit("orderStatusUpdate", {
           orderId: updatedOrder._id,
-          status: status,
+          isCompleted,
           order: orderWithItems,
         });
         io.to(adminId.toString()).emit("order:statusUpdated", {
           orderId: updatedOrder._id,
-          status,
+          isCompleted,
           order: orderWithItems,
         });
 
@@ -350,24 +348,17 @@ const orderService = {
           const id = custId.toString();
           io.to(`customer-${id}`).emit("orderStatusUpdate", {
             orderId: updatedOrder._id,
-            status: status,
+            isCompleted,
             order: orderWithItems,
           });
           io.to(`customer-${id}`).emit("order:statusUpdated", {
             orderId: updatedOrder._id,
-            status,
+            isCompleted,
             order: orderWithItems,
           });
         }
 
-        if (status === "preparing") {
-          io.to(adminId.toString()).emit("orderAccepted", {
-            orderId: updatedOrder._id,
-            order: orderWithItems,
-          });
-        }
-
-        if (status === "completed") {
+        if (isCompleted === true) {
           io.to(adminId.toString()).emit("completeOrder", updatedOrder._id);
           await Qr.findOneAndUpdate(
             { adminId, tableNumber: updatedOrder.tableNumber },
@@ -394,7 +385,7 @@ const orderService = {
       if (!order) {
         throw new Error("Order not found");
       }
-      if (order.orderStatus !== "completed") {
+      if (!order.isCompleted) {
         throw new Error(
           "Payment status can only be updated when order is completed"
         );
@@ -563,7 +554,7 @@ See you again!
     const latestActiveOrder = await Order.findOne({
       adminId: qr.adminId._id,
       tableNumber: qr.tableNumber,
-      orderStatus: { $ne: "completed" },
+      isCompleted: false,
     })
       .sort({ createdAt: -1 })
       .populate("adminId", "name email");

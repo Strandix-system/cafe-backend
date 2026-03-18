@@ -1,5 +1,6 @@
 import OrderItem from "../../../model/orderItem.js";
 import Order from "../../../model/order.js";
+import { getIO } from "../../../socket.js";
 
 const recalculateOrderTotals = async (orderId) => {
   const order = await Order.findById(orderId);
@@ -27,17 +28,6 @@ const recalculateOrderTotals = async (orderId) => {
   await order.save();
 
   return order;
-};
-
-const syncOrderCompletion = async (orderId) => {
-  const remaining = await OrderItem.countDocuments({
-    orderId,
-    status: { $ne: "served" },
-  });
-
-  await Order.findByIdAndUpdate(orderId, {
-    isCompleted: remaining === 0,
-  });
 };
 
 const orderItemService = {
@@ -83,11 +73,32 @@ const orderItemService = {
     orderItem.servedAt = status === "served" ? new Date() : orderItem.servedAt;
     await orderItem.save();
 
-    await syncOrderCompletion(orderItem.orderId);
-
-    return await OrderItem.findById(orderItem._id)
+    const updatedItem = await OrderItem.findById(orderItem._id)
       .populate("menuId")
       .populate("customerId", "name email phoneNumber");
+
+    try {
+      const io = getIO();
+      io.to(adminId.toString()).emit("orderItemStatusUpdate", {
+        orderId: orderItem.orderId,
+        orderItem: updatedItem,
+        status,
+      });
+      if (orderItem.customerId) {
+        io.to(`customer-${orderItem.customerId.toString()}`).emit(
+          "orderItemStatusUpdate",
+          {
+            orderId: orderItem.orderId,
+            orderItem: updatedItem,
+            status,
+          }
+        );
+      }
+    } catch (socketError) {
+      console.error("Socket emission error:", socketError);
+    }
+
+    return updatedItem;
   },
 
   updateQuantity: async (orderItemId, quantity, user) => {

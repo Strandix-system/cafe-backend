@@ -17,7 +17,7 @@ const orderController = {
   getOrders: async (req, res, next) => {
     try {
       const adminId = req.user._id;
-      const filter = pick(req.query, ["orderStatus", "tableNumber", "paymentStatus", "orderStatus"]);
+      const filter = pick(req.query, ["isCompleted", "tableNumber", "paymentStatus"]);
       const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
       const result = await orderService.getOrders(adminId, filter, options);
       sendSuccessResponse(res, 200, "Orders fetched", result);
@@ -38,7 +38,7 @@ const orderController = {
   updateOrderStatus: async (req, res, next) => {
     try {
 
-      const status = req.body.status ?? req.body.orderStatus;
+      const status = req.body.isCompleted ?? req.body.status ?? req.body.orderStatus;
       const result =
         await orderService.updateOrderStatus(
           req.body.orderId,

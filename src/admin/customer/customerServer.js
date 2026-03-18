@@ -89,7 +89,7 @@ const customerService = {
                 $expr: {
                   $and: [
                     { $eq: ["$order.adminId", "$$adminId"] },
-                    { $eq: ["$order.orderStatus", "completed"] },
+                    { $eq: ["$order.isCompleted", true] },
                   ],
                 },
               },
@@ -149,7 +149,7 @@ const customerService = {
                 $expr: {
                   $and: [
                     { $eq: ["$order.adminId", "$$adminId"] },
-                    { $eq: ["$order.orderStatus", "completed"] },
+                    { $eq: ["$order.isCompleted", true] },
                   ],
                 },
               },

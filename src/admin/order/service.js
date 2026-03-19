@@ -6,6 +6,7 @@ import Qr from "../../../model/qr.js";
 import OrderItem from "../../../model/orderItem.js";
 import { getIO } from "../../../socket.js";
 import sendWhatsAppMessage from "../../../utils/whatsapp.js";
+import { ApiError } from "../../../utils/apiError.js";
 
 const attachOrderItems = async (orders) => {
   if (!orders || !orders.length) return [];
@@ -70,13 +71,13 @@ const orderService = {
     const { items, specialInstruction, customerId, tableNumber } = body;
 
     if (!items || !items.length) {
-      throw new Error("Order items are required");
+      throw new ApiError(400, "Order items are required");
     }
 
     const customer = await Customer.findById(customerId);
 
     if (!customer) {
-      throw new Error("Customer not found");
+      throw new ApiError(404, "Customer not found");
     }
 
     const adminId = customer.adminId;
@@ -85,7 +86,7 @@ const orderService = {
       .select("gst");
 
     if (!admin) {
-      throw new Error("Admin not found");
+      throw new ApiError(404, "Admin not found");
     }
 
     const gstPercent = admin.gst;
@@ -97,7 +98,7 @@ const orderService = {
     });
 
     if (menus?.length !== items.length) {
-      throw new Error("Invalid menu item");
+      throw new ApiError(400, "Invalid menu item");
     }
     let subTotal = 0;
 
@@ -120,7 +121,7 @@ const orderService = {
     });
 
     if (finalItems.some(item => !item.customerId)) {
-      throw new Error("customerId is required for each item");
+      throw new ApiError(400, "customerId is required for each item");
     }
 
     const gstAmount = (subTotal * gstPercent) / 100;
@@ -129,7 +130,7 @@ const orderService = {
 
     const qr = await Qr.findOne({ adminId, tableNumber });
     if (!qr) {
-      throw new Error("Table not found");
+      throw new ApiError(404, "Table not found");
     }
 
     const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
@@ -262,48 +263,48 @@ const orderService = {
     return result;
   },
   getMyOrders: async (filter, options) => {
-  if (!filter.userId) {
-    throw new Error("userId is required to fetch customer's orders");
-  }
+    if (!filter.userId) {
+      throw new ApiError(400, "userId is required to fetch customer's orders");
+    }
 
-  const { userId, ...restFilter } = filter;
+    const { userId, ...restFilter } = filter;
 
-  const orderIds = await OrderItem.distinct("orderId", {
-    customerId: userId,
-  });
+    const orderIds = await OrderItem.distinct("orderId", {
+      customerId: userId,
+    });
 
-  if (!orderIds.length) {
-   
-    return {
-      results: [],
-      page: Number(options?.page) || 0,
-      limit: Number(options?.limit) || 0,
-      totalPages: 0,
-      totalResults: 0,
-    };
-  }
+    if (!orderIds.length) {
 
-  const finalFilter = { ...restFilter, _id: { $in: orderIds } };
+      return {
+        results: [],
+        page: Number(options?.page) || 0,
+        limit: Number(options?.limit) || 0,
+        totalPages: 0,
+        totalResults: 0,
+      };
+    }
 
-  const { populate: _populate, ...safeOptions } = options || {};
-  const result = await Order.paginate(finalFilter, safeOptions);
+    const finalFilter = { ...restFilter, _id: { $in: orderIds } };
 
-  const ordersWithItems = await attachOrderItems(result.results);
-  result.results = ordersWithItems.map(({ order, orderItems }) => ({
-    ...order.toObject(),
-    items: buildAggregatedItems(orderItems),
-    orderItems: orderItems.map((i) => i.toObject()),
-  }));
+    const { populate: _populate, ...safeOptions } = options || {};
+    const result = await Order.paginate(finalFilter, safeOptions);
 
-  return result;
-},
+    const ordersWithItems = await attachOrderItems(result.results);
+    result.results = ordersWithItems.map(({ order, orderItems }) => ({
+      ...order.toObject(),
+      items: buildAggregatedItems(orderItems),
+      orderItems: orderItems.map((i) => i.toObject()),
+    }));
+
+    return result;
+  },
   updateIsCompletedStatus: async (orderId, isCompleted, adminId) => {
     try {
       if (isCompleted === undefined || isCompleted === null) {
-        throw new Error("Order completion status is required");
+        throw new ApiError(400, "Order completion status is required");
       }
       if (typeof isCompleted !== "boolean") {
-        throw new Error("isCompleted must be true or false");
+        throw new ApiError(400, "isCompleted must be true or false");
       }
 
       const updatedOrder = await Order.findOneAndUpdate(
@@ -317,7 +318,7 @@ const orderService = {
 
 
       if (!updatedOrder) {
-        throw new Error("Order not found");
+        throw new ApiError(404, "Order not found");
       }
 
       const [{ orderItems }] = await attachOrderItems([updatedOrder]);
@@ -372,26 +373,24 @@ const orderService = {
       return orderWithItems;
     } catch (error) {
 
-      throw new Error(`Error updating order: ${error.message}`);
+      throw new ApiError(500, `Error updating order: ${error.message}`);
     }
   },
   updatePaymentStatus: async (orderId, paymentStatus, adminId) => {
     try {
 
       if (typeof paymentStatus !== "boolean") {
-        throw new Error("Payment status must be true or false");
+        throw new ApiError(400, "Payment status must be true or false");
       }
       const order = await Order.findOne({ _id: orderId, adminId });
       if (!order) {
-        throw new Error("Order not found");
+        throw new ApiError(404, "Order not found");
       }
       if (!order.isCompleted) {
-        throw new Error(
-          "Payment status can only be updated when order is completed"
-        );
+        throw new ApiError(400, "Payment status can only be updated when order is completed");
       }
       if (order.paymentStatus === paymentStatus) {
-        throw new Error("Payment status already updated");
+        throw new ApiError(400, "Payment status already updated");
       }
       order.paymentStatus = paymentStatus;
       await order.save();
@@ -446,17 +445,17 @@ See you again!
       return order;
 
     } catch (error) {
-      throw new Error(`Error updating payment status: ${error.message}`);
+      throw new ApiError(500, `Error updating payment status: ${error.message}`);
     }
   },
   deleteOrder: async (orderId, adminId) => {
     if (!orderId) {
-      throw new Error("orderId is required");
+      throw new ApiError(400, "orderId is required");
     }
 
     const order = await Order.findOne({ _id: orderId, adminId });
     if (!order) {
-      throw new Error("Order not found");
+      throw new ApiError(404, "Order not found");
     }
 
     await OrderItem.deleteMany({ orderId });
@@ -468,7 +467,6 @@ See you again!
         { occupied: false }
       );
     }
-
     return order;
   },
   getOrderBillDetails: async (orderId, adminId) => {
@@ -479,7 +477,7 @@ See you again!
       .populate("adminId", "cafeName gst address city state pincode");
 
     if (!order) {
-      throw new Error("Order not found");
+      throw new ApiError(404, "Order not found");
     }
     const orderItems = await OrderItem.find({ orderId })
       .populate("customerId", "name")
@@ -562,15 +560,15 @@ See you again!
   },
   getActiveOrderByQr: async (qrId) => {
     if (!qrId) {
-      throw new Error("qrId is required");
+      throw new ApiError(400, "qrId is required");
     }
 
     const qr = await Qr.findById(qrId).populate("adminId");
     if (!qr) {
-      throw new Error("Invalid QR");
+      throw new ApiError(400, "Invalid QR");
     }
     if (!qr.adminId || !qr.adminId.isActive) {
-      throw new Error("This QR is disabled because the account is inactive");
+      throw new ApiError(400, "This QR is disabled because the account is inactive");
     }
 
     const latestActiveOrder = await Order.findOne({

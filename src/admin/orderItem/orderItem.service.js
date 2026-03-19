@@ -2,11 +2,12 @@ import OrderItem from "../../../model/orderItem.js";
 import Order from "../../../model/order.js";
 import Qr from "../../../model/qr.js";
 import { getIO } from "../../../socket.js";
+import { ApiError } from "../../../utils/apiError.js";
 
 const recalculateOrderTotals = async (orderId) => {
   const order = await Order.findById(orderId);
   if (!order) {
-    throw new Error("Order not found");
+    throw new ApiError(404, "Order not found");
   }
 
   const orderItems = await OrderItem.find({ orderId })
@@ -35,7 +36,7 @@ const orderItemService = {
   getOrderItems: async (orderId, adminId) => {
     const order = await Order.findOne({ _id: orderId, adminId });
     if (!order) {
-      throw new Error("Order not found");
+      throw new ApiError(404, "Order not found");
     }
 
     return await OrderItem.find({ orderId })
@@ -45,21 +46,20 @@ const orderItemService = {
 
   updateItemStatus: async (orderItemId, status, adminId) => {
     if (!orderItemId) {
-      throw new Error("orderItemId is required");
+      throw new ApiError(400, "orderItemId is required");
     }
     if (!status) {
-      throw new Error("Item status is required");
+      throw new ApiError(400, "Item status is required");
     }
 
-    status = status.trim().toLowerCase();
     const allowed = ["pending", "preparing", "served"];
     if (!allowed.includes(status)) {
-      throw new Error("Invalid item status");
+      throw new ApiError(400, "Invalid item status");
     }
 
     const orderItem = await OrderItem.findById(orderItemId);
     if (!orderItem) {
-      throw new Error("Order item not found");
+      throw new ApiError(404, "Order item not found");
     }
 
     const order = await Order.findOne({
@@ -67,7 +67,7 @@ const orderItemService = {
       adminId,
     });
     if (!order) {
-      throw new Error("Order not found");
+      throw new ApiError(404, "Order not found");
     }
 
     orderItem.status = status;
@@ -104,43 +104,43 @@ const orderItemService = {
 
   updateQuantity: async (orderItemId, quantity, user) => {
     if (!orderItemId) {
-      throw new Error("orderItemId is required");
+      throw new ApiError(400, "orderItemId is required");
     }
     if (!quantity || Number(quantity) < 1) {
-      throw new Error("Quantity must be at least 1");
+      throw new ApiError(400, "Quantity must be at least 1");
     }
 
     const orderItem = await OrderItem.findById(orderItemId);
     if (!orderItem) {
-      throw new Error("Order item not found");
+      throw new ApiError(404, "Order item not found");
     }
 
     if (orderItem.status === "served") {
-      throw new Error("Served items cannot be edited");
+      throw new ApiError(400, "Served items cannot be edited");
     }
 
     const role = user?.role || "customer";
     const order = await Order.findById(orderItem.orderId).select("adminId");
     if (!order) {
-      throw new Error("Order not found");
+      throw new ApiError(404, "Order not found");
     }
     if (role === "admin") {
       if (order.adminId.toString() !== user?._id?.toString()) {
-        throw new Error("Unauthorized to edit this order");
+        throw new ApiError(403, "Unauthorized to edit this order");
       }
       if (!["pending", "preparing"].includes(orderItem.status)) {
-        throw new Error("Item cannot be edited in this status");
+        throw new ApiError(400, "Item cannot be edited in this status");
       }
     } else {
       const customerId = user?.customerId || user?.userId || user?._id;
       if (!customerId) {
-        throw new Error("customerId is required to edit items");
+        throw new ApiError(400, "customerId is required to edit items");
       }
       if (orderItem.customerId.toString() !== customerId.toString()) {
-        throw new Error("You can only edit your own items");
+        throw new ApiError(403, "You can only edit your own items");
       }
       if (orderItem.status !== "pending") {
-        throw new Error("Only pending items can be edited");
+        throw new ApiError(400, "Only pending items can be edited");
       }
     }
 
@@ -156,45 +156,45 @@ const orderItemService = {
 
   deleteOrderItem: async (orderItemId, user) => {
     if (!orderItemId) {
-      throw new Error("orderItemId is required");
+      throw new ApiError(400, "orderItemId is required");
     }
 
     const orderItem = await OrderItem.findById(orderItemId);
     if (!orderItem) {
-      throw new Error("Order item not found");
+      throw new ApiError(400, "Order item not found");
     }
 
     if (orderItem.status === "served") {
-      throw new Error("Served items cannot be deleted");
+      throw new ApiError(400, "Served items cannot be deleted");
     }
 
     const order = await Order.findById(orderItem.orderId)
       .select("adminId tableNumber isCompleted");
     if (!order) {
-      throw new Error("Order not found");
+      throw new ApiError(404, "Order not found");
     }
 
     const role = user?.role || "customer";
     if (role === "admin") {
       if (order.adminId.toString() !== user?._id?.toString()) {
-        throw new Error("Unauthorized to delete this order item");
+        throw new ApiError(403, "Unauthorized to delete this order item");
       }
       if (order.isCompleted) {
-        throw new Error("Completed orders cannot be edited");
+        throw new ApiError(400, "Completed orders cannot be edited");
       }
       if (!["pending", "preparing"].includes(orderItem.status)) {
-        throw new Error("Item cannot be deleted in this status");
+        throw new ApiError(400, "Item cannot be deleted in this status");
       }
     } else {
       const customerId = user?.customerId || user?.userId || user?._id;
       if (!customerId) {
-        throw new Error("customerId is required to delete items");
+        throw new ApiError(400, "customerId is required to delete items");
       }
       if (orderItem.customerId.toString() !== customerId.toString()) {
-        throw new Error("You can only delete your own items");
+        throw new ApiError(403, "You can only delete your own items");
       }
       if (orderItem.status !== "pending") {
-        throw new Error("Only pending items can be deleted");
+        throw new ApiError(400, "Only pending items can be deleted");
       }
     }
 

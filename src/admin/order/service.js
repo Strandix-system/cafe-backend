@@ -13,7 +13,7 @@ const attachOrderItems = async (orders) => {
   const orderIds = orders.map((o) => o._id);
   const items = await OrderItem.find({ orderId: { $in: orderIds } })
     .populate("menuId")
-    .populate("customerId", "name email phoneNumber");
+    .populate("customerId", "name phoneNumber");
 
   const grouped = new Map();
   for (const item of items) {
@@ -33,15 +33,21 @@ const buildAggregatedItems = (orderItems = []) => {
   for (const item of orderItems) {
     const menuId = item.menuId?._id?.toString() || "unknown";
     if (!itemMap.has(menuId)) {
+      const price =
+        item.menuId?.discountPrice && item.menuId.discountPrice > 0
+          ? item.menuId.discountPrice
+          : item.menuId?.price || 0;
+
       itemMap.set(menuId, {
-        menuId: item.menuId,
-        name: item.menuId?.name || "Unknown",
+        menu: {
+          _id: item.menuId?._id,
+          name: item.menuId?.name,
+          price: item.menuId?.price,
+          discountPrice: item.menuId?.discountPrice,
+        },
         quantity: 0,
         customers: new Map(),
-        price:
-          item.menuId?.discountPrice && item.menuId.discountPrice > 0
-            ? item.menuId.discountPrice
-            : item.menuId?.price || 0,
+        price,
       });
     }
     const entry = itemMap.get(menuId);
@@ -52,15 +58,16 @@ const buildAggregatedItems = (orderItems = []) => {
         entry.customers.set(id, {
           _id: item.customerId._id,
           name: item.customerId.name,
-          phoneNumber: item.customerId.phoneNumber,
-          email: item.customerId.email,
+          phoneNumber: item.customerId.phoneNumber
         });
       }
     }
   }
 
   return Array.from(itemMap.values()).map((entry) => ({
-    ...entry,
+    menu: entry.menu,
+    quantity: entry.quantity,
+    price: entry.price,
     customers: Array.from(entry.customers.values()),
     amount: entry.price * entry.quantity,
   }));
@@ -257,7 +264,17 @@ const orderService = {
     result.results = ordersWithItems.map(({ order, orderItems }) => ({
       ...order.toObject(),
       items: buildAggregatedItems(orderItems),
-      orderItems: orderItems.map((i) => i.toObject()),
+      orderItems: orderItems.map((i) => ({
+        _id: i._id,
+        menuId: i.menuId?._id,
+        customerId: i.customerId?._id,
+        quantity: i.quantity,
+        status: i.status,
+        timestamps: {
+          createdAt: i.createdAt,
+          updatedAt: i.updatedAt,
+        },
+      })),
     }));
 
     return result;
@@ -292,8 +309,18 @@ const orderService = {
     const ordersWithItems = await attachOrderItems(result.results);
     result.results = ordersWithItems.map(({ order, orderItems }) => ({
       ...order.toObject(),
-      items: buildAggregatedItems(orderItems)
-      // orderItems: orderItems.map((i) => i.toObject()),
+      items: buildAggregatedItems(orderItems),
+      orderItems: orderItems.map((i) => ({
+        _id: i._id,
+        menuId: i.menuId?._id,
+        customerId: i.customerId?._id,
+        quantity: i.quantity,
+        status: i.status,
+        timestamps: {
+          createdAt: i.createdAt,
+          updatedAt: i.updatedAt,
+        },
+      })),
     }));
 
     return result;

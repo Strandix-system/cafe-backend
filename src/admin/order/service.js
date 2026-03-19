@@ -605,8 +605,38 @@ See you again!
     const [{ orderItems }] = await attachOrderItems([latestActiveOrder]);
     const orderWithItems = {
       ...latestActiveOrder.toObject(),
-      items: buildAggregatedItems(orderItems),
-      orderItems: orderItems.map((i) => i.toObject()),
+
+      pricing: {
+        subTotal: latestActiveOrder.subTotal,
+        gstPercent: latestActiveOrder.gstPercent,
+        gstAmount: latestActiveOrder.gstAmount,
+        totalAmount: latestActiveOrder.totalAmount,
+      },
+
+      status: {
+        isCompleted: latestActiveOrder.isCompleted,
+        paymentStatus: latestActiveOrder.paymentStatus,
+      },
+
+      items: buildAggregatedItems(orderItems), // ✅ clean aggregated
+
+      orderItems: orderItems.map((i) => ({
+        _id: i._id,
+        menuId: i.menuId?._id,        // ✅ ONLY ID
+        customerId: i.customerId?._id,
+        quantity: i.quantity,
+        status: i.status,
+        servedAt: i.servedAt,
+        timestamps: {
+          createdAt: i.createdAt,
+          updatedAt: i.updatedAt,
+        },
+      })),
+
+      timestamps: {
+        createdAt: latestActiveOrder.createdAt,
+        updatedAt: latestActiveOrder.updatedAt,
+      },
     };
 
     return {

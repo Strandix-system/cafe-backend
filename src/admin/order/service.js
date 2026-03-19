@@ -292,8 +292,8 @@ const orderService = {
     const ordersWithItems = await attachOrderItems(result.results);
     result.results = ordersWithItems.map(({ order, orderItems }) => ({
       ...order.toObject(),
-      items: buildAggregatedItems(orderItems),
-      orderItems: orderItems.map((i) => i.toObject()),
+      items: buildAggregatedItems(orderItems)
+      // orderItems: orderItems.map((i) => i.toObject()),
     }));
 
     return result;
@@ -474,7 +474,7 @@ See you again!
       _id: orderId,
       adminId,
     })
-      .populate("adminId", "cafeName gst address city state pincode");
+      .populate("adminId", "cafeName gst address city state pincode phoneNumber");
 
     if (!order) {
       throw new ApiError(404, "Order not found");
@@ -487,7 +487,7 @@ See you again!
       const menu = item.menuId;
       const price = menu?.discountPrice && menu.discountPrice > 0
         ? menu.discountPrice
-        : menu?.price || 0;
+        : menu?.price;
       return sum + price * item.quantity;
     }, 0);
 
@@ -524,33 +524,25 @@ See you again!
       entry.subTotal += itemEntry.price * (item.quantity || 0);
     }
 
-    const customers = Array.from(customerMap.values()).map((entry) => ({
-      customerId: entry.customerId,
-      name: entry.name,
-      items: Array.from(entry.items.values()).map((i) => ({
-        ...i,
+    const customers = {};
+
+    for (const entry of customerMap.values()) {
+      const customerName = entry.name || "Unknown";
+
+      customers[customerName] = Array.from(entry.items.values()).map((i) => ({
+        name: i.name,
+        quantity: i.quantity,
+        price: i.price,
         amount: i.price * i.quantity,
-      })),
-      subTotal: entry.subTotal,
-    }));
+      }));
+    }
 
     return {
       cafeName: order.adminId.cafeName,
       address: `${order.adminId.address || ""}, ${order.adminId.city || ""}`,
+      phoneNumber: order.adminId.phoneNumber,
       tableNumber: order.tableNumber,
-
-      items: customers.flatMap((c) =>
-        c.items.map((i) => ({
-          customerId: c.customerId || null,
-          customerName: c.name || "Unknown",
-          name: i.name,
-          quantity: i.quantity,
-          price: i.price,
-          amount: i.amount,
-        }))
-      ),
       customers,
-
       subTotal,
       gstPercent,
       gstAmount,

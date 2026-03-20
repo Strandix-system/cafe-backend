@@ -82,7 +82,7 @@ router.patch(
 router.get(
   "/bill/:id",
   tokenVerification,
-  allowRoles("admin","superadmin"),
+  allowRoles("admin", "superadmin"),
   orderController.getBillDetails
 );
 

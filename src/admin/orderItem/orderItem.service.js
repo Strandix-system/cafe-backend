@@ -149,9 +149,34 @@ const orderItemService = {
 
     await recalculateOrderTotals(orderItem.orderId);
 
-    return await OrderItem.findById(orderItem._id)
+    const updatedItem = await OrderItem.findById(orderItem._id)
       .populate("menuId")
       .populate("customerId", "name email phoneNumber");
+
+    try {
+      const io = getIO();
+      if (order.adminId) {
+        io.to(order.adminId.toString()).emit("orderItemQuantityUpdate", {
+          orderId: orderItem.orderId,
+          orderItem: updatedItem,
+          quantity: updatedItem?.quantity,
+        });
+      }
+      if (orderItem.customerId) {
+        io.to(`customer-${orderItem.customerId.toString()}`).emit(
+          "orderItemQuantityUpdate",
+          {
+            orderId: orderItem.orderId,
+            orderItem: updatedItem,
+            quantity: updatedItem?.quantity,
+          }
+        );
+      }
+    } catch (socketError) {
+      console.error("Socket emission error:", socketError);
+    }
+
+    return updatedItem;
   },
 
   deleteOrderItem: async (orderItemId, user) => {

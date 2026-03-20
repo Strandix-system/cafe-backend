@@ -17,6 +17,10 @@ const qrSchema = new mongoose.Schema(
             type: String,
             default: "",
         },
+        occupied : {
+            type: Boolean,
+            default: false
+        }
     },
     { timestamps: true }
 );

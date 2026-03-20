@@ -17,7 +17,7 @@ const orderController = {
   getOrders: async (req, res, next) => {
     try {
       const adminId = req.user._id;
-      const filter = pick(req.query, ["orderStatus", "tableNumber", "paymentStatus", "orderStatus"]);
+      const filter = pick(req.query, ["isCompleted", "tableNumber", "paymentStatus"]);
       const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
       const result = await orderService.getOrders(adminId, filter, options);
       sendSuccessResponse(res, 200, "Orders fetched", result);
@@ -35,30 +35,17 @@ const orderController = {
       next(err);
     }
   },
-  updateStatus: async (req, res, next) => {
+  updateIsCompletedStatus: async (req, res, next) => {
     try {
 
-      const status = req.body.status ?? req.body.orderStatus;
+      const isCompleted = req.body.isCompleted;
       const result =
-        await orderService.updateStatus(
+        await orderService.updateIsCompletedStatus(
           req.body.orderId,
-          status,
+          isCompleted,
           req.user._id,
         );
       sendSuccessResponse(res, 200, "Status updated", result);
-    } catch (err) {
-      next(err);
-    }
-  },
-  getItems: async (req, res, next) => {
-    try {
-
-      const result =
-        await orderService.getOrderItems(
-          req.params.id,
-          req.user._id
-        );
-      sendSuccessResponse(res, 200, "Order items fetched", result);
     } catch (err) {
       next(err);
     }
@@ -76,6 +63,17 @@ const orderController = {
       next(err);
     }
   },
+  deleteOrder: async (req, res, next) => {
+    try {
+      const result = await orderService.deleteOrder(
+        req.params.orderId,
+        req.user._id
+      );
+      sendSuccessResponse(res, 200, "Order deleted", result);
+    } catch (err) {
+      next(err);
+    }
+  },
   getBillDetails: async (req, res, next) => {
     try {
       const result = await orderService.getOrderBillDetails(
@@ -84,6 +82,16 @@ const orderController = {
       );
 
       sendSuccessResponse(res, 200, "Bill details fetched", result);
+    } catch (err) {
+      next(err);
+    }
+  },
+  getActiveOrderByQr: async (req, res, next) => {
+    try {
+      const result = await orderService.getActiveOrderByQr(
+        req.params.qrId
+      );
+      sendSuccessResponse(res, 200, "Active order fetched", result);
     } catch (err) {
       next(err);
     }

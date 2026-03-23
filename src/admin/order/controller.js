@@ -1,8 +1,8 @@
-import orderService from "./service.js";
+import {orderService} from "./service.js";
 import { pick } from "../../../utils/pick.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
 
-const orderController = {
+export const orderController = {
   createPublicOrder: async (req, res, next) => {
     try {
 
@@ -97,5 +97,3 @@ const orderController = {
     }
   },
 };
-
-export default orderController;

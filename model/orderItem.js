@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { paginate } from "../model/plugin/paginate.plugin.js";
+import { ORDER_STATUS } from "../utils/constants.js";
 
 const orderItemSchema = new mongoose.Schema(
   {
@@ -23,10 +24,14 @@ const orderItemSchema = new mongoose.Schema(
       min: 1,
       required: true,
     },
+    specialInstruction: {   
+      type: String,
+      trim: true,
+    },
     status: {
       type: String,
-      enum: ["pending", "preparing", "served"],
-      default: "pending",
+      enum: Object.values(ORDER_STATUS),
+      default: ORDER_STATUS.PENDING,
       trim: true,
     },
     servedAt: {
@@ -38,4 +43,4 @@ const orderItemSchema = new mongoose.Schema(
 
 orderItemSchema.plugin(paginate);
 
-export default mongoose.model("OrderItem", orderItemSchema);
+export const OrderItem = mongoose.model("OrderItem", orderItemSchema);

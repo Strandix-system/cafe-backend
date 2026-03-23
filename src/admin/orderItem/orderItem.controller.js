@@ -1,7 +1,7 @@
-import orderItemService from "./orderItem.service.js";
+import {orderItemService} from "./orderItem.service.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
 
-const orderItemController = {
+export const orderItemController = {
   getItems: async (req, res, next) => {
     try {
       const result = await orderItemService.getOrderItems(
@@ -65,5 +65,3 @@ const orderItemController = {
     }
   },
 };
-
-export default orderItemController;

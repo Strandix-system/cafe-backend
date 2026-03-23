@@ -5,13 +5,13 @@ const objectId = Joi.string().regex(/^[0-9a-fA-F]{24}$/);
 const createOrderSchema = {
     body: Joi.object({
         customerId: objectId.required(),
+        adminId: objectId.required(),
         tableNumber: Joi.number().required(),
         items: Joi.array()
             .items(
                 Joi.object({
                     menuId: objectId.required(),
                     quantity: Joi.number().min(1).required(),
-                    customerId: objectId.required(),
                     specialInstruction: Joi.string().trim().allow("", null).max(200).optional(),
                 })
             )

@@ -17,7 +17,7 @@ const objectId = Joi.string().regex(/^[0-9a-fA-F]{24}$/);
  const updateQuantitySchema = {
   body: Joi.object({
     orderItemId: objectId.required(),
-    orderId: objectId.optional(),
+    orderId: objectId.required(),
     quantity: Joi.number().min(1).required(),
     customerId: objectId.optional(),
     userId: objectId.optional(),

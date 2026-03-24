@@ -1,6 +1,6 @@
 import express from "express";
 import { tokenVerification } from "../middleware/auth.js";
-import { categoryController } from "../src/admin/category/categoryController.js";
+import categoryController  from "../src/admin/category/categoryController.js";
 import { allowRoles } from "../middleware/permission.js";
 
 const router = express.Router();
@@ -41,7 +41,7 @@ router.get(
   "/admin-category",
   tokenVerification,
   allowRoles("admin"),
-  categoryController.getUsedCategoriesForDropdown
+  categoryController.getAdminUsedCategories
 );
 
 export const categoryRoutes = router;

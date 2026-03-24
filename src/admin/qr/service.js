@@ -1,6 +1,7 @@
 import Qr from "../../../model/qr.js";
 import QRCode from "qrcode";
 import CafeLayout from "../../../model/layout.js";
+import { ApiError } from "../../../utils/apiError.js";
 
 
 const qrService = {
@@ -8,16 +9,14 @@ const qrService = {
 
     const layoutExists = await CafeLayout.exists({ adminId });
     if (!layoutExists) {
-      throw new Error("Please create cafe layout before generating Qr")
+      throw new ApiError(400, "Please create cafe layout before generating Qr");
     }
     if (!totalTables || totalTables < 1) {
-      const err = new Error("Invalid totalTables");
-      err.statusCode = 400;
-      throw err;
+      throw new ApiError(400, "Invalid totalTables");
     }
 
     if (!process.env.PORTFOLIO_URL) {
-      throw new Error("PORTFOLIO_URL not set");
+      throw new ApiError(500, "PORTFOLIO_URL not set");
     }
 
     const lastQr = await Qr.findOne({ adminId })
@@ -54,11 +53,11 @@ const qrService = {
     const qr = await Qr.findById(qrId).populate("adminId");
 
     if (!qr) {
-      throw new Error("Invalid QR");
+      throw new ApiError(404, "Invalid QR");
     }
 
     if (!qr.adminId || !qr.adminId.isActive) {
-      throw new Error("This QR is disabled because the account is inactive");
+      throw new ApiError(403, "This QR is disabled because the account is inactive");
     }
 
     return qr;

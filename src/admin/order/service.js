@@ -35,24 +35,19 @@ export const orderService = {
   createOrderByCustomerId: async (body) => {
     const { items, customerId, tableNumber } = body;
     const customer = await Customer.findById(customerId);
-
     if (!customer) {
       throw new ApiError(404, "Customer not found");
     }
 
     const adminId = customer.adminId;
 
-    const admin = await User.findOne({ _id: adminId, role: "admin" })
-      .select("gst");
-
+    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst");
     if (!admin) {
       throw new ApiError(404, "Admin not found");
     }
 
     const gstPercent = admin.gst;
-
-    const menuIds = items.map(menu => menu.menuId);
-
+    const menuIds = items.map((menu) => menu.menuId);
     const menus = await Menu.find({
       _id: { $in: menuIds }
     });
@@ -60,11 +55,12 @@ export const orderService = {
     if (menus?.length !== items.length) {
       throw new ApiError(400, "Invalid menu item");
     }
+
     let subTotal = 0;
 
-    const finalItems = items.map(item => {
+    const finalItems = items.map((item) => {
       const menu = menus.find(
-        m => m._id.toString() === item.menuId
+        (m) => m._id.toString() === item.menuId
       );
 
       const price = menu.discountPrice && menu.discountPrice > 0
@@ -82,7 +78,6 @@ export const orderService = {
     });
 
     const gstAmount = (subTotal * gstPercent) / 100;
-
     const finalTotal = subTotal + gstAmount;
 
     const qr = await Qr.findOne({ adminId, tableNumber });
@@ -211,7 +206,6 @@ export const orderService = {
         },
       })),
     }));
-
     return result;
   },
   getMyOrders: async (filter, options) => {
@@ -371,11 +365,11 @@ Hello ${customer.name},
 
 🧾 Order Summary:
 Table No: ${billDetails.tableNumber}
-Total Amount: ₹${billDetails.total}
+Total Amount: Rs.${billDetails.total}
 
 Your bill PDF is ready in the app.
 
-Thank you for visiting ${populatedOrder.adminId.cafeName} ☕
+Thank you for visiting ${populatedOrder.adminId.cafeName}
 See you again!
           `;
 
@@ -394,6 +388,8 @@ See you again!
     } catch (error) {
       throw new ApiError(500, `Error updating payment status: ${error.message}`);
     }
+
+    return order;
   },
   deleteOrder: async (orderId, adminId) => {
     const order = await Order.findOne({ _id: orderId, adminId });
@@ -436,7 +432,6 @@ See you again!
 
     const gstPercent = order.adminId.gst;
     const gstAmount = (subTotal * gstPercent) / 100;
-
     const total = Math.round(subTotal + gstAmount);
 
     const customerMap = new Map();

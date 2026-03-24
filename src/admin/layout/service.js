@@ -8,50 +8,46 @@ const layoutService = {
   createCafeLayout: async (adminId, body, files, role) => {
     const homeImage = files?.homeImage?.[0]?.location;
     const aboutImage = files?.aboutImage?.[0]?.location;
+
     if (!homeImage || !aboutImage) {
-      throw Object.assign(new Error("Both Home image and About image are required"), {
-        statusCode: 400
-      });
+      throw new ApiError(400, "Both Home image and About image are required");
     }
-    let defaultLayout = role === "superadmin";
+
+    const defaultLayout = role === "superadmin";
     const haveLayout = await CafeLayout.findOne({ adminId });
+
     const layout = await CafeLayout.create({
       ...body,
       adminId,
-      homeImage, // S3 URL
-      aboutImage, // S3 URL
+      homeImage,
+      aboutImage,
       defaultLayout,
-      active: !haveLayout
+      active: !haveLayout,
     });
+
     return layout;
   },
   updateCafeLayout: async (id, body, files) => {
     const layout = await CafeLayout.findById(id);
     if (!layout) {
-      throw new ApiError("Cafe layout not found");
+      throw new ApiError(404, "Cafe layout not found");
     }
 
-    // ✅ Home Image Update
     if (files?.homeImage?.[0]?.location) {
       if (layout.homeImage) {
-        await deleteSingleFile(layout.homeImage)
-          .catch(err => console.error("S3 Error:", err));
+        await deleteSingleFile(layout.homeImage).catch((err) => console.error("S3 Error:", err));
       }
       layout.homeImage = files.homeImage[0].location;
     }
 
-    // ✅ About Image Update
     if (files?.aboutImage?.[0]?.location) {
       if (layout.aboutImage) {
-        await deleteSingleFile(layout.aboutImage)
-          .catch(err => console.error("S3 Error:", err));
+        await deleteSingleFile(layout.aboutImage).catch((err) => console.error("S3 Error:", err));
       }
       layout.aboutImage = files.aboutImage[0].location;
     }
 
-    // ✅ Directly assign all body fields
     Object.assign(layout, body);
-
     await layout.save();
 
     return layout;
@@ -60,18 +56,18 @@ const layoutService = {
     const { layoutId, active } = body;
     const layout = await CafeLayout.findById(layoutId);
     if (!layout) {
-      throw new ApiError("Cafe layout not found");
+      throw new ApiError(404, "Cafe layout not found");
     }
 
     if (active === undefined || typeof active !== "boolean") {
-      throw new ApiError("Active status is required");
+      throw new ApiError(400, "Active status is required");
     }
 
     if (active === true) {
       await CafeLayout.updateMany(
         {
-          adminId: layout?.adminId,
-          _id: { $ne: layout?._id },
+          adminId: layout.adminId,
+          _id: { $ne: layout._id },
         },
         { $set: { active: false } }
       );
@@ -88,27 +84,25 @@ const layoutService = {
   deleteCafeLayout: async (id) => {
     const layout = await CafeLayout.findById(id);
     if (!layout) {
-      throw new ApiError("Cafe layout not found");
+      throw new ApiError(404, "Cafe layout not found");
     }
     if (layout.active) {
-      throw new ApiError("Active cafe layout cannot be deleted")
+      throw new ApiError(400, "Active cafe layout cannot be deleted");
     }
+
     const imagesToDelete = [];
     if (layout.homeImage) imagesToDelete.push(layout.homeImage);
     if (layout.aboutImage) imagesToDelete.push(layout.aboutImage);
+
     if (imagesToDelete.length > 0) {
-      try {
-        await deleteUploadedFiles(imagesToDelete);
-      } catch (err) {
-        console.error("Failed to delete S3 images during layout deletion:", err.message);
-      }
+      await deleteUploadedFiles(imagesToDelete);
     }
+
     const result = await layout.deleteOne();
     return result;
   },
   getCafeLayoutByAdmin: async (filter, options) => {
     const result = await CafeLayout.paginate(filter, options);
-
     const cafeQr = await Qr.findOne({ adminId: filter.adminId });
 
     return { ...result, cafeQr };
@@ -127,4 +121,5 @@ const layoutService = {
     return result;
   },
 };
+
 export default layoutService;

@@ -23,11 +23,11 @@ export const orderController = {
     sendSuccessResponse(res, 200, "Orders fetched successfully", result);
   },
   updateIsCompletedStatus: async (req, res) => {
-    const isCompleted = req.body.isCompleted;
+   
     const result =
       await orderService.updateIsCompletedStatus(
         req.body.orderId,
-        isCompleted,
+        req.body.isCompleted,
         req.user._id,
       );
     sendSuccessResponse(res, 200, "Status updated", result);

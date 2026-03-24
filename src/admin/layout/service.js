@@ -95,11 +95,7 @@ const layoutService = {
     if (layout.aboutImage) imagesToDelete.push(layout.aboutImage);
 
     if (imagesToDelete.length > 0) {
-      try {
-        await deleteUploadedFiles(imagesToDelete);
-      } catch (err) {
-        console.error("Failed to delete S3 images during layout deletion:", err.message);
-      }
+      await deleteUploadedFiles(imagesToDelete);
     }
 
     const result = await layout.deleteOne();

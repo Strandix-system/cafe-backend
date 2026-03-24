@@ -38,11 +38,10 @@ export const orderController = {
   updateIsCompletedStatus: async (req, res, next) => {
     try {
 
-      const isCompleted = req.body.isCompleted;
       const result =
         await orderService.updateIsCompletedStatus(
           req.body.orderId,
-          isCompleted,
+          req.body.isCompleted,
           req.user._id,
         );
       sendSuccessResponse(res, 200, "Status updated", result);

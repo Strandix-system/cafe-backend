@@ -2,3 +2,49 @@ import crypto from "crypto";
 
 export const generateTicketId = () =>
     `TKT-${Date.now()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+
+export const buildAggregatedItems = (orderItems = []) => {
+    const itemMap = new Map();
+    for (const item of orderItems) {
+        const menuId = `${item.menuId?._id?.toString()}-${item.specialInstruction || ""}`; if (!itemMap.has(menuId)) {
+            const price =
+                item.menuId?.discountPrice && item.menuId.discountPrice > 0
+                    ? item.menuId.discountPrice
+                    : item.menuId?.price || 0;
+
+            itemMap.set(menuId, {
+                menu: {
+                    _id: item.menuId?._id,
+                    name: item.menuId?.name,
+                    price: item.menuId?.price,
+                    discountPrice: item.menuId?.discountPrice,
+                },
+                quantity: 0,
+                customers: new Map(),
+                price,
+                specialInstruction: item.specialInstruction || "",
+            });
+        }
+        const entry = itemMap.get(menuId);
+        entry.quantity += item.quantity || 0;
+        if (item.customerId?._id) {
+            const id = item.customerId._id.toString();
+            if (!entry.customers.has(id)) {
+                entry.customers.set(id, {
+                    _id: item.customerId._id,
+                    name: item.customerId.name,
+                    phoneNumber: item.customerId.phoneNumber
+                });
+            }
+        }
+    }
+
+    return Array.from(itemMap.values()).map((entry) => ({
+        menu: entry.menu,
+        quantity: entry.quantity,
+        price: entry.price,
+        customers: Array.from(entry.customers.values()),
+        specialInstruction: entry.specialInstruction || "",
+        amount: entry.price * entry.quantity,
+    }));
+};

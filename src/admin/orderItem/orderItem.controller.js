@@ -28,7 +28,7 @@ export const orderItemController = {
       quantity,
       {
         role,
-        customerId: customerId || userId,
+        customerId: customerId ?? userId,
         _id: req.user?._id,
       }
     );
@@ -36,13 +36,13 @@ export const orderItemController = {
   },
 
   deleteItem: async (req, res) => {
-    const { customerId, userId } = req.body || {};
+    const { customerId, userId } = req.body ?? {};
     const role = req.user?.role;
     const result = await orderItemService.deleteOrderItem(
       req.params.orderItemId,
       {
         role,
-        customerId: customerId || userId,
+        customerId: customerId ?? userId,
         _id: req.user?._id,
       }
     );

@@ -26,7 +26,7 @@ const attachOrderItems = async (orders) => {
 
   return orders.map((order) => ({
     order,
-    orderItems: grouped.get(order._id.toString()) || [],
+    orderItems: grouped.get(order._id.toString()) ?? [],
   }));
 };
 
@@ -74,10 +74,10 @@ export const orderService = {
       subTotal += price * item.quantity;
 
       return {
-        customerId: item.customerId || customerId,
+        customerId: item.customerId ?? customerId,
         menuId: item.menuId,
         quantity: item.quantity,
-        specialInstruction: item.specialInstruction || "",
+        specialInstruction: item.specialInstruction ?? "",
       };
     });
 
@@ -114,7 +114,7 @@ export const orderService = {
         finalItems
       );
 
-      latestActiveOrder.subTotal = (latestActiveOrder.subTotal || 0) + subTotal;
+      latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
       latestActiveOrder.gstAmount =
         (latestActiveOrder.subTotal * gstPercent) / 100;
@@ -128,7 +128,7 @@ export const orderService = {
         finalItems
       );
 
-      latestActiveOrder.subTotal = (latestActiveOrder.subTotal || 0) + subTotal;
+      latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
       latestActiveOrder.gstAmount =
         (latestActiveOrder.subTotal * gstPercent) / 100;
@@ -191,7 +191,7 @@ export const orderService = {
       }
     }
 
-    const { populate: _populate, ...safeOptions } = options || {};
+    const { populate: _populate, ...safeOptions } = options ?? {};
     const result = await Order.paginate({ adminId, ...filter }, safeOptions);
 
     const ordersWithItems = await attachOrderItems(result.results);
@@ -204,7 +204,7 @@ export const orderService = {
         customerId: i.customerId?._id,
         quantity: i.quantity,
         status: i.status,
-        specialInstruction: i.specialInstruction || "",
+        specialInstruction: i.specialInstruction ?? "",
         timestamps: {
           createdAt: i.createdAt,
           updatedAt: i.updatedAt,
@@ -225,8 +225,8 @@ export const orderService = {
 
       return {
         results: [],
-        page: Number(options?.page) || 0,
-        limit: Number(options?.limit) || 0,
+        page: Number(options?.page) ?? 0,
+        limit: Number(options?.limit) ?? 0,
         totalPages: 0,
         totalResults: 0,
       };
@@ -234,7 +234,7 @@ export const orderService = {
 
     const finalFilter = { ...restFilter, _id: { $in: orderIds } };
 
-    const { populate: _populate, ...safeOptions } = options || {};
+    const { populate: _populate, ...safeOptions } = options ?? {};
     const result = await Order.paginate(finalFilter, safeOptions);
 
     const ordersWithItems = await attachOrderItems(result.results);
@@ -247,7 +247,7 @@ export const orderService = {
         customerId: i.customerId?._id,
         quantity: i.quantity,
         status: i.status,
-        specialInstruction: i.specialInstruction || "",
+        specialInstruction: i.specialInstruction ?? "",
         timestamps: {
           createdAt: i.createdAt,
           updatedAt: i.updatedAt,
@@ -441,49 +441,49 @@ See you again!
 
     const customerMap = new Map();
     for (const item of orderItems) {
-      const custId = item.customerId?._id?.toString() || "unknown";
+      const custId = item.customerId?._id?.toString() ?? "unknown";
       if (!customerMap.has(custId)) {
         customerMap.set(custId, {
-          customerId: item.customerId?._id || null,
-          name: item.customerId?.name || "Unknown",
+          customerId: item.customerId?._id ?? null,
+          name: item.customerId?.name ?? "Unknown",
           items: new Map(),
           subTotal: 0,
         });
       }
       const entry = customerMap.get(custId);
-      const menuId = `${item.menuId?._id?.toString()}-${item.specialInstruction || ""}`; if (!entry.items.has(menuId)) {
+      const menuId = `${item.menuId?._id?.toString()}-${item.specialInstruction ?? ""}`; if (!entry.items.has(menuId)) {
         entry.items.set(menuId, {
-          name: item.menuId?.name || "Unknown",
+          name: item.menuId?.name ?? "Unknown",
           quantity: 0,
           price:
             item.menuId?.discountPrice && item.menuId.discountPrice > 0
               ? item.menuId.discountPrice
-              : item.menuId?.price || 0,
-          specialInstruction: item.specialInstruction || "",
+              : item.menuId?.price ?? 0,
+          specialInstruction: item.specialInstruction ?? "",
         });
       }
       const itemEntry = entry.items.get(menuId);
-      itemEntry.quantity += item.quantity || 0;
-      entry.subTotal += itemEntry.price * (item.quantity || 0);
+      itemEntry.quantity += item.quantity ?? 0;
+      entry.subTotal += itemEntry.price * (item.quantity ?? 0);
     }
 
     const customers = {};
 
     for (const entry of customerMap.values()) {
-      const customerName = entry.name || "Unknown";
+      const customerName = entry.name ?? "Unknown";
 
       customers[customerName] = Array.from(entry.items.values()).map((i) => ({
         name: i.name,
         quantity: i.quantity,
         price: i.price,
         amount: i.price * i.quantity,
-        specialInstruction: i.specialInstruction || "",
+        specialInstruction: i.specialInstruction ?? "",
       }));
     }
 
     return {
       cafeName: order.adminId.cafeName,
-      address: `${order.adminId.address || ""}, ${order.adminId.city || ""}`,
+      address: `${order.adminId.address ?? ""}, ${order.adminId.city ?? ""}`,
       phoneNumber: order.adminId.phoneNumber,
       tableNumber: order.tableNumber,
       customers,

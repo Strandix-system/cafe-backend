@@ -19,11 +19,11 @@ const recalculateOrderTotals = async (orderId) => {
     const menu = item.menuId;
     const price = menu?.discountPrice && menu.discountPrice > 0
       ? menu.discountPrice
-      : menu?.price || 0;
+      : menu?.price ?? 0;
     return sum + price * item.quantity;
   }, 0);
 
-  const gstPercent = order.gstPercent || 0;
+  const gstPercent = order.gstPercent ?? 0;
   const gstAmount = (subTotal * gstPercent) / 100;
 
   order.subTotal = subTotal;
@@ -115,7 +115,7 @@ export const orderItemService = {
       throw new ApiError(400, "Served items cannot be edited");
     }
 
-    const role = user?.role || "customer";
+    const role = user?.role ?? "customer";
 
     const order = await Order.findById(orderItem.orderId).select("adminId");
     if (!order) {
@@ -129,7 +129,7 @@ export const orderItemService = {
         throw new ApiError(400, "Item cannot be edited in this status");
       }
     } else {
-      const customerId = user?.customerId || user?.userId || user?._id;
+      const customerId = user?.customerId ?? user?.userId ?? user?._id;
 
       if (orderItem.customerId.toString() !== customerId.toString()) {
         throw new ApiError(403, "You can only edit your own items");
@@ -160,10 +160,6 @@ export const orderItemService = {
           order: orderWithItems,
         });
         if (orderWithItems) {
-          io.to(order.adminId.toString()).emit("order:update", {
-            orderId: orderItem.orderId,
-            order: orderWithItems,
-          });
           io.to(order.adminId.toString()).emit("order:updated", {
             orderId: orderItem.orderId,
             order: orderWithItems,
@@ -181,13 +177,6 @@ export const orderItemService = {
           }
         );
         if (orderWithItems) {
-          io.to(`customer-${orderItem.customerId.toString()}`).emit(
-            "order:update",
-            {
-              orderId: orderItem.orderId,
-              order: orderWithItems,
-            }
-          );
           io.to(`customer-${orderItem.customerId.toString()}`).emit(
             "order:updated",
             {
@@ -220,7 +209,7 @@ export const orderItemService = {
       throw new ApiError(404, "Order not found");
     }
 
-    const role = user?.role || "customer";
+    const role = user?.role ?? "customer";
     if (role === "admin") {
       if (order.adminId.toString() !== user?._id?.toString()) {
         throw new ApiError(403, "Unauthorized to delete this order item");
@@ -232,7 +221,7 @@ export const orderItemService = {
         throw new ApiError(400, "Item cannot be deleted in this status");
       }
     } else {
-      const customerId = user?.customerId || user?.userId || user?._id;
+      const customerId = user?.customerId ?? user?.userId ?? user?._id;
       if (orderItem.customerId.toString() !== customerId.toString()) {
         throw new ApiError(403, "You can only delete your own items");
       }
@@ -243,7 +232,7 @@ export const orderItemService = {
 
     const populatedItem = await OrderItem.findById(orderItem._id)
       .populate("menuId")
-      .populate("customerId", "name email phoneNumber");
+      .populate("customerId", "name phoneNumber");
 
     await OrderItem.deleteOne({ _id: orderItem._id });
     await recalculateOrderTotals(orderItem.orderId);
@@ -268,7 +257,7 @@ export const orderItemService = {
       if (order.adminId) {
         io.to(order.adminId.toString()).emit("orderItemDeleted", {
           orderId: orderItem.orderId,
-          orderItem: populatedItem || orderItem,
+          orderItem: populatedItem ?? orderItem,
         });
       }
       if (orderItem.customerId) {
@@ -276,7 +265,7 @@ export const orderItemService = {
           "orderItemDeleted",
           {
             orderId: orderItem.orderId,
-            orderItem: populatedItem || orderItem,
+            orderItem: populatedItem ?? orderItem,
           }
         );
       }

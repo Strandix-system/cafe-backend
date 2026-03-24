@@ -6,27 +6,27 @@ export const generateTicketId = () =>
 export const buildAggregatedItems = (orderItems = []) => {
     const itemMap = new Map();
     for (const item of orderItems) {
-        const menuId = `${item.menuId?._id?.toString()}-${item.specialInstruction || ""}`; if (!itemMap.has(menuId)) {
+        const menuId = `${item.menuId?._id?.toString()}-${item.specialInstruction ?? ""}`; if (!itemMap.has(menuId)) {
             const price =
                 item.menuId?.discountPrice && item.menuId.discountPrice > 0
                     ? item.menuId.discountPrice
-                    : item.menuId?.price || 0;
+                    : item.menuId?.price ?? 0;
 
             itemMap.set(menuId, {
                 menu: {
                     _id: item.menuId?._id,
                     name: item.menuId?.name,
-                    price: item.menuId?.price,
-                    discountPrice: item.menuId?.discountPrice,
+                    price: item.menuId?.price ?? 0,
+                    discountPrice: item.menuId?.discountPrice ?? 0,
                 },
                 quantity: 0,
                 customers: new Map(),
                 price,
-                specialInstruction: item.specialInstruction || "",
+                specialInstruction: item.specialInstruction ?? "",
             });
         }
         const entry = itemMap.get(menuId);
-        entry.quantity += item.quantity || 0;
+        entry.quantity += item.quantity;
         if (item.customerId?._id) {
             const id = item.customerId._id.toString();
             if (!entry.customers.has(id)) {
@@ -44,7 +44,7 @@ export const buildAggregatedItems = (orderItems = []) => {
         quantity: entry.quantity,
         price: entry.price,
         customers: Array.from(entry.customers.values()),
-        specialInstruction: entry.specialInstruction || "",
+        specialInstruction: entry.specialInstruction ?? "",
         amount: entry.price * entry.quantity,
     }));
 };

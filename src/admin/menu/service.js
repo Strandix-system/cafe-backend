@@ -103,20 +103,4 @@ export const menuService = {
     const menu = await Menu.findById(menuId);
     return menu;
   },
-  getAdminUsedCategories: async (adminId, filter, options) => {
-    // Step 1: Get categories used by this admin in Menu
-    const usedCategories = await Menu.distinct("category", { adminId });
-    const query = {
-      name: { $in: usedCategories }
-    };
-    if (filter.search) {
-      query.name = {
-        $in: usedCategories,
-        $regex: filter.search,
-        $options: "i"
-      };
-    }
-    const result = await Category.paginate(query, filter, options);
-    return result;
-  },
 };

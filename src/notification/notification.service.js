@@ -56,6 +56,33 @@ export const notificationService = {
     return notification;
   },
 
+  deleteNotification: async (notificationId, user) => {
+    const notification = await Notification.findOneAndDelete({
+      _id: notificationId,
+      userId: user._id,
+    });
+
+    if (!notification) {
+      throw new ApiError(404, "Notification not found");
+    }
+
+    return notification;
+  },
+
+  deleteOldNotifications: async () => {
+    const startOfCurrentMonth = new Date();
+    startOfCurrentMonth.setDate(1);
+    startOfCurrentMonth.setHours(0, 0, 0, 0);
+
+    const result = await Notification.deleteMany({
+      createdAt: { $lt: startOfCurrentMonth },
+    });
+
+    return {
+      deletedCount: result.deletedCount || 0,
+    };
+  },
+
   markAllReadForUser: async (user, filter = {}) => {
     const query = getUserNotificationFilter(user._id, filter);
     query.isRead = false;

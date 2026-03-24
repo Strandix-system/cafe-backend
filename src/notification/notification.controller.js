@@ -22,6 +22,14 @@ export const notificationController = {
     sendSuccessResponse(res, 200, "Notification marked as read", data);
   },
 
+  deleteNotification: async (req, res) => {
+    const data = await notificationService.deleteNotification(
+      req.params.id,
+      req.user
+    );
+    sendSuccessResponse(res, 200, "Notification deleted", data);
+  },
+
   markAllRead: async (req, res) => {
     const filter = pick(req.body, ["entityType"]);
     const data = await notificationService.markAllReadForUser(req.user, filter);

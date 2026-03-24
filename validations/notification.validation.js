@@ -55,6 +55,12 @@ const markSingleReadValidator = {
   }),
 };
 
+const deleteNotificationValidator = {
+  params: Joi.object({
+    id: objectId.required(),
+  }),
+};
+
 const markAllReadValidator = {
   body: Joi.object({
     entityType: Joi.string().trim().optional(),
@@ -95,6 +101,7 @@ export {
   createNotificationPayloadValidator,
   getNotificationsValidator,
   markSingleReadValidator,
+  deleteNotificationValidator,
   markAllReadValidator,
   getNotificationCountValidator,
   getCustomerNotificationsValidator,

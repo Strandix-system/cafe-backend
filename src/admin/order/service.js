@@ -3,12 +3,14 @@ import Menu from "../../../model/menu.js";
 import Customer from "../../../model/customer.js";
 import User from "../../../model/user.js";
 import Qr from "../../../model/qr.js";
-import OrderItem from "../../../model/orderItem.js";
+import { OrderItem } from "../../../model/orderItem.js";
 import { getIO } from "../../../socket.js";
 import sendWhatsAppMessage from "../../../utils/whatsapp.js";
 import { ApiError } from "../../../utils/apiError.js";
 import { notificationService } from "../../notification/notification.service.js";
 import { NOTIFICATION_TYPES } from "../../../utils/constants.js";
+import { ORDER_STATUS } from "../../../utils/constants.js";
+import { buildAggregatedItems } from "../../../utils/utils.js";
 
 const attachOrderItems = async (orders) => {
   if (!orders || !orders.length) return [];
@@ -30,75 +32,23 @@ const attachOrderItems = async (orders) => {
   }));
 };
 
-const buildAggregatedItems = (orderItems = []) => {
-  const itemMap = new Map();
-  for (const item of orderItems) {
-    const menuId = item.menuId?._id?.toString() || "unknown";
-    if (!itemMap.has(menuId)) {
-      itemMap.set(menuId, {
-        menuId: item.menuId,
-        name: item.menuId?.name || "Unknown",
-        quantity: 0,
-        customers: new Map(),
-        price:
-          item.menuId?.discountPrice && item.menuId.discountPrice > 0
-            ? item.menuId.discountPrice
-            : item.menuId?.price || 0,
-      });
-    }
-    const entry = itemMap.get(menuId);
-    entry.quantity += item.quantity || 0;
-    if (item.customerId?._id) {
-      const id = item.customerId._id.toString();
-      if (!entry.customers.has(id)) {
-        entry.customers.set(id, {
-          _id: item.customerId._id,
-          name: item.customerId.name,
-          phoneNumber: item.customerId.phoneNumber,
-          email: item.customerId.email,
-        });
-      }
-    }
-  }
-
-  return Array.from(itemMap.values()).map((entry) => ({
-    ...entry,
-    customers: Array.from(entry.customers.values()),
-    amount: entry.price * entry.quantity,
-  }));
-};
-
-const orderService = {
+export const orderService = {
   createOrderByCustomerId: async (body) => {
-    const { items, specialInstruction, customerId, tableNumber } = body;
-
-    if (!items || !items.length) {
-      throw new ApiError(400, "Order items are required");
-    }
-
+    const { items, customerId, tableNumber } = body;
     const customer = await Customer.findById(customerId);
-
     if (!customer) {
       throw new ApiError(404, "Customer not found");
     }
 
     const adminId = customer.adminId;
 
-    if (!adminId) {
-      throw new ApiError(404, "Admin not found for customer");
-    }
-
-    const admin = await User.findOne({ _id: adminId, role: "admin" })
-      .select("gst");
-
+    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst");
     if (!admin) {
       throw new ApiError(404, "Admin not found");
     }
 
     const gstPercent = admin.gst;
-
-    const menuIds = items.map(menu => menu.menuId);
-
+    const menuIds = items.map((menu) => menu.menuId);
     const menus = await Menu.find({
       _id: { $in: menuIds }
     });
@@ -106,11 +56,12 @@ const orderService = {
     if (menus?.length !== items.length) {
       throw new ApiError(400, "Invalid menu item");
     }
+
     let subTotal = 0;
 
-    const finalItems = items.map(item => {
+    const finalItems = items.map((item) => {
       const menu = menus.find(
-        m => m._id.toString() === item.menuId
+        (m) => m._id.toString() === item.menuId
       );
 
       const price = menu.discountPrice && menu.discountPrice > 0
@@ -120,9 +71,10 @@ const orderService = {
       subTotal += price * item.quantity;
 
       return {
-        customerId: item.customerId || customerId,
+        customerId: item.customerId ?? customerId,
         menuId: item.menuId,
         quantity: item.quantity,
+        specialInstruction: item.specialInstruction ?? "",
       };
     });
 
@@ -131,15 +83,12 @@ const orderService = {
     }
 
     const gstAmount = (subTotal * gstPercent) / 100;
-
     const finalTotal = subTotal + gstAmount;
 
     const qr = await Qr.findOne({ adminId, tableNumber });
     if (!qr) {
       throw new ApiError(404, "Table not found");
     }
-
-    const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
 
     const latestActiveOrder = await Order.findOne({
       adminId,
@@ -149,17 +98,12 @@ const orderService = {
 
     let order = null;
 
-    const isWithinThreeHours =
-      latestActiveOrder &&
-      latestActiveOrder.createdAt &&
-      latestActiveOrder.createdAt >= threeHoursAgo;
-
     const createOrderItems = async (orderId, newItems) => {
       await OrderItem.insertMany(
         newItems.map((item) => ({
           ...item,
           orderId,
-          status: "pending",
+          status: ORDER_STATUS.PENDING,
         }))
       );
     };
@@ -169,12 +113,8 @@ const orderService = {
         latestActiveOrder._id,
         finalItems
       );
-      if (specialInstruction) {
-        latestActiveOrder.specialInstruction = latestActiveOrder.specialInstruction
-          ? `${latestActiveOrder.specialInstruction}\n${specialInstruction}`
-          : specialInstruction;
-      }
-      latestActiveOrder.subTotal = (latestActiveOrder.subTotal || 0) + subTotal;
+
+      latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
       latestActiveOrder.gstAmount =
         (latestActiveOrder.subTotal * gstPercent) / 100;
@@ -182,17 +122,13 @@ const orderService = {
         latestActiveOrder.subTotal + latestActiveOrder.gstAmount
       );
       order = await latestActiveOrder.save();
-    } else if (latestActiveOrder && isWithinThreeHours) {
+    } else if (latestActiveOrder) {
       await createOrderItems(
         latestActiveOrder._id,
         finalItems
       );
-      if (specialInstruction) {
-        latestActiveOrder.specialInstruction = latestActiveOrder.specialInstruction
-          ? `${latestActiveOrder.specialInstruction}\n${specialInstruction}`
-          : specialInstruction;
-      }
-      latestActiveOrder.subTotal = (latestActiveOrder.subTotal || 0) + subTotal;
+
+      latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
       latestActiveOrder.gstAmount =
         (latestActiveOrder.subTotal * gstPercent) / 100;
@@ -212,7 +148,6 @@ const orderService = {
       order = await Order.create({
         adminId,
         tableNumber,
-        specialInstruction,
         totalAmount: Math.round(finalTotal),
         gstPercent,
         gstAmount,
@@ -267,23 +202,29 @@ const orderService = {
       }
     }
 
-    const { populate: _populate, ...safeOptions } = options || {};
+    const { populate: _populate, ...safeOptions } = options ?? {};
     const result = await Order.paginate({ adminId, ...filter }, safeOptions);
 
     const ordersWithItems = await attachOrderItems(result.results);
     result.results = ordersWithItems.map(({ order, orderItems }) => ({
       ...order.toObject(),
       items: buildAggregatedItems(orderItems),
-      orderItems: orderItems.map((i) => i.toObject()),
+      orderItems: orderItems.map((i) => ({
+        _id: i._id,
+        menuId: i.menuId?._id,
+        customerId: i.customerId?._id,
+        quantity: i.quantity,
+        status: i.status,
+        specialInstruction: i.specialInstruction ?? "",
+        timestamps: {
+          createdAt: i.createdAt,
+          updatedAt: i.updatedAt,
+        },
+      })),
     }));
-
     return result;
   },
   getMyOrders: async (filter, options) => {
-    if (!filter.userId) {
-      throw new ApiError(400, "userId is required to fetch customer's orders");
-    }
-
     const { userId, ...restFilter } = filter;
 
     const orderIds = await OrderItem.distinct("orderId", {
@@ -294,8 +235,8 @@ const orderService = {
 
       return {
         results: [],
-        page: Number(options?.page) || 0,
-        limit: Number(options?.limit) || 0,
+        page: Number(options?.page) ?? 0,
+        limit: Number(options?.limit) ?? 0,
         totalPages: 0,
         totalResults: 0,
       };
@@ -303,27 +244,31 @@ const orderService = {
 
     const finalFilter = { ...restFilter, _id: { $in: orderIds } };
 
-    const { populate: _populate, ...safeOptions } = options || {};
+    const { populate: _populate, ...safeOptions } = options ?? {};
     const result = await Order.paginate(finalFilter, safeOptions);
 
     const ordersWithItems = await attachOrderItems(result.results);
     result.results = ordersWithItems.map(({ order, orderItems }) => ({
       ...order.toObject(),
-      items: buildAggregatedItems(orderItems)
-      // orderItems: orderItems.map((i) => i.toObject()),
+      items: buildAggregatedItems(orderItems),
+      orderItems: orderItems.map((i) => ({
+        _id: i._id,
+        menuId: i.menuId?._id,
+        customerId: i.customerId?._id,
+        quantity: i.quantity,
+        status: i.status,
+        specialInstruction: i.specialInstruction ?? "",
+        timestamps: {
+          createdAt: i.createdAt,
+          updatedAt: i.updatedAt,
+        },
+      })),
     }));
 
     return result;
   },
   updateIsCompletedStatus: async (orderId, isCompleted, adminId) => {
     try {
-      if (isCompleted === undefined || isCompleted === null) {
-        throw new ApiError(400, "Order completion status is required");
-      }
-      if (typeof isCompleted !== "boolean") {
-        throw new ApiError(400, "isCompleted must be true or false");
-      }
-
       const updatedOrder = await Order.findOneAndUpdate(
         { _id: orderId, adminId },
         { isCompleted },
@@ -410,10 +355,6 @@ const orderService = {
   },
   updatePaymentStatus: async (orderId, paymentStatus, adminId) => {
     try {
-
-      if (typeof paymentStatus !== "boolean") {
-        throw new ApiError(400, "Payment status must be true or false");
-      }
       const order = await Order.findOne({ _id: orderId, adminId });
       if (!order) {
         throw new ApiError(404, "Order not found");
@@ -455,11 +396,11 @@ Hello ${customer.name},
 
 🧾 Order Summary:
 Table No: ${billDetails.tableNumber}
-Total Amount: ₹${billDetails.total}
+Total Amount: Rs.${billDetails.total}
 
 Your bill PDF is ready in the app.
 
-Thank you for visiting ${populatedOrder.adminId.cafeName} ☕
+Thank you for visiting ${populatedOrder.adminId.cafeName}
 See you again!
           `;
 
@@ -469,16 +410,34 @@ See you again!
               });
             }
           }
-        } catch (whatsappError) {
-          console.error("WhatsApp Error:", whatsappError.message);
-        }
+        } catch (whatsappError) { }
       }
+
 
       return order;
 
     } catch (error) {
       throw new ApiError(500, `Error updating payment status: ${error.message}`);
     }
+
+    return order;
+  },
+  deleteOrder: async (orderId, adminId) => {
+    const order = await Order.findOne({ _id: orderId, adminId });
+    if (!order) {
+      throw new ApiError(404, "Order not found");
+    }
+
+    await OrderItem.deleteMany({ orderId });
+    await Order.deleteOne({ _id: orderId });
+
+    if (!order.isCompleted) {
+      await Qr.findOneAndUpdate(
+        { adminId, tableNumber: order.tableNumber },
+        { occupied: false }
+      );
+    }
+    return order;
   },
   deleteOrder: async (orderId, adminId) => {
     if (!orderId) {
@@ -525,53 +484,53 @@ See you again!
 
     const gstPercent = order.adminId.gst;
     const gstAmount = (subTotal * gstPercent) / 100;
-
     const total = Math.round(subTotal + gstAmount);
 
     const customerMap = new Map();
     for (const item of orderItems) {
-      const custId = item.customerId?._id?.toString() || "unknown";
+      const custId = item.customerId?._id?.toString() ?? "unknown";
       if (!customerMap.has(custId)) {
         customerMap.set(custId, {
-          customerId: item.customerId?._id || null,
-          name: item.customerId?.name || "Unknown",
+          customerId: item.customerId?._id ?? null,
+          name: item.customerId?.name ?? "Unknown",
           items: new Map(),
           subTotal: 0,
         });
       }
       const entry = customerMap.get(custId);
-      const menuId = item.menuId?._id?.toString() || "unknown";
-      if (!entry.items.has(menuId)) {
+      const menuId = `${item.menuId?._id?.toString()}-${item.specialInstruction ?? ""}`; if (!entry.items.has(menuId)) {
         entry.items.set(menuId, {
-          name: item.menuId?.name || "Unknown",
+          name: item.menuId?.name ?? "Unknown",
           quantity: 0,
           price:
             item.menuId?.discountPrice && item.menuId.discountPrice > 0
               ? item.menuId.discountPrice
-              : item.menuId?.price || 0,
+              : item.menuId?.price ?? 0,
+          specialInstruction: item.specialInstruction ?? "",
         });
       }
       const itemEntry = entry.items.get(menuId);
-      itemEntry.quantity += item.quantity || 0;
-      entry.subTotal += itemEntry.price * (item.quantity || 0);
+      itemEntry.quantity += item.quantity ?? 0;
+      entry.subTotal += itemEntry.price * (item.quantity ?? 0);
     }
 
     const customers = {};
 
     for (const entry of customerMap.values()) {
-      const customerName = entry.name || "Unknown";
+      const customerName = entry.name ?? "Unknown";
 
       customers[customerName] = Array.from(entry.items.values()).map((i) => ({
         name: i.name,
         quantity: i.quantity,
         price: i.price,
         amount: i.price * i.quantity,
+        specialInstruction: i.specialInstruction ?? "",
       }));
     }
 
     return {
       cafeName: order.adminId.cafeName,
-      address: `${order.adminId.address || ""}, ${order.adminId.city || ""}`,
+      address: `${order.adminId.address ?? ""}, ${order.adminId.city ?? ""}`,
       phoneNumber: order.adminId.phoneNumber,
       tableNumber: order.tableNumber,
       customers,
@@ -583,10 +542,6 @@ See you again!
     };
   },
   getActiveOrderByQr: async (qrId) => {
-    if (!qrId) {
-      throw new ApiError(400, "qrId is required");
-    }
-
     const qr = await Qr.findById(qrId).populate("adminId");
     if (!qr) {
       throw new ApiError(400, "Invalid QR");
@@ -610,8 +565,38 @@ See you again!
     const [{ orderItems }] = await attachOrderItems([latestActiveOrder]);
     const orderWithItems = {
       ...latestActiveOrder.toObject(),
-      items: buildAggregatedItems(orderItems),
-      orderItems: orderItems.map((i) => i.toObject()),
+
+      pricing: {
+        subTotal: latestActiveOrder.subTotal,
+        gstPercent: latestActiveOrder.gstPercent,
+        gstAmount: latestActiveOrder.gstAmount,
+        totalAmount: latestActiveOrder.totalAmount,
+      },
+
+      status: {
+        isCompleted: latestActiveOrder.isCompleted,
+        paymentStatus: latestActiveOrder.paymentStatus,
+      },
+
+      items: buildAggregatedItems(orderItems), // ✅ clean aggregated
+
+      orderItems: orderItems.map((i) => ({
+        _id: i._id,
+        menuId: i.menuId?._id,        // ✅ ONLY ID
+        customerId: i.customerId?._id,
+        quantity: i.quantity,
+        status: i.status,
+        servedAt: i.servedAt,
+        timestamps: {
+          createdAt: i.createdAt,
+          updatedAt: i.updatedAt,
+        },
+      })),
+
+      timestamps: {
+        createdAt: latestActiveOrder.createdAt,
+        updatedAt: latestActiveOrder.updatedAt,
+      },
     };
 
     return {
@@ -622,5 +607,3 @@ See you again!
     };
   },
 };
-
-export default orderService;

@@ -2,6 +2,7 @@ import Customer from "../../../model/customer.js";
 import mongoose from "mongoose";
 import { notificationService } from "../../notification/notification.service.js";
 import { NOTIFICATION_TYPES } from "../../../utils/constants.js";
+import { ApiError } from "../../../utils/apiError.js";
 
 const customerService = {
   createCustomer: async (body) => {
@@ -43,14 +44,11 @@ const customerService = {
     let adminId = user.role === "admin" ? user._id : filter.adminId;
 
     if (user.role === "superadmin" && !filter.adminId) {
-      throw Object.assign(
-        new Error("adminId is required to view customers"),
-        { statusCode: 400 }
-      );
+      throw new ApiError(400, "adminId is required to view customers");
     }
 
     if (!mongoose.Types.ObjectId.isValid(adminId)) {
-      throw Object.assign(new Error("Invalid adminId"), { statusCode: 400 });
+      throw new ApiError(400, "Invalid adminId");
     }
 
     adminId = new mongoose.Types.ObjectId(adminId);
@@ -72,10 +70,7 @@ const customerService = {
     const allowedStatuses = ["new", "frequent", "vip"];
 
     if (statusFilter && !allowedStatuses.includes(statusFilter)) {
-      throw Object.assign(
-        new Error("Invalid status. Allowed: new, frequent, vip"),
-        { statusCode: 400 }
-      );
+      throw new ApiError(400, "Invalid status. Allowed: new, frequent, vip");
     }
 
     const pipeline = [
@@ -227,7 +222,7 @@ const customerService = {
   getCustomerById: async (id) => {
     const customer = await Customer.findById(id);
     if (!customer) {
-      throw Object.assign(new Error("Customer not found"), { statusCode: 404 });
+      throw new ApiError(404, "Customer not found");
     }
     return customer;
   },
@@ -235,7 +230,7 @@ const customerService = {
   updateCustomer: async (id, data) => {
     const customer = await Customer.findById(id);
     if (!customer) {
-      throw Object.assign(new Error("Customer not found"), { statusCode: 404 });
+      throw new ApiError(404, "Customer not found");
     }
 
     Object.assign(customer, data);
@@ -246,7 +241,7 @@ const customerService = {
   deleteCustomer: async (id) => {
     const customer = await Customer.findById(id);
     if (!customer) {
-      throw Object.assign(new Error("Customer not found"), { statusCode: 404 });
+      throw new ApiError(404, "Customer not found");
     }
 
     await customer.deleteOne();

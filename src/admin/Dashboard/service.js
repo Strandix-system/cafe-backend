@@ -1,6 +1,6 @@
 import User from "../../../model/user.js";
 import Order from "../../../model/order.js";
-import OrderItem from "../../../model/orderItem.js";
+import {OrderItem} from "../../../model/orderItem.js";
 import Customer from "../../../model/customer.js";
 import demoRequest from "../../../model/demoRequest.js";
 import { ApiError } from "../../../utils/apiError.js";
@@ -111,6 +111,7 @@ export const dashboardService = {
         {
           $match: {
             adminId,
+            isCompleted: true,
             createdAt: { $gte: start, $lte: end }
           }
         },

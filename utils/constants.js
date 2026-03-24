@@ -1,10 +1,8 @@
-export const STATUS = {
-    PENDING: "pending",
-    CONFIRMED: "confirmed",
-    PREPARING: "preparing",
-    COMPLETED: "completed",
-};
-
+export const ORDER_STATUS = Object.freeze({
+  PENDING: "pending",
+  PREPARING: "preparing",
+  SERVED: "served",
+});
 export const ROLES = {
     ADMIN: "admin",
     SUPERADMIN: "superadmin",

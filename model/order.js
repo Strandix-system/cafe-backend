@@ -12,10 +12,6 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    specialInstruction: {
-      type: String,
-      trim: true,
-    },
     totalAmount: {
       type: Number,
       required: true,

@@ -1,7 +1,8 @@
 import { IssueReported } from "../../model/issueReported.js";
 import { generateTicketId } from "../../utils/utils.js";
 import { ApiError } from "../../utils/apiError.js";
-import { ISSUE_STATUSES } from "../../utils/constants.js";
+import { ISSUE_STATUSES, NOTIFICATION_TYPES } from "../../utils/constants.js";
+import { notificationService } from "../notification/notification.service.js";
 
 export const issueService = {
     raiseTicket: async (data, adminId, files = []) => {
@@ -13,6 +14,17 @@ export const issueService = {
             adminId,
             ticketId: generateTicketId(),
             status: ISSUE_STATUSES.PENDING,
+        });
+
+        await notificationService.createNotification({
+            title: "New support ticket",
+            message: `A new ticket ${ticket.ticketId} has been raised by an admin.`,
+            notificationType: NOTIFICATION_TYPES.TICKET_RAISED,
+            recipientType: "role",
+            recipientRole: "superadmin",
+            adminId,
+            entityType: "ticket",
+            entityId: ticket._id,
         });
 
         return ticket;
@@ -39,6 +51,17 @@ export const issueService = {
         if (!ticket) {
             throw new ApiError(404, "Ticket not found");
         }
+
+        await notificationService.createNotification({
+            title: "Ticket status updated",
+            message: `Your ticket ${ticket.ticketId} status is now ${status}.`,
+            notificationType: NOTIFICATION_TYPES.TICKET_STATUS_UPDATED,
+            recipientType: "user",
+            userId: ticket.adminId,
+            adminId: ticket.adminId,
+            entityType: "ticket",
+            entityId: ticket._id,
+        });
 
         return ticket;
     },

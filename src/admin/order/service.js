@@ -7,6 +7,8 @@ import OrderItem from "../../../model/orderItem.js";
 import { getIO } from "../../../socket.js";
 import sendWhatsAppMessage from "../../../utils/whatsapp.js";
 import { ApiError } from "../../../utils/apiError.js";
+import { notificationService } from "../../notification/notification.service.js";
+import { NOTIFICATION_TYPES } from "../../../utils/constants.js";
 
 const attachOrderItems = async (orders) => {
   if (!orders || !orders.length) return [];
@@ -81,6 +83,10 @@ const orderService = {
     }
 
     const adminId = customer.adminId;
+
+    if (!adminId) {
+      throw new ApiError(404, "Admin not found for customer");
+    }
 
     const admin = await User.findOne({ _id: adminId, role: "admin" })
       .select("gst");
@@ -241,6 +247,17 @@ const orderService = {
       io.to(`customer-${id}`).emit("order:new", orderWithItems);
     }
 
+    await notificationService.createNotification({
+      title: "New order received",
+      message: `A new order has been placed for table ${order.tableNumber}.`,
+      notificationType: NOTIFICATION_TYPES.ORDER_CREATED,
+      recipientType: "user",
+      userId: adminId,
+      adminId,
+      entityType: "order",
+      entityId: order._id,
+    });
+
     return orderWithItems;
   },
   getOrders: async (adminId, filter, options) => {
@@ -356,6 +373,21 @@ const orderService = {
             orderId: updatedOrder._id,
             isCompleted,
             order: orderWithItems,
+          });
+        }
+
+        for (const custId of customerIds) {
+          await notificationService.createNotification({
+            title: "Order status updated",
+            message: isCompleted
+              ? `Your order for table ${updatedOrder.tableNumber} is completed.`
+              : `Your order for table ${updatedOrder.tableNumber} was updated.`,
+            notificationType: NOTIFICATION_TYPES.ORDER_STATUS_UPDATED,
+            recipientType: "customer",
+            customerId: custId,
+            adminId,
+            entityType: "order",
+            entityId: updatedOrder._id,
           });
         }
 

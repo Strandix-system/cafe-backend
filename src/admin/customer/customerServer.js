@@ -1,5 +1,7 @@
 import Customer from "../../../model/customer.js";
 import mongoose from "mongoose";
+import { notificationService } from "../../notification/notification.service.js";
+import { NOTIFICATION_TYPES } from "../../../utils/constants.js";
 
 const customerService = {
   createCustomer: async (body) => {
@@ -21,6 +23,19 @@ const customerService = {
       phoneNumber,
       adminId,
     });
+
+    if (adminId) {
+      await notificationService.createNotification({
+        title: "New customer joined",
+        message: `${name} has been added as a new customer.`,
+        notificationType: NOTIFICATION_TYPES.CUSTOMER_CREATED,
+        recipientType: "user",
+        userId: adminId,
+        adminId,
+        entityType: "customer",
+        entityId: newCustomer._id,
+      });
+    }
 
     return newCustomer.toObject();
   },

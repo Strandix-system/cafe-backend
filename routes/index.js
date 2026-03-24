@@ -12,6 +12,7 @@ import qrRoute from "./qrRoute.js";
 import demoRoute from "./demoRoute.js";
 import { issueReportedRoute } from "./issueReported.route.js";
 import { portfolioRoute } from "./portfolio.route.js";
+import notificationRoute from "./notification.route.js";
 
 import { signUpRoutes } from "./signUp.js";
 const router = express.Router();
@@ -71,6 +72,10 @@ const defaultRoutes = [
   {
     path: "/portfolio",
     route: portfolioRoute,
+  },
+  {
+    path: "/notification",
+    route: notificationRoute,
   },
 ];
 

@@ -1,5 +1,6 @@
-import {Transaction} from "../model/transaction.js";
+import { Transaction } from "../model/transaction.js";
 import { ApiError } from "../utils/apiError.js";
+import { createSubscriptionNotifications } from "../subscription.expire.cron.js";
 
 const checkSubscription = async (req, res, next) => {
   try {
@@ -18,32 +19,41 @@ const checkSubscription = async (req, res, next) => {
 
     const today = new Date();
     const endDate = new Date(latestSubscriptionTransaction.subscriptionEndDate);
-
     const diffTime = endDate - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // 1️⃣ Subscription expired
+    if (diffDays <= 7) {
+      try {
+        await createSubscriptionNotifications(
+          req.user,
+          latestSubscriptionTransaction
+        );
+      } catch (error) {
+        console.error(
+          "Subscription notification creation failed:",
+          error.message
+        );
+      }
+    }
+
     if (diffDays <= 0) {
       req.subscriptionAlert = {
         type: "expired",
         message:
           "Your subscription has expired. Please renew to continue using the service.",
         endDate,
-        modalClosable: false, // FE can lock modal
+        modalClosable: false,
       };
 
       await Transaction.findByIdAndUpdate(latestSubscriptionTransaction._id, {
         subscriptionStatus: "expired",
       });
-    }
-
-    // 2️⃣ Subscription expiring in next 7 days
-    else if (diffDays <= 7) {
+    } else if (diffDays <= 7) {
       req.subscriptionAlert = {
         type: "expiringSoon",
         message: `Your subscription will expire in ${diffDays} day(s). Please renew soon.`,
         endDate,
-        modalClosable: true, // FE can close modal
+        modalClosable: true,
       };
     }
 
@@ -52,9 +62,9 @@ const checkSubscription = async (req, res, next) => {
     return next(error);
   }
 };
+
 const blockExpiredSubscription = async (req, res, next) => {
   try {
-    // apply only for admin
     if (req.user.role !== "admin") {
       return next();
     }
@@ -71,7 +81,6 @@ const blockExpiredSubscription = async (req, res, next) => {
     const today = new Date();
     const endDate = new Date(latestSubscriptionTransaction.subscriptionEndDate);
 
-    // check expired
     if (
       today >= endDate ||
       latestSubscriptionTransaction.subscriptionStatus === "expired"
@@ -80,9 +89,9 @@ const blockExpiredSubscription = async (req, res, next) => {
         new ApiError(403, "Subscription expired. Please renew to continue.")
       );
     }
-
   } catch (error) {
     next(error);
   }
 };
+
 export { checkSubscription, blockExpiredSubscription };

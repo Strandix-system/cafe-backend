@@ -3,6 +3,8 @@ import Order from "../../../model/order.js";
 import Qr from "../../../model/qr.js";
 import { getIO } from "../../../socket.js";
 import { ApiError } from "../../../utils/apiError.js";
+import { notificationService } from "../../notification/notification.service.js";
+import { NOTIFICATION_TYPES } from "../../../utils/constants.js";
 
 const recalculateOrderTotals = async (orderId) => {
   const order = await Order.findById(orderId);
@@ -97,6 +99,19 @@ const orderItemService = {
       }
     } catch (socketError) {
       console.error("Socket emission error:", socketError);
+    }
+
+    if (orderItem.customerId) {
+      await notificationService.createNotification({
+        title: "Order item updated",
+        message: `${updatedItem.menuId?.name || "Your item"} is now ${status}.`,
+        notificationType: NOTIFICATION_TYPES.ORDER_ITEM_STATUS_UPDATED,
+        recipientType: "customer",
+        customerId: orderItem.customerId,
+        adminId,
+        entityType: "order",
+        entityId: orderItem.orderId,
+      });
     }
 
     return updatedItem;

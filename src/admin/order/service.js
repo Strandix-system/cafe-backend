@@ -167,7 +167,6 @@ export const orderService = {
       orderItems: orderItems.map((i) => i.toObject()),
     };
 
-    io.to(adminId.toString()).emit("newOrder", orderWithItems);
     io.to(adminId.toString()).emit("order:new", orderWithItems);
     const customerIds = await OrderItem.distinct("customerId", {
       orderId: order._id,

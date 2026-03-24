@@ -1,17 +1,18 @@
 import User from "../../model/user.js";
 import { deleteSingleFile } from "../../utils/s3utils.js";
+import { ApiError } from "../../utils/apiError.js";
 const adminService = {
   createAdmin: async (body, files) => {
     const exists = await User.findOne({ email: body.email });
     if (exists) {
-      throw Object.assign(new Error("User already exists"), { statusCode: 409 });
+      throw new ApiError(409, "User already exists");
     }
     const phoneExists = await User.findOne({ phoneNumber: body.phoneNumber });
     if (phoneExists) {
-      throw Object.assign(new Error("PhoneNumber already exists"), { statusCode: 409 });
+      throw new ApiError(409, "PhoneNumber already exists");
     }
     if (!files || !files.logo || files.logo.length === 0) {
-      throw Object.assign(new Error("Logo is required"), { statusCode: 400 });
+      throw new ApiError(400, "Logo is required");
     }
 
     const admin = await User.create({
@@ -25,7 +26,7 @@ const adminService = {
   updateAdmin: async (id, body, files) => {
     const admin = await User.findById(id);
     if (!admin)
-      throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
+      throw new ApiError(404, "Admin not found");
 
     // ✅ Unique field check
     const uniqueFields = ['email', 'phoneNumber'];
@@ -33,7 +34,7 @@ const adminService = {
       if (body[field] && body[field] !== admin[field]) {
         const exists = await User.findOne({ [field]: body[field] });
         if (exists)
-          throw Object.assign(new Error(`${field} already exists`), { statusCode: 409 });
+          throw new ApiError(409, `${field} already exists`);
       }
     }
 
@@ -95,9 +96,7 @@ const adminService = {
       role: "admin",
     });
     if (!admin) {
-      const err = new Error("Admin not found");
-      err.statusCode = 404;
-      throw err;
+      throw new ApiError(404, "Admin not found");
     }
     return true;
   },
@@ -127,7 +126,7 @@ const adminService = {
     }).lean();;
 
     if (!admin) {
-      throw new Error("Admin not found");
+      throw new ApiError(404, "Admin not found");
     }
 
     return admin;
@@ -140,7 +139,7 @@ const adminService = {
     );
 
     if (!admin) {
-      throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
+      throw new ApiError(404, "Admin not found");
     }
     return admin;
   },
@@ -148,7 +147,7 @@ const adminService = {
   const superadmin = await User.findById(id);
 
   if (!superadmin) {
-    throw Object.assign(new Error("Admin not found"), { statusCode: 404 });
+    throw new ApiError(404, "Admin not found");
   }
 
   // 🔐 Only allow specific fields
@@ -163,10 +162,7 @@ const adminService = {
       });
 
       if (exists) {
-        throw Object.assign(
-          new Error(`${field} already exists`),
-          { statusCode: 409 }
-        );
+        throw new ApiError(409, `${field} already exists`);
       }
     }
   }

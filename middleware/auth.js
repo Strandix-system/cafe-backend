@@ -38,14 +38,16 @@ export const tokenVerification = async (req, res, next, isPublic = false) => {
 
     const decoded = isPublic ? { id: req.body.adminId ?? req.params.adminId } : jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
+
     if (!user) {
-      return res.status(401).json({ message: "User not found" });
+      throw new ApiError(401, "User not found");
     }
     if (!user.isActive) {
       return res.status(403).json({
         message: "Your account is inactive. Please purchase subscription",
       });
     }
+
     req.user = user;
     if (user.role !== "superadmin" && !subscriptionAllowedRoutes.includes(req.path)) {
       await blockExpiredSubscription(req, res, next);

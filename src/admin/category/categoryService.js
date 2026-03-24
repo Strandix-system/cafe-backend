@@ -1,10 +1,11 @@
 import { Category } from "../../../model/category.js";
 import Menu from "../../../model/menu.js";
+import { ApiError } from "../../../utils/apiError.js";
 export const categoryService = {
   createCategory: async (data) => {
     const exists = await Category.findOne({ name: data.name });
     if (exists) {
-      throw new Error("Category already exists");
+      throw new ApiError(409, "Category already exists");
     }
     const result = await Category.create(data);
     return result;
@@ -20,7 +21,7 @@ export const categoryService = {
   updateCategoryById: async (categoryId, data) => {
     const category = await Category.findById(categoryId);
     if (!category) {
-      throw Object.assign(new Error("Category not found"), { statusCode: 404 });
+      throw new ApiError(404, "Category not found");
     }
     const updatedCategory = await Category.findByIdAndUpdate(
       categoryId,
@@ -32,14 +33,14 @@ export const categoryService = {
   deleteCategoryById: async (categoryId) => {
     const category = await Category.findByIdAndDelete(categoryId);
     if (!category) {
-      throw Object.assign(new Error("Category not found"), { statusCode: 404 });
+      throw new ApiError(404, "Category not found");
     }
     return category;
   },
   getCategoryById: async (categoryId) => {
     const category = await Category.findById(categoryId);
     if (!category) {
-      throw Object.assign(new Error("Category not found"), { statusCode: 404 });
+      throw new ApiError(404, "Category not found");
     }
     return category;
   },
@@ -68,10 +69,7 @@ export const categoryService = {
   resolveAdminIdForUsedCategories: async (user, requestedAdminId) => {
     if (user.role === "superadmin") {
       if (!requestedAdminId) {
-        throw Object.assign(
-          new Error("adminId is required for superadmin"),
-          { statusCode: 400 }
-        );
+        throw new ApiError(400, "adminId is required for superadmin");
       }
       return requestedAdminId;
     }

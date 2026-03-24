@@ -1,35 +1,22 @@
 import visitService from "./service.js";
+import { sendSuccessResponse } from "../../../utils/response.js";
 
 const visitController = {
-  trackVisit: async (req, res) => {
+  trackVisit: async (req, res, next) => {
     try {
       await visitService.trackVisit(req);
-
-      res.status(200).json({
-        success: true,
-        message: "Visit tracked successfully",
-      });
+      sendSuccessResponse(res, 200, "Visit tracked successfully");
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error.message,
-      });
+      next(error);
     }
   },
 
-  getTotalVisits: async (req, res) => {
+  getTotalVisits: async (req, res, next) => {
     try {
       const total = await visitService.getTotalVisits();
-
-      res.status(200).json({
-        success: true,
-        totalVisits: total,
-      });
+      sendSuccessResponse(res, 200, "Total visits fetched", { totalVisits: total });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error.message,
-      });
+      next(error);
     }
   },
 };

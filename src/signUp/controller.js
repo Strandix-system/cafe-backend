@@ -1,7 +1,6 @@
 import { signUpService } from "./service.js";
 import { sendSuccessResponse } from "../../utils/response.js";
 import { pick } from "../../utils/pick.js";
-
 export const signUpController = {
   createSubscription: async (req, res) => {
     const result = await signUpService.createSubscription(req.body);

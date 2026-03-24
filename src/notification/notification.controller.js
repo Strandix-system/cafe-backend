@@ -57,11 +57,6 @@ export const notificationController = {
       filter
     );
 
-    sendSuccessResponse(
-      res,
-      200,
-      "Customer notifications marked as read",
-      data
-    );
+    sendSuccessResponse(res, 200, "Customer notifications marked as read", data);
   },
 };

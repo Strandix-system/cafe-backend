@@ -32,13 +32,10 @@ export default {
     const category = await categoryService.getCategoryById(req.params.id);
     sendSuccessResponse(res, 200, "Category fetched successfully", category);
   },
-  getAdminUsedCategories: async (req, res) => {
-    const filter = pick(req.query, ["search"]);
-    const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
-    const result = await categoryService.getAdminUsedCategories(
-      req.user.id,
-      filter,
-      options
+  getUsedCategoriesForDropdown: async (req, res) => {
+    const result = await categoryService.getUsedCategoriesForDropdown(
+      req.user,
+      req.query.adminId
     );
     sendSuccessResponse(res, 200, "Categories fetched successfully", result);
   },

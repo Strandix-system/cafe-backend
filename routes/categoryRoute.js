@@ -41,7 +41,7 @@ router.get(
   "/admin-category",
   tokenVerification,
   allowRoles("admin"),
-  categoryController.getAdminUsedCategories
+  categoryController.getUsedCategoriesForDropdown
 );
 
 export const categoryRoutes = router;

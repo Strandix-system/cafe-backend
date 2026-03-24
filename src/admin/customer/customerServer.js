@@ -62,28 +62,49 @@ const customerService = {
       { $match: matchStage },
       {
         $lookup: {
-          from: "orders",
-          let: { customerId: "$_id" },
+          from: "orderitems",
+          let: { customerId: "$_id", adminId: "$adminId" },
           pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$customerId", "$$customerId"] },
+              },
+            },
+            {
+              $lookup: {
+                from: "orders",
+                localField: "orderId",
+                foreignField: "_id",
+                as: "order",
+              },
+            },
+            { $unwind: "$order" },
             {
               $match: {
                 $expr: {
                   $and: [
-                    { $eq: ["$userId", "$$customerId"] },
-                    { $eq: ["$orderStatus", "completed"] },
+                    { $eq: ["$order.adminId", "$$adminId"] },
+                    { $eq: ["$order.isCompleted", true] },
                   ],
                 },
               },
             },
+            {
+              $group: {
+                _id: "$orderId",
+                totalAmount: { $first: "$order.totalAmount" },
+                createdAt: { $first: "$order.createdAt" },
+              },
+            },
           ],
-          as: "orders",
+          as: "orderStats",
         },
       },
       {
         $addFields: {
-          totalOrder: { $size: "$orders" },
-          totalSpent: { $sum: "$orders.totalAmount" },
-          lastVisitDate: { $max: "$orders.createdAt" },
+          totalOrder: { $size: "$orderStats" },
+          totalSpent: { $sum: "$orderStats.totalAmount" },
+          lastVisitDate: { $max: "$orderStats.createdAt" },
         },
       },
       {
@@ -100,61 +121,58 @@ const customerService = {
         },
       },
       {
-        $addFields: {
-          favoriteItem: {
-            $let: {
-              vars: {
-                allItems: {
-                  $reduce: {
-                    input: "$orders",
-                    initialValue: [],
-                    in: { $concatArrays: ["$$value", "$$this.items"] },
-                  },
-                },
-              },
-              in: {
-                $arrayElemAt: [
-                  {
-                    $map: {
-                      input: {
-                        $slice: [
-                          {
-                            $sortArray: {
-                              input: {
-                                $map: {
-                                  input: { $setUnion: ["$$allItems.name"] },
-                                  as: "itemName",
-                                  in: {
-                                    name: "$$itemName",
-                                    count: {
-                                      $size: {
-                                        $filter: {
-                                          input: "$$allItems",
-                                          as: "i",
-                                          cond: {
-                                            $eq: ["$$i.name", "$$itemName"],
-                                          },
-                                        },
-                                      },
-                                    },
-                                  },
-                                },
-                              },
-                              sortBy: { count: -1 },
-                            },
-                          },
-                          1,
-                        ],
-                      },
-                      as: "top",
-                      in: "$$top.name",
-                    },
-                  },
-                  0,
-                ],
+        $lookup: {
+          from: "orderitems",
+          let: { customerId: "$_id", adminId: "$adminId" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$customerId", "$$customerId"] },
               },
             },
-          },
+            {
+              $lookup: {
+                from: "orders",
+                localField: "orderId",
+                foreignField: "_id",
+                as: "order",
+              },
+            },
+            { $unwind: "$order" },
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$order.adminId", "$$adminId"] },
+                    { $eq: ["$order.isCompleted", true] },
+                  ],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: "menus",
+                localField: "menuId",
+                foreignField: "_id",
+                as: "menu",
+              },
+            },
+            { $unwind: { path: "$menu", preserveNullAndEmptyArrays: true } },
+            {
+              $group: {
+                _id: "$menu.name",
+                count: { $sum: 1 },
+              },
+            },
+            { $sort: { count: -1 } },
+            { $limit: 1 },
+          ],
+          as: "favoriteItemAgg",
+        },
+      },
+      {
+        $addFields: {
+          favoriteItem: { $arrayElemAt: ["$favoriteItemAgg._id", 0] },
         },
       },
     ];
@@ -164,7 +182,7 @@ const customerService = {
     }
 
     pipeline.push(
-      { $project: { orders: 0 } },
+      { $project: { orderStats: 0, favoriteItemAgg: 0 } },
       {
         $facet: {
           metadata: [{ $count: "totalResults" }],

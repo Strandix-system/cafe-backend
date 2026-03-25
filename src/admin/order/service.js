@@ -172,7 +172,6 @@ export const orderService = {
       orderItems: orderItems.map((i) => i.toObject()),
     };
 
-    io.to(adminId.toString()).emit("newOrder", orderWithItems);
     io.to(adminId.toString()).emit("order:new", orderWithItems);
     const customerIds = await OrderItem.distinct("customerId", {
       orderId: order._id,
@@ -298,23 +297,13 @@ export const orderService = {
           isCompleted,
           order: orderWithItems,
         });
-        io.to(adminId.toString()).emit("order:statusUpdated", {
-          orderId: updatedOrder._id,
-          isCompleted,
-          order: orderWithItems,
-        });
-
+     
         const customerIds = await OrderItem.distinct("customerId", {
           orderId: updatedOrder._id,
         });
         for (const custId of customerIds) {
           const id = custId.toString();
           io.to(`customer-${id}`).emit("orderStatusUpdate", {
-            orderId: updatedOrder._id,
-            isCompleted,
-            order: orderWithItems,
-          });
-          io.to(`customer-${id}`).emit("order:statusUpdated", {
             orderId: updatedOrder._id,
             isCompleted,
             order: orderWithItems,

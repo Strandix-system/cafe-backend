@@ -6,7 +6,7 @@ const menuSchema = {
     category: Joi.string().required(), // Assuming ObjectId string
     description: Joi.string().trim().min(10).max(500).required(),
     price: Joi.number().positive().required(),
-    discountPrice: Joi.number().min(0).max(Joi.ref('price'))
+    discountPrice: Joi.number().min(0).max(Joi.ref('price')).allow(null,"")
       .messages({
         'number.max': 'Discount price must be less than or equal to the original price'
       }).optional(),

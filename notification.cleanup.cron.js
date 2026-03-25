@@ -4,6 +4,10 @@ import { notificationService } from "./src/notification/notification.service.js"
 
 let notificationCleanupInitialized = false;
 
+const logNotificationCleanupError = (error) => {
+  console.error("Notification cleanup failed:", error.message);
+};
+
 const runNotificationCleanup = async () => {
   if (mongoose.connection.readyState !== 1) {
     return;
@@ -20,11 +24,13 @@ const initNotificationCleanupScheduler = () => {
   notificationCleanupInitialized = true;
 
   const startCleanupScheduler = () => {
-    cron.schedule("0 0 1 * *", runNotificationCleanup, {
+    cron.schedule("0 0 1 * *", () => {
+      runNotificationCleanup().catch(logNotificationCleanupError);
+    }, {
       timezone: "Asia/Kolkata",
     });
 
-    runNotificationCleanup();
+    runNotificationCleanup().catch(logNotificationCleanupError);
   };
 
   if (mongoose.connection.readyState === 1) {

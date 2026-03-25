@@ -111,6 +111,7 @@ export const dashboardService = {
         {
           $match: {
             adminId,
+            isCompleted: true,
             createdAt: { $gte: start, $lte: end }
           }
         },

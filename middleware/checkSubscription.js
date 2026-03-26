@@ -34,9 +34,6 @@ const checkSubscription = async (req, res, next) => {
         await Transaction.findByIdAndUpdate(latestTransaction._id, {
           subscriptionStatus: "expired",
         });
-
-        // Keep the user logged in (e.g. profile fetch), but mark access as blocked for UI.
-        req.accessBlocked = true;
         return next();
       }
 
@@ -79,9 +76,6 @@ const checkSubscription = async (req, res, next) => {
       trialEnd,
       modalClosable: false,
     };
-
-    // Keep the user logged in (e.g. profile fetch), but mark access as blocked for UI.
-    req.accessBlocked = true;
     return next();
   } catch (error) {
     return next(error);

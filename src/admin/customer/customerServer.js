@@ -1,5 +1,6 @@
 import Customer from "../../../model/customer.js";
 import mongoose from "mongoose";
+import { ApiError } from "../../../utils/apiError.js";
 
 const customerService = {
   createCustomer: async (body) => {
@@ -28,14 +29,11 @@ const customerService = {
     let adminId = user.role === "admin" ? user._id : filter.adminId;
 
     if (user.role === "superadmin" && !filter.adminId) {
-      throw Object.assign(
-        new Error("adminId is required to view customers"),
-        { statusCode: 400 }
-      );
+      throw new ApiError(400, "adminId is required to view customers");
     }
 
     if (!mongoose.Types.ObjectId.isValid(adminId)) {
-      throw Object.assign(new Error("Invalid adminId"), { statusCode: 400 });
+      throw new ApiError(400, "Invalid adminId");
     }
 
     adminId = new mongoose.Types.ObjectId(adminId);
@@ -57,38 +55,60 @@ const customerService = {
     const allowedStatuses = ["new", "frequent", "vip"];
 
     if (statusFilter && !allowedStatuses.includes(statusFilter)) {
-      throw Object.assign(
-        new Error("Invalid status. Allowed: new, frequent, vip"),
-        { statusCode: 400 }
-      );
+      throw new ApiError(400, "Invalid status. Allowed: new, frequent, vip");
     }
 
     const pipeline = [
       { $match: matchStage },
       {
         $lookup: {
-          from: "orders",
-          let: { customerId: "$_id" },
+          from: "orderitems",
+          let: { customerId: "$_id", adminId },
           pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$customerId", "$$customerId"] },
+              },
+            },
+            {
+              $lookup: {
+                from: "orders",
+                localField: "orderId",
+                foreignField: "_id",
+                as: "order",
+              },
+            },
+            { $unwind: "$order" },
             {
               $match: {
                 $expr: {
                   $and: [
-                    { $eq: ["$userId", "$$customerId"] },
-                    { $eq: ["$orderStatus", "completed"] },
+                    { $eq: ["$order.adminId", "$$adminId"] },
+                    { $eq: ["$order.isCompleted", true] },
                   ],
                 },
               },
             },
+            {
+              $group: {
+                _id: "$orderId",
+                totalAmount: { $first: "$order.totalAmount" },
+                visitDate: {
+                  $first: { $ifNull: ["$order.updatedAt", "$order.createdAt"] },
+                },
+              },
+            },
           ],
-          as: "orders",
+          as: "orderStats",
         },
       },
       {
         $addFields: {
-          totalOrder: { $size: "$orders" },
-          totalSpent: { $sum: "$orders.totalAmount" },
-          lastVisitDate: { $max: "$orders.createdAt" },
+          totalOrder: { $size: "$orderStats" },
+          totalSpent: { $sum: "$orderStats.totalAmount" },
+          lastVisitDate: {
+            $ifNull: [{ $max: "$orderStats.visitDate" }, "$createdAt"],
+          },
         },
       },
       {
@@ -105,61 +125,58 @@ const customerService = {
         },
       },
       {
-        $addFields: {
-          favoriteItem: {
-            $let: {
-              vars: {
-                allItems: {
-                  $reduce: {
-                    input: "$orders",
-                    initialValue: [],
-                    in: { $concatArrays: ["$$value", "$$this.items"] },
-                  },
-                },
-              },
-              in: {
-                $arrayElemAt: [
-                  {
-                    $map: {
-                      input: {
-                        $slice: [
-                          {
-                            $sortArray: {
-                              input: {
-                                $map: {
-                                  input: { $setUnion: ["$$allItems.name"] },
-                                  as: "itemName",
-                                  in: {
-                                    name: "$$itemName",
-                                    count: {
-                                      $size: {
-                                        $filter: {
-                                          input: "$$allItems",
-                                          as: "i",
-                                          cond: {
-                                            $eq: ["$$i.name", "$$itemName"],
-                                          },
-                                        },
-                                      },
-                                    },
-                                  },
-                                },
-                              },
-                              sortBy: { count: -1 },
-                            },
-                          },
-                          1,
-                        ],
-                      },
-                      as: "top",
-                      in: "$$top.name",
-                    },
-                  },
-                  0,
-                ],
+        $lookup: {
+          from: "orderitems",
+          let: { customerId: "$_id", adminId },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$customerId", "$$customerId"] },
               },
             },
-          },
+            {
+              $lookup: {
+                from: "orders",
+                localField: "orderId",
+                foreignField: "_id",
+                as: "order",
+              },
+            },
+            { $unwind: "$order" },
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$order.adminId", "$$adminId"] },
+                    { $eq: ["$order.isCompleted", true] },
+                  ],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: "menus",
+                localField: "menuId",
+                foreignField: "_id",
+                as: "menu",
+              },
+            },
+            { $unwind: { path: "$menu", preserveNullAndEmptyArrays: true } },
+            {
+              $group: {
+                _id: "$menu.name",
+                count: { $sum: 1 },
+              },
+            },
+            { $sort: { count: -1 } },
+            { $limit: 1 },
+          ],
+          as: "favoriteItemAgg",
+        },
+      },
+      {
+        $addFields: {
+          favoriteItem: { $arrayElemAt: ["$favoriteItemAgg._id", 0] },
         },
       },
     ];
@@ -169,7 +186,7 @@ const customerService = {
     }
 
     pipeline.push(
-      { $project: { orders: 0 } },
+      { $project: { orderStats: 0, favoriteItemAgg: 0 } },
       {
         $facet: {
           metadata: [{ $count: "totalResults" }],
@@ -194,7 +211,7 @@ const customerService = {
   getCustomerById: async (id) => {
     const customer = await Customer.findById(id);
     if (!customer) {
-      throw Object.assign(new Error("Customer not found"), { statusCode: 404 });
+      throw new ApiError(404, "Customer not found");
     }
     return customer;
   },
@@ -202,7 +219,7 @@ const customerService = {
   updateCustomer: async (id, data) => {
     const customer = await Customer.findById(id);
     if (!customer) {
-      throw Object.assign(new Error("Customer not found"), { statusCode: 404 });
+      throw new ApiError(404, "Customer not found");
     }
 
     Object.assign(customer, data);
@@ -213,7 +230,7 @@ const customerService = {
   deleteCustomer: async (id) => {
     const customer = await Customer.findById(id);
     if (!customer) {
-      throw Object.assign(new Error("Customer not found"), { statusCode: 404 });
+      throw new ApiError(404, "Customer not found");
     }
 
     await customer.deleteOne();

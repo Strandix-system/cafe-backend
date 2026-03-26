@@ -1,4 +1,8 @@
 import User from "../../../model/user.js";
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { s3 } from "../../../config/s3.js";
+import { deleteSingleFile } from "../../../utils/s3utils.js";
+import { ApiError } from "../../../utils/apiError.js";
 
 const profileService = {
   getMyProfile: async (userId) => {
@@ -6,31 +10,29 @@ const profileService = {
       "firstName lastName email phoneNumber profileImage role socialLinks hours"
     );
     if (!user) {
-      const err = new Error("User not found");
-      err.statusCode = 404;
-      throw err;
+      throw new ApiError(404, "User not found");
     }
     return user;
   },
   updateMyProfile: async (userId, body, file) => {
     const user = await User.findById(userId);
-    if (!user) throw Object.assign(new Error("User not found"), { statusCode: 404 });
+    if (!user) throw new ApiError(404, "User not found");
     for (const field of ['email', 'phoneNumber']) {
       if (body[field] && body[field] !== user[field]) {
         const exists = await User.findOne({ [field]: body[field] });
-        if (exists) throw Object.assign(new Error(`${field} already in use`), { statusCode: 409 });
+        if (exists) throw new ApiError(409, `${field} already in use`);
       }
     }
     if (body.email && body.email !== user.email) {
       const emailExists = await User.findOne({ email: body.email });
       if (emailExists) {
-        throw Object.assign(new Error("Email already in use"), { statusCode: 409 });
+        throw new ApiError(409, "Email already in use");
       }
     }
     if (body.phoneNumber && body.phoneNumber !== user.phoneNumber) {
       const phoneExists = await User.findOne({ phoneNumber: body.phoneNumber });
       if (phoneExists) {
-        throw Object.assign(new Error("Phone number already in use"), { statusCode: 409 });
+        throw new ApiError(409, "Phone number already in use");
       }
     }
     if (file?.location) {
@@ -46,14 +48,10 @@ const profileService = {
   deleteProfileImage: async (userId) => {
     const user = await User.findById(userId);
     if (!user) {
-      const err = new Error("User not found");
-      err.statusCode = 404;
-      throw err;
+      throw new ApiError(404, "User not found");
     }
     if (!user.profileImage) {
-      const err = new Error("Profile image not found");
-      err.statusCode = 400;
-      throw err;
+      throw new ApiError(400, "Profile image not found");
     }
     const key = user.profileImage.split(".amazonaws.com/")[1];
     await s3.send(

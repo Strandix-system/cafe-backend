@@ -8,46 +8,17 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Customer",
-      required: true,
-    },
     tableNumber: {
       type: Number,
       required: true,
-    },
-    items: [
-      {
-        menuId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Menu",
-          required: true,
-        },
-
-        name: String,
-
-        price: Number,
-
-        quantity: {
-          type: Number,
-          min: 1,
-          required: true,
-        },
-      },
-    ],
-    specialInstruction: {
-      type: String,
-      trim: true,
     },
     totalAmount: {
       type: Number,
       required: true,
     },
-    orderStatus: {
-      type: String,
-      enum: ["pending", "accepted", "completed"],
-      default: "pending",
+    isCompleted: {
+      type: Boolean,
+      default: false,
     },
     paymentStatus: {
       type: Boolean,
@@ -57,11 +28,11 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-     subTotal: {
+    subTotal: {
       type: Number,
       required: true,
     },
-    gstPercent:{
+    gstPercent: {
       type: Number,
       required: true,
     },
@@ -70,8 +41,6 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-
 orderSchema.plugin(paginate);
-
 
 export default mongoose.model("Order", orderSchema);

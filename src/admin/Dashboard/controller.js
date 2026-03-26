@@ -36,7 +36,6 @@ export const dashboardController = {
       req.query.adminId,
       { requireForSuperadmin: true }
     );
-
     const data = await dashboardService.itemPerformance(adminId);
     sendSuccessResponse(res, 200, "Item performance fetched", data);
   },
@@ -73,7 +72,6 @@ export const dashboardController = {
       req.query.adminId,
       { requireForSuperadmin: true }
     );
-
     const data = await dashboardService.tablePerformance(adminId);
     sendSuccessResponse(res, 200, "Table performance fetched", data);
   },

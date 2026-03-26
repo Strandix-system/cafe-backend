@@ -1,4 +1,5 @@
 import DemoRequest from "../../model/demoRequest.js";
+import { ApiError } from "../../utils/apiError.js";
 
 const demoService = {
     createDemoRequest: async (body) => {
@@ -10,7 +11,7 @@ const demoService = {
         const allowedStatus = ["requested", "full_filled", "inquiry","not_interested"];
 
         if (!allowedStatus.includes(status)) {
-            throw Object.assign(new Error("Invalid status value"), { statusCode: 400 });
+            throw new ApiError(400, "Invalid status value");
         }
 
         const result = await DemoRequest.findByIdAndUpdate(
@@ -20,7 +21,7 @@ const demoService = {
         );
 
         if (!result) {
-            throw Object.assign(new Error("Demo request not found"), { statusCode: 404 });
+            throw new ApiError(404, "Demo request not found");
         }
 
         return result;
@@ -45,7 +46,7 @@ const demoService = {
     getDemoRequestById: async (demoId) => {
         const demoUser = await DemoRequest.findById(demoId);
         if (!demoUser) {
-            throw Object.assign(new Error("DemoUser not found"), { statusCode: 404 });
+            throw new ApiError(404, "DemoUser not found");
         }
         return demoUser;
     },

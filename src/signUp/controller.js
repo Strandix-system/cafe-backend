@@ -3,7 +3,8 @@ import { sendSuccessResponse } from "../../utils/response.js";
 import { pick } from "../../utils/pick.js";
 export const signUpController = {
   createSubscription: async (req, res) => {
-    const result = await signUpService.createSubscription(req.user._id);
+    const { planId } = req.body || {};
+    const result = await signUpService.createSubscription(req.user._id, planId);
     sendSuccessResponse(res, 200, "Subscription created successfully.", result);
   },
 

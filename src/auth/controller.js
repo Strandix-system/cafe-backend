@@ -26,6 +26,7 @@ export default {
         id: user._id,
         ...user,
         subscriptionAlert: req?.subscriptionAlert,
+        accessBlocked: req?.accessBlocked,
         isProfileComplete,
       }
     );

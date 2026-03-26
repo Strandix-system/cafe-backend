@@ -53,7 +53,7 @@ export const tokenVerification = async (req, res, next, isPublic = false) => {
       await blockExpiredSubscription(req, res, next);
     }
 
-    next();
+     next();
   } catch (error) {
     res.status(401).json({ message: "Unauthorized" });
   }

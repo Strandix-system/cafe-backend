@@ -252,6 +252,22 @@ export const orderService = {
   },
   updateIsCompletedStatus: async (orderId, isCompleted, adminId) => {
     try {
+
+      if (isCompleted === true) {
+        await OrderItem.updateMany(
+          {
+            orderId,
+            status: { $in: [ORDER_STATUS.PENDING, ORDER_STATUS.PREPARING] }
+          },
+          {
+            $set: {
+              status: "served",
+              servedAt: new Date(), // optional but useful
+            },
+          }
+        );
+      }
+
       const updatedOrder = await Order.findOneAndUpdate(
         { _id: orderId, adminId },
         { isCompleted },
@@ -261,11 +277,9 @@ export const orderService = {
         }
       ).populate("adminId", "name email");
 
-
       if (!updatedOrder) {
         throw new ApiError(404, "Order not found");
       }
-
       const [{ orderItems }] = await attachOrderItems([updatedOrder]);
       const orderWithItems = {
         ...updatedOrder.toObject(),
@@ -281,7 +295,7 @@ export const orderService = {
           isCompleted,
           order: orderWithItems,
         });
-     
+
         const customerIds = await OrderItem.distinct("customerId", {
           orderId: updatedOrder._id,
         });

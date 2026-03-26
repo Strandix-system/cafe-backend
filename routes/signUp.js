@@ -2,7 +2,7 @@ import express from "express";
 import { signUpController } from "../src/signUp/controller.js";
 import { tokenVerification } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/permission.js";
-import{ validate } from "../middleware/validate.js";
+import { validate } from "../middleware/validate.js";
 import { checkEmailValidation } from "../validations/authValidation.js";
 import {
   createSubscriptionValidation,
@@ -10,12 +10,29 @@ import {
   getTransactionsValidation,
   renewSubscriptionValidation,
   verifyRenewSubscriptionValidation,
+  signUpValidation
 } from "../validations/signUpValidation.js";
 const router = express.Router();
 
-router.post("/create-subscription", validate(createSubscriptionValidation), signUpController.createSubscription);
-router.post("/verify-subscription", validate(verifySubscriptionValidation), signUpController.verifySubscription);
-router.post("/check-email", validate(checkEmailValidation), signUpController.checkEmail);
+router.post(
+  "/create-subscription",
+  tokenVerification,
+  allowRoles("admin"),
+  validate(createSubscriptionValidation),
+  signUpController.createSubscription
+);
+router.post(
+  "/verify-subscription",
+  tokenVerification,
+  allowRoles("admin"),
+  validate(verifySubscriptionValidation),
+  signUpController.verifySubscription
+);
+router.post(
+  "/check-email",
+  validate(checkEmailValidation),
+  signUpController.checkEmail
+);
 router.get("/plans", signUpController.getAllPlans);
 router.get(
   "/transactions",
@@ -37,5 +54,10 @@ router.post(
   allowRoles("admin"),
   validate(verifyRenewSubscriptionValidation),
   signUpController.verifyRenewSubscription
+);
+router.post(
+  "/create-user",
+  validate(signUpValidation),
+  signUpController.registerUser
 );
 export const signUpRoutes = router;

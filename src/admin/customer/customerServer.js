@@ -63,7 +63,7 @@ const customerService = {
       {
         $lookup: {
           from: "orderitems",
-          let: { customerId: "$_id", adminId: "$adminId" },
+          let: { customerId: "$_id", adminId },
           pipeline: [
             {
               $match: {
@@ -93,7 +93,9 @@ const customerService = {
               $group: {
                 _id: "$orderId",
                 totalAmount: { $first: "$order.totalAmount" },
-                createdAt: { $first: "$order.createdAt" },
+                visitDate: {
+                  $first: { $ifNull: ["$order.updatedAt", "$order.createdAt"] },
+                },
               },
             },
           ],
@@ -104,7 +106,9 @@ const customerService = {
         $addFields: {
           totalOrder: { $size: "$orderStats" },
           totalSpent: { $sum: "$orderStats.totalAmount" },
-          lastVisitDate: { $max: "$orderStats.createdAt" },
+          lastVisitDate: {
+            $ifNull: [{ $max: "$orderStats.visitDate" }, "$createdAt"],
+          },
         },
       },
       {
@@ -123,7 +127,7 @@ const customerService = {
       {
         $lookup: {
           from: "orderitems",
-          let: { customerId: "$_id", adminId: "$adminId" },
+          let: { customerId: "$_id", adminId },
           pipeline: [
             {
               $match: {

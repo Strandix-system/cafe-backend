@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../model/user.js";
 import { blockExpiredSubscription } from "./checkSubscription.js";
+import { ApiError } from "../utils/apiError.js";
 
 const subscriptionAllowedRoutes = [
   "/me",
@@ -40,7 +41,7 @@ export const tokenVerification = async (req, res, next, isPublic = false) => {
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      throw new ApiError(401, "User not found");
+      return next(new ApiError(401, "User not found"));
     }
     if (!user.isActive) {
       return res.status(403).json({
@@ -50,11 +51,11 @@ export const tokenVerification = async (req, res, next, isPublic = false) => {
 
     req.user = user;
     if (user.role !== "superadmin" && !subscriptionAllowedRoutes.includes(req.path)) {
-      await blockExpiredSubscription(req, res, next);
+      return blockExpiredSubscription(req, res, next);
     }
 
-     next();
+    return next();
   } catch (error) {
-    res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ message: "Unauthorized" });
   }
 };

@@ -23,7 +23,7 @@ const createNotificationPayloadValidator = Joi.object({
     .valid(...Object.values(RECIPIENT_TYPES))
     .required(),
   userId: Joi.when("recipientType", {
-    is: RECIPIENT_TYPES.USER,
+    is: RECIPIENT_TYPES.ADMIN,
     then: internalObjectId.required(),
     otherwise: internalObjectId.optional(),
   }),
@@ -34,7 +34,11 @@ const createNotificationPayloadValidator = Joi.object({
   }),
   adminId: internalObjectId.optional(),
   entityId: Joi.any().optional(),
-  recipientRole: Joi.string().trim().optional(),
+  recipientRole: Joi.when("recipientType", {
+    is: RECIPIENT_TYPES.ROLE,
+    then: Joi.string().trim().valid("admin", "superadmin").required(),
+    otherwise: Joi.string().trim().optional(),
+  }),
 }).unknown(true);
 
 const getNotificationsValidator = {
@@ -67,15 +71,8 @@ const markAllReadValidator = {
   }),
 };
 
-const getNotificationCountValidator = {
-  query: Joi.object({
-    entityType: Joi.string().trim().optional(),
-  }),
-};
-
 const getCustomerNotificationsValidator = {
   params: Joi.object({
-    adminId: objectId.required(),
     customerId: objectId.required(),
   }),
   query: Joi.object({
@@ -91,7 +88,6 @@ const getCustomerNotificationsValidator = {
 
 const markAllCustomerNotificationsReadValidator = {
   body: Joi.object({
-    adminId: objectId.required(),
     customerId: objectId.required(),
     entityType: Joi.string().trim().optional(),
   }),
@@ -103,7 +99,6 @@ export {
   markSingleReadValidator,
   deleteNotificationValidator,
   markAllReadValidator,
-  getNotificationCountValidator,
   getCustomerNotificationsValidator,
   markAllCustomerNotificationsReadValidator,
 };

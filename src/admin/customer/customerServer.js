@@ -30,7 +30,7 @@ const customerService = {
         title: "New customer joined",
         message: `${name} has been added as a new customer.`,
         notificationType: NOTIFICATION_TYPES.CUSTOMER_CREATED,
-        recipientType: "user",
+        recipientType: "admin",
         userId: adminId,
         adminId,
         entityType: "customer",

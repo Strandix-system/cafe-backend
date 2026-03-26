@@ -34,7 +34,26 @@ export const notificationService = {
       finalOptions.populate = "adminId,customerId";
     }
 
-    return await Notification.paginate(query, finalOptions);
+    const unreadCountFilter = {
+      notificationType: filter.notificationType,
+      entityType: filter.entityType,
+    };
+    const unreadCountQuery = getUserNotificationFilter(
+      user._id,
+      unreadCountFilter
+    );
+    unreadCountQuery.isRead = false;
+
+    const [paginatedNotifications, unreadCount] = await Promise.all([
+      Notification.paginate(query, finalOptions),
+      Notification.countDocuments(unreadCountQuery),
+    ]);
+
+    return {
+      ...paginatedNotifications,
+      count: paginatedNotifications.totalResults,
+      unreadCount,
+    };
   },
 
   markSingleRead: async (notificationId, user) => {
@@ -70,12 +89,13 @@ export const notificationService = {
   },
 
   deleteOldNotifications: async () => {
-    const startOfCurrentMonth = new Date();
-    startOfCurrentMonth.setDate(1);
-    startOfCurrentMonth.setHours(0, 0, 0, 0);
+    const startOfPreviousMonth = new Date();
+    startOfPreviousMonth.setDate(1);
+    startOfPreviousMonth.setHours(0, 0, 0, 0);
+    startOfPreviousMonth.setMonth(startOfPreviousMonth.getMonth() - 1);
 
     const result = await Notification.deleteMany({
-      createdAt: { $lt: startOfCurrentMonth },
+      createdAt: { $lt: startOfPreviousMonth },
     });
 
     return {
@@ -96,21 +116,48 @@ export const notificationService = {
     return await Notification.countDocuments(query);
   },
 
-  getCustomerNotifications: async (customerId, adminId, filter = {}, options = {}) => {
-    await validateCustomerNotificationAccess(customerId, adminId);
-    const query = getCustomerNotificationFilter(customerId, adminId, filter);
+  getUnreadCountForCustomer: async (customerId, filter = {}) => {
+    await validateCustomerNotificationAccess(customerId);
+    const query = getCustomerNotificationFilter(customerId, filter);
+    query.isRead = false;
+
+    return await Notification.countDocuments(query);
+  },
+
+  getCustomerNotifications: async (customerId, filter = {}, options = {}) => {
+    await validateCustomerNotificationAccess(customerId);
+    const query = getCustomerNotificationFilter(customerId, filter);
     const finalOptions = { ...options };
 
     if (!finalOptions.populate) {
       finalOptions.populate = "adminId";
     }
 
-    return await Notification.paginate(query, finalOptions);
+    const unreadCountFilter = {
+      notificationType: filter.notificationType,
+      entityType: filter.entityType,
+    };
+    const unreadCountQuery = getCustomerNotificationFilter(
+      customerId,
+      unreadCountFilter
+    );
+    unreadCountQuery.isRead = false;
+
+    const [paginatedNotifications, unreadCount] = await Promise.all([
+      Notification.paginate(query, finalOptions),
+      Notification.countDocuments(unreadCountQuery),
+    ]);
+
+    return {
+      ...paginatedNotifications,
+      count: paginatedNotifications.totalResults,
+      unreadCount,
+    };
   },
 
-  markAllReadForCustomer: async (customerId, adminId, filter = {}) => {
-    await validateCustomerNotificationAccess(customerId, adminId);
-    const query = getCustomerNotificationFilter(customerId, adminId, filter);
+  markAllReadForCustomer: async (customerId, filter = {}) => {
+    await validateCustomerNotificationAccess(customerId);
+    const query = getCustomerNotificationFilter(customerId, filter);
     query.isRead = false;
     return await markNotificationsAsRead(query);
   },

@@ -37,18 +37,36 @@ const emitNotification = (notificationDoc) => {
   }
 };
 
-const buildNotificationData = (payload, recipient) => ({
-  title: payload.title,
-  message: payload.message,
-  notificationType: payload.notificationType,
-  recipientType: recipient.recipientType,
-  recipientRole: recipient.recipientRole || null,
-  userId: recipient.userId || null,
-  customerId: recipient.customerId || null,
-  adminId: recipient.adminId || payload.adminId || null,
-  entityType: payload.entityType || null,
-  entityId: payload.entityId ?? null,
-});
+const buildNotificationData = (payload, recipient) => {
+  const notificationData = {
+    title: payload.title,
+    message: payload.message,
+    notificationType: payload.notificationType,
+    recipientType: recipient.recipientType,
+  };
+
+  if (recipient.userId) {
+    notificationData.userId = recipient.userId;
+  }
+
+  if (recipient.customerId) {
+    notificationData.customerId = recipient.customerId;
+  }
+
+  if (recipient.adminId || payload.adminId) {
+    notificationData.adminId = recipient.adminId || payload.adminId;
+  }
+
+  if (payload.entityType) {
+    notificationData.entityType = payload.entityType;
+  }
+  
+  if (payload.entityId !== undefined && payload.entityId !== null) {
+    notificationData.entityId = payload.entityId;
+  }
+
+  return notificationData;
+};
 
 const createNotificationDocument = async (payload, recipient) => {
   const notification = await Notification.create(
@@ -60,36 +78,31 @@ const createNotificationDocument = async (payload, recipient) => {
   return notification;
 };
 
-const validateCustomerNotificationAccess = async (customerId, adminId) => {
+const validateCustomerNotificationAccess = async (customerId) => {
   validateObjectId(customerId, "customerId");
-  validateObjectId(adminId, "adminId");
 
-  const customer = await Customer.findOne({
-    _id: customerId,
-    adminId,
-  }).select("_id");
+  const customer = await Customer.findById(customerId).select("_id");
 
   if (!customer) {
-    throw new ApiError(404, "Customer not found for this admin");
+    throw new ApiError(404, "Customer not found");
   }
 };
 
 const resolveRecipients = async (payload) => {
   switch (payload.recipientType) {
-    case RECIPIENT_TYPES.USER: {
+    case RECIPIENT_TYPES.ADMIN: {
       validateObjectId(payload.userId, "userId");
 
       const user = await User.findById(payload.userId).select("_id role");
 
       if (!user) {
-        throw new ApiError(404, "Recipient user not found");
+        throw new ApiError(404, "Recipient admin not found");
       }
 
       return [
         {
-          recipientType: RECIPIENT_TYPES.USER,
+          recipientType: RECIPIENT_TYPES.ADMIN,
           userId: user._id,
-          recipientRole: user.role,
           adminId: payload.adminId || null,
         },
       ];
@@ -97,7 +110,6 @@ const resolveRecipients = async (payload) => {
 
     case RECIPIENT_TYPES.CUSTOMER:
       validateObjectId(payload.customerId, "customerId");
-
       return [
         {
           recipientType: RECIPIENT_TYPES.CUSTOMER,
@@ -122,9 +134,8 @@ const resolveRecipients = async (payload) => {
       );
 
       return users.map((user) => ({
-        recipientType: RECIPIENT_TYPES.USER,
+        recipientType: RECIPIENT_TYPES.ADMIN,
         userId: user._id,
-        recipientRole: user.role,
         adminId: payload.adminId || null,
       }));
     }
@@ -156,14 +167,8 @@ const getUserNotificationFilter = (userId, filter = {}) => {
   return applyNotificationFilter({ userId }, filter);
 };
 
-const getCustomerNotificationFilter = (customerId, adminId, filter = {}) => {
-  const query = { customerId };
-
-  if (adminId) {
-    query.adminId = adminId;
-  }
-
-  return applyNotificationFilter(query, filter);
+const getCustomerNotificationFilter = (customerId, filter = {}) => {
+  return applyNotificationFilter({ customerId }, filter);
 };
 
 const markNotificationsAsRead = async (query) => {

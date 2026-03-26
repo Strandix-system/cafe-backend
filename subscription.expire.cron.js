@@ -10,6 +10,8 @@ let schedulerInitialized = false;
 let isRunning = false;
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const ADMIN_RECIPIENT_TYPE = "admin";
+const SUBSCRIPTION_ENTITY_TYPE = "subscription";
 
 const getAdminLabel = (admin) =>
   admin.cafeName ||
@@ -60,68 +62,122 @@ const getNotificationPayload = (admin, transaction) => {
   };
 };
 
-export const createSubscriptionNotifications = async (admin, transaction) => {
-  const payload = getNotificationPayload(admin, transaction);
+const getSuperadminNotificationContent = (payload) => {
+  const isExpired =
+    payload.notificationType === NOTIFICATION_TYPES.SUBSCRIPTION_EXPIRED;
 
-  if (!payload) {
-    return;
-  }
-
-  const superadminTitle =
-    payload.notificationType === NOTIFICATION_TYPES.SUBSCRIPTION_EXPIRED
+  return {
+    title: isExpired
       ? "Admin subscription expired"
-      : "Admin subscription expiring soon";
-  const superadminMessage =
-    payload.notificationType === NOTIFICATION_TYPES.SUBSCRIPTION_EXPIRED
+      : "Admin subscription expiring soon",
+    message: isExpired
       ? `${payload.adminLabel}'s subscription expired.`
-      : `${payload.adminLabel}'s subscription will expire in ${payload.diffDays} day(s).`;
+      : `${payload.adminLabel}'s subscription will expire in ${payload.diffDays} day(s).`,
+  };
+};
 
-  const [adminNotificationExists, superadmins, existingSuperadminNotifications] = await Promise.all([
-    Notification.exists({
-      title: payload.title,
-      message: payload.message,
-      notificationType: payload.notificationType,
-      recipientType: "user",
-      userId: admin._id,
-      adminId: admin._id,
-      entityType: "subscription",
-      entityId: payload.entityId,
-    }),
-    User.find({ role: "superadmin" }).select("_id"),
-    Notification.find({
-      title: superadminTitle,
-      message: superadminMessage,
-      notificationType: payload.notificationType,
-      recipientType: "user",
-      recipientRole: "superadmin",
-      adminId: admin._id,
-      entityType: "subscription",
-      entityId: payload.entityId,
-    }).select("userId"),
-  ]);
+const buildSubscriptionNotificationQuery = ({
+  title,
+  message,
+  notificationType,
+  userId,
+  adminId,
+  entityId,
+}) => ({
+  title,
+  message,
+  notificationType,
+  recipientType: ADMIN_RECIPIENT_TYPE,
+  userId,
+  adminId,
+  entityType: SUBSCRIPTION_ENTITY_TYPE,
+  entityId,
+});
 
+const buildSubscriptionNotificationPayload = ({
+  title,
+  message,
+  notificationType,
+  userId,
+  adminId,
+  entityId,
+}) => ({
+  title,
+  message,
+  notificationType,
+  recipientType: ADMIN_RECIPIENT_TYPE,
+  userId,
+  adminId,
+  entityType: SUBSCRIPTION_ENTITY_TYPE,
+  entityId,
+});
+
+const getSubscriptionNotificationState = async (
+  admin,
+  payload,
+  superadminIds,
+  superadminContent
+) => {
+  const [adminNotificationExists, existingSuperadminNotifications] =
+    await Promise.all([
+      Notification.exists(
+        buildSubscriptionNotificationQuery({
+          title: payload.title,
+          message: payload.message,
+          notificationType: payload.notificationType,
+          userId: admin._id,
+          adminId: admin._id,
+          entityId: payload.entityId,
+        })
+      ),
+      superadminIds.length
+        ? Notification.find({
+          ...buildSubscriptionNotificationQuery({
+            title: superadminContent.title,
+            message: superadminContent.message,
+            notificationType: payload.notificationType,
+            adminId: admin._id,
+            entityId: payload.entityId,
+          }),
+          userId: { $in: superadminIds },
+        }).select("userId")
+        : [],
+    ]);
+
+  return {
+    adminNotificationExists,
+    existingSuperadminUserIds: new Set(
+      existingSuperadminNotifications.map((notification) =>
+        notification.userId?.toString()
+      )
+    ),
+  };
+};
+
+const createMissingSubscriptionNotifications = ({
+  admin,
+  payload,
+  superadmins,
+  superadminContent,
+  adminNotificationExists,
+  existingSuperadminUserIds,
+}) => {
   const notificationPromises = [];
 
   if (!adminNotificationExists) {
     notificationPromises.push(
-      notificationService.createNotification({
-        title: payload.title,
-        message: payload.message,
-        notificationType: payload.notificationType,
-        recipientType: "user",
-        userId: admin._id,
-        adminId: admin._id,
-        entityType: "subscription",
-        entityId: payload.entityId,
-      })
+      notificationService.createNotification(
+        buildSubscriptionNotificationPayload({
+          title: payload.title,
+          message: payload.message,
+          notificationType: payload.notificationType,
+          userId: admin._id,
+          adminId: admin._id,
+          entityId: payload.entityId,
+        })
+      )
     );
   }
-
-  const existingSuperadminUserIds = new Set(
-    existingSuperadminNotifications.map((notification) =>
-      notification.userId?.toString()
-    )
-  );
 
   for (const superadmin of superadmins) {
     if (existingSuperadminUserIds.has(superadmin._id.toString())) {
@@ -129,19 +185,49 @@ export const createSubscriptionNotifications = async (admin, transaction) => {
     }
 
     notificationPromises.push(
-      notificationService.createNotification({
-        title:
-          superadminTitle,
-        message: superadminMessage,
-        notificationType: payload.notificationType,
-        recipientType: "user",
-        userId: superadmin._id,
-        adminId: admin._id,
-        entityType: "subscription",
-        entityId: payload.entityId,
-      })
+      notificationService.createNotification(
+        buildSubscriptionNotificationPayload({
+          title: superadminContent.title,
+          message: superadminContent.message,
+          notificationType: payload.notificationType,
+          userId: superadmin._id,
+          adminId: admin._id,
+          entityId: payload.entityId,
+        })
+      )
     );
   }
+
+  return notificationPromises;
+};
+
+export const createSubscriptionNotifications = async (admin, transaction) => {
+  const payload = getNotificationPayload(admin, transaction);
+
+  if (!payload) {
+    return;
+  }
+
+  const superadminContent = getSuperadminNotificationContent(payload);
+  const superadmins = await User.find({ role: "superadmin" }).select("_id");
+  const superadminIds = superadmins.map((superadmin) => superadmin._id);
+
+  const { adminNotificationExists, existingSuperadminUserIds } =
+    await getSubscriptionNotificationState(
+      admin,
+      payload,
+      superadminIds,
+      superadminContent
+    );
+
+  const notificationPromises = createMissingSubscriptionNotifications({
+    admin,
+    payload,
+    superadmins,
+    superadminContent,
+    adminNotificationExists,
+    existingSuperadminUserIds,
+  });
 
   await Promise.all(notificationPromises);
 };

@@ -1,4 +1,5 @@
 import { IssueReported } from "../../model/issueReported.js";
+import User from "../../model/user.js";
 import { generateTicketId } from "../../utils/utils.js";
 import { ApiError } from "../../utils/apiError.js";
 import { ISSUE_STATUSES, NOTIFICATION_TYPES } from "../../utils/constants.js";
@@ -16,9 +17,17 @@ export const issueService = {
             status: ISSUE_STATUSES.PENDING,
         });
 
+        const admin = await User.findById(adminId).select(
+            "firstName lastName cafeName"
+        );
+        const adminLabel =
+            `${admin?.firstName || ""} ${admin?.lastName || ""}`.trim() ||
+            admin?.cafeName ||
+            "an admin";
+
         await notificationService.createNotification({
             title: "New support ticket",
-            message: `A new ticket ${ticket.ticketId} has been raised by an admin.`,
+            message: `A new ticket ${ticket.ticketId} has been raised by ${adminLabel}.`,
             notificationType: NOTIFICATION_TYPES.TICKET_RAISED,
             recipientType: "role",
             recipientRole: "superadmin",
@@ -56,7 +65,7 @@ export const issueService = {
             title: "Ticket status updated",
             message: `Your ticket ${ticket.ticketId} status is now ${status}.`,
             notificationType: NOTIFICATION_TYPES.TICKET_STATUS_UPDATED,
-            recipientType: "user",
+            recipientType: "admin",
             userId: ticket.adminId,
             adminId: ticket.adminId,
             entityType: "ticket",

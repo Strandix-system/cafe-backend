@@ -6,7 +6,6 @@ import { validate } from "../middleware/validate.js";
 import {
   deleteNotificationValidator,
   getCustomerNotificationsValidator,
-  getNotificationCountValidator,
   getNotificationsValidator,
   markAllCustomerNotificationsReadValidator,
   markAllReadValidator,
@@ -48,23 +47,13 @@ router.patch(
 );
 
 router.get(
-  "/count",
-  tokenVerification,
-  allowRoles("admin", "superadmin"),
-  validate(getNotificationCountValidator),
-  notificationController.getUnreadCount
-);
-
-router.get(
-  "/customer/:adminId/:customerId",
-  (req, res, next) => tokenVerification(req, res, next, true),
+  "/customer/:customerId",
   validate(getCustomerNotificationsValidator),
   notificationController.getCustomerNotifications
 );
 
 router.patch(
   "/customer/read-all",
-  (req, res, next) => tokenVerification(req, res, next, true),
   validate(markAllCustomerNotificationsReadValidator),
   notificationController.markAllCustomerRead
 );

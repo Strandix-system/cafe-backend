@@ -9,7 +9,7 @@ export const ROLES = {
 };
 
 export const RECIPIENT_TYPES = {
-    USER: "user",
+    ADMIN: "admin",
     CUSTOMER: "customer",
     ROLE: "role",
 };

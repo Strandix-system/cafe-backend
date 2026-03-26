@@ -36,21 +36,11 @@ export const notificationController = {
     sendSuccessResponse(res, 200, "All notifications marked as read", data);
   },
 
-  getUnreadCount: async (req, res) => {
-    const filter = pick(req.query, ["entityType"]);
-    const unreadCount = await notificationService.getUnreadCountForUser(
-      req.user,
-      filter
-    );
-    sendSuccessResponse(res, 200, "Notification count fetched", { unreadCount });
-  },
-
   getCustomerNotifications: async (req, res) => {
     const filter = pick(req.query, ["notificationType", "entityType", "isRead"]);
     const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
     const data = await notificationService.getCustomerNotifications(
       req.params.customerId,
-      req.params.adminId,
       filter,
       options
     );
@@ -61,7 +51,6 @@ export const notificationController = {
     const filter = pick(req.body, ["entityType"]);
     const data = await notificationService.markAllReadForCustomer(
       req.body.customerId,
-      req.body.adminId,
       filter
     );
 

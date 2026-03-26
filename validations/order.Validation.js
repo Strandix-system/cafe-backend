@@ -70,4 +70,11 @@ const getActiveOrderSchema = {
     }),
 };
 
-export { createOrderSchema, getActiveOrderSchema, getOrdersSchema, updateIsCompletedSchema, getMyOrdersSchema, updatePaymentStatusSchema, getBillSchema, deleteOrderSchema };   
+const changeTableSchema = {
+    body: Joi.object({
+        orderId: objectId.required(),
+        newTableNumber: Joi.number().min(1).required(),
+    }),
+};
+
+export { createOrderSchema, getActiveOrderSchema, getOrdersSchema, updateIsCompletedSchema, getMyOrdersSchema, updatePaymentStatusSchema, getBillSchema, deleteOrderSchema, changeTableSchema };   

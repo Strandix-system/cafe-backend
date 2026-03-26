@@ -42,7 +42,9 @@ export const orderService = {
 
     const adminId = customer.adminId;
 
-    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst");
+    const admin = await User.findOne({ _id: adminId, role: "admin" }).select(
+      "gst",
+    );
     if (!admin) {
       throw new ApiError(404, "Admin not found");
     }
@@ -50,7 +52,7 @@ export const orderService = {
     const gstPercent = admin.gst;
     const menuIds = items.map((menu) => menu.menuId);
     const menus = await Menu.find({
-      _id: { $in: menuIds }
+      _id: { $in: menuIds },
     });
 
     if (menus?.length !== items.length) {
@@ -60,13 +62,12 @@ export const orderService = {
     let subTotal = 0;
 
     const finalItems = items.map((item) => {
-      const menu = menus.find(
-        (m) => m._id.toString() === item.menuId
-      );
+      const menu = menus.find((m) => m._id.toString() === item.menuId);
 
-      const price = menu.discountPrice && menu.discountPrice > 0
-        ? menu.discountPrice
-        : menu.price;
+      const price =
+        menu.discountPrice && menu.discountPrice > 0
+          ? menu.discountPrice
+          : menu.price;
 
       subTotal += price * item.quantity;
 
@@ -104,36 +105,30 @@ export const orderService = {
           ...item,
           orderId,
           status: ORDER_STATUS.PENDING,
-        }))
+        })),
       );
     };
 
     if (qr.occupied && latestActiveOrder) {
-      await createOrderItems(
-        latestActiveOrder._id,
-        finalItems
-      );
+      await createOrderItems(latestActiveOrder._id, finalItems);
 
       latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
       latestActiveOrder.gstAmount =
         (latestActiveOrder.subTotal * gstPercent) / 100;
       latestActiveOrder.totalAmount = Math.round(
-        latestActiveOrder.subTotal + latestActiveOrder.gstAmount
+        latestActiveOrder.subTotal + latestActiveOrder.gstAmount,
       );
       order = await latestActiveOrder.save();
     } else if (latestActiveOrder) {
-      await createOrderItems(
-        latestActiveOrder._id,
-        finalItems
-      );
+      await createOrderItems(latestActiveOrder._id, finalItems);
 
       latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
       latestActiveOrder.gstAmount =
         (latestActiveOrder.subTotal * gstPercent) / 100;
       latestActiveOrder.totalAmount = Math.round(
-        latestActiveOrder.subTotal + latestActiveOrder.gstAmount
+        latestActiveOrder.subTotal + latestActiveOrder.gstAmount,
       );
       order = await latestActiveOrder.save();
       if (!qr.occupied) {
@@ -151,7 +146,7 @@ export const orderService = {
         totalAmount: Math.round(finalTotal),
         gstPercent,
         gstAmount,
-        subTotal
+        subTotal,
       });
       await createOrderItems(order._id, finalItems);
 
@@ -161,8 +156,10 @@ export const orderService = {
 
     const io = getIO();
 
-    const populatedOrder = await Order.findById(order._id)
-      .populate("adminId", "name email");
+    const populatedOrder = await Order.findById(order._id).populate(
+      "adminId",
+      "name email",
+    );
 
     const [{ orderItems }] = await attachOrderItems([populatedOrder]);
     const aggregatedItems = buildAggregatedItems(orderItems);
@@ -231,7 +228,6 @@ export const orderService = {
     });
 
     if (!orderIds.length) {
-
       return {
         results: [],
         page: Number(options?.page) ?? 0,
@@ -274,9 +270,8 @@ export const orderService = {
         {
           new: true,
           runValidators: true,
-        }
+        },
       ).populate("adminId", "name email");
-
 
       if (!updatedOrder) {
         throw new ApiError(404, "Order not found");
@@ -297,7 +292,7 @@ export const orderService = {
           isCompleted,
           order: orderWithItems,
         });
-     
+
         const customerIds = await OrderItem.distinct("customerId", {
           orderId: updatedOrder._id,
         });
@@ -329,7 +324,7 @@ export const orderService = {
           io.to(adminId.toString()).emit("completeOrder", updatedOrder._id);
           await Qr.findOneAndUpdate(
             { adminId, tableNumber: updatedOrder.tableNumber },
-            { occupied: false }
+            { occupied: false },
           );
         }
       } catch (socketError) {
@@ -338,7 +333,6 @@ export const orderService = {
 
       return orderWithItems;
     } catch (error) {
-
       throw new ApiError(500, `Error updating order: ${error.message}`);
     }
   },
@@ -349,7 +343,10 @@ export const orderService = {
         throw new ApiError(404, "Order not found");
       }
       if (!order.isCompleted) {
-        throw new ApiError(400, "Payment status can only be updated when order is completed");
+        throw new ApiError(
+          400,
+          "Payment status can only be updated when order is completed",
+        );
       }
       if (order.paymentStatus === paymentStatus) {
         throw new ApiError(400, "Payment status already updated");
@@ -359,11 +356,13 @@ export const orderService = {
       if (paymentStatus === true) {
         const billDetails = await orderService.getOrderBillDetails(
           orderId,
-          adminId
+          adminId,
         );
         try {
-          const populatedOrder = await Order.findById(orderId)
-            .populate("adminId", "cafeName");
+          const populatedOrder = await Order.findById(orderId).populate(
+            "adminId",
+            "cafeName",
+          );
 
           const customerIds = await OrderItem.distinct("customerId", {
             orderId,
@@ -399,14 +398,15 @@ See you again!
               });
             }
           }
-        } catch (whatsappError) { }
+        } catch (whatsappError) {}
       }
 
-
       return order;
-
     } catch (error) {
-      throw new ApiError(500, `Error updating payment status: ${error.message}`);
+      throw new ApiError(
+        500,
+        `Error updating payment status: ${error.message}`,
+      );
     }
 
     return order;
@@ -423,7 +423,7 @@ See you again!
     if (!order.isCompleted) {
       await Qr.findOneAndUpdate(
         { adminId, tableNumber: order.tableNumber },
-        { occupied: false }
+        { occupied: false },
       );
     }
     return order;
@@ -453,8 +453,10 @@ See you again!
     const order = await Order.findOne({
       _id: orderId,
       adminId,
-    })
-      .populate("adminId", "cafeName gst address city state pincode phoneNumber");
+    }).populate(
+      "adminId",
+      "cafeName gst address city state pincode phoneNumber",
+    );
 
     if (!order) {
       throw new ApiError(404, "Order not found");
@@ -465,9 +467,10 @@ See you again!
 
     const subTotal = orderItems.reduce((sum, item) => {
       const menu = item.menuId;
-      const price = menu?.discountPrice && menu.discountPrice > 0
-        ? menu.discountPrice
-        : menu?.price;
+      const price =
+        menu?.discountPrice && menu.discountPrice > 0
+          ? menu.discountPrice
+          : menu?.price;
       return sum + price * item.quantity;
     }, 0);
 
@@ -487,14 +490,15 @@ See you again!
         });
       }
       const entry = customerMap.get(custId);
-      const menuId = `${item.menuId?._id?.toString()}-${item.specialInstruction ?? ""}`; if (!entry.items.has(menuId)) {
+      const menuId = `${item.menuId?._id?.toString()}-${item.specialInstruction ?? ""}`;
+      if (!entry.items.has(menuId)) {
         entry.items.set(menuId, {
           name: item.menuId?.name ?? "Unknown",
           quantity: 0,
           price:
             item.menuId?.discountPrice && item.menuId.discountPrice > 0
               ? item.menuId.discountPrice
-              : item.menuId?.price ?? 0,
+              : (item.menuId?.price ?? 0),
           specialInstruction: item.specialInstruction ?? "",
         });
       }
@@ -530,13 +534,73 @@ See you again!
       createdAt: order.createdAt,
     };
   },
-  getActiveOrderByQr: async (qrId) => {
+  getActiveOrderByQr: async (qrId, customerId) => {
     const qr = await Qr.findById(qrId).populate("adminId");
     if (!qr) {
       throw new ApiError(400, "Invalid QR");
     }
     if (!qr.adminId || !qr.adminId.isActive) {
-      throw new ApiError(400, "This QR is disabled because the account is inactive");
+      throw new ApiError(
+        400,
+        "This QR is disabled because the account is inactive",
+      );
+    }
+
+    if (customerId) {
+      const existingOrderItem = await OrderItem.findOne({ customerId }).sort({
+        createdAt: -1,
+      });
+
+      if (existingOrderItem) {
+        const existingOrder = await Order.findOne({
+          _id: existingOrderItem.orderId,
+          isCompleted: false,
+        }).populate("adminId", "name email");
+
+        if (existingOrder) {
+          const [{ orderItems }] = await attachOrderItems([existingOrder]);
+
+          const orderWithItems = {
+            ...existingOrder.toObject(),
+            pricing: {
+              subTotal: existingOrder.subTotal,
+              gstPercent: existingOrder.gstPercent,
+              gstAmount: existingOrder.gstAmount,
+              totalAmount: existingOrder.totalAmount,
+            },
+            status: {
+              isCompleted: existingOrder.isCompleted,
+              paymentStatus: existingOrder.paymentStatus,
+            },
+            items: buildAggregatedItems(orderItems),
+            orderItems: orderItems.map((i) => ({
+              _id: i._id,
+              menuId: i.menuId?._id,
+              customerId: i.customerId?._id,
+              quantity: i.quantity,
+              status: i.status,
+              servedAt: i.servedAt,
+              timestamps: {
+                createdAt: i.createdAt,
+                updatedAt: i.updatedAt,
+              },
+            })),
+            timestamps: {
+              createdAt: existingOrder.createdAt,
+              updatedAt: existingOrder.updatedAt,
+            },
+          };
+
+          return {
+            active: true,
+            isDifferentTable: existingOrder.tableNumber !== qr.tableNumber,
+            message: "You already have an active order",
+            order: orderWithItems,
+            currentTable: existingOrder.tableNumber,
+            newTable: qr.tableNumber,
+          };
+        }
+      }
     }
 
     const latestActiveOrder = await Order.findOne({
@@ -551,6 +615,23 @@ See you again!
       return { active: false, order: null, tableNumber: qr.tableNumber };
     }
 
+    if (customerId) {
+      const customerIds = await OrderItem.distinct("customerId", {
+        orderId: latestActiveOrder._id,
+      });
+
+      const isOwner = customerIds.some(
+        (id) => id.toString() === customerId.toString(),
+      );
+
+      if (!isOwner) {
+        return {
+          active: false,
+          message: "Start a new order",
+          tableNumber: qr.tableNumber,
+        };
+      }
+    }
     const [{ orderItems }] = await attachOrderItems([latestActiveOrder]);
     const orderWithItems = {
       ...latestActiveOrder.toObject(),
@@ -567,11 +648,11 @@ See you again!
         paymentStatus: latestActiveOrder.paymentStatus,
       },
 
-      items: buildAggregatedItems(orderItems), // ✅ clean aggregated
+      items: buildAggregatedItems(orderItems),
 
       orderItems: orderItems.map((i) => ({
         _id: i._id,
-        menuId: i.menuId?._id,        // ✅ ONLY ID
+        menuId: i.menuId?._id,
         customerId: i.customerId?._id,
         quantity: i.quantity,
         status: i.status,
@@ -592,7 +673,58 @@ See you again!
       active: true,
       message: "An active order already exists. You can add more items.",
       order: orderWithItems,
-      tableNumber: qr.tableNumber
+      tableNumber: qr.tableNumber,
+    };
+  },
+  changeTable: async (orderId, newTableNumber, user) => {
+    const order = await Order.findOne({
+      _id: orderId,
+      isCompleted: false,
+    });
+
+    if (!order) {
+      throw new ApiError(404, "Active order not found");
+    }
+
+    if (user.role !== "admin") {
+      throw new ApiError(403, "Only admin can change table");
+    }
+
+    const oldTableNumber = order.tableNumber;
+
+    if (oldTableNumber === newTableNumber) {
+      throw new ApiError(400, "Order is already on this table");
+    }
+
+    const adminId = order.adminId;
+
+    const newQr = await Qr.findOne({ adminId, tableNumber: newTableNumber });
+    if (!newQr) {
+      throw new ApiError(404, "Target table not found");
+    }
+
+    if (newQr.occupied) {
+      throw new ApiError(400, "Target table is already occupied");
+    }
+
+    const oldQr = await Qr.findOne({ adminId, tableNumber: oldTableNumber });
+
+    order.tableNumber = newTableNumber;
+    await order.save();
+
+    if (oldQr) {
+      oldQr.occupied = false;
+      await oldQr.save();
+    }
+
+    newQr.occupied = true;
+    await newQr.save();
+
+    return {
+      message: "Table changed successfully",
+      orderId: order._id,
+      oldTableNumber,
+      newTableNumber,
     };
   },
 };

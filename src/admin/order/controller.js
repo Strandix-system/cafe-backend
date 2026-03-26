@@ -1,17 +1,19 @@
-import {orderService} from "./service.js";
+import { orderService } from "./service.js";
 import { pick } from "../../../utils/pick.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
 
 export const orderController = {
   createPublicOrder: async (req, res) => {
-    const order = await orderService.createOrderByCustomerId(
-      req.body
-    );
+    const order = await orderService.createOrderByCustomerId(req.body);
     sendSuccessResponse(res, 201, "Order placed", order);
   },
   getOrders: async (req, res) => {
     const adminId = req.user._id;
-    const filter = pick(req.query, ["isCompleted", "tableNumber", "paymentStatus"]);
+    const filter = pick(req.query, [
+      "isCompleted",
+      "tableNumber",
+      "paymentStatus",
+    ]);
     const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
     const result = await orderService.getOrders(adminId, filter, options);
     sendSuccessResponse(res, 200, "Orders fetched", result);
@@ -23,13 +25,11 @@ export const orderController = {
     sendSuccessResponse(res, 200, "Orders fetched successfully", result);
   },
   updateIsCompletedStatus: async (req, res) => {
-   
-    const result =
-      await orderService.updateIsCompletedStatus(
-        req.body.orderId,
-        req.body.isCompleted,
-        req.user._id,
-      );
+    const result = await orderService.updateIsCompletedStatus(
+      req.body.orderId,
+      req.body.isCompleted,
+      req.user._id,
+    );
     sendSuccessResponse(res, 200, "Status updated", result);
   },
   updatePaymentStatus: async (req, res) => {
@@ -37,39 +37,42 @@ export const orderController = {
     const result = await orderService.updatePaymentStatus(
       orderId,
       paymentStatus,
-      req.user._id
+      req.user._id,
     );
     sendSuccessResponse(res, 200, "Payment status updated", result);
   },
   deleteOrder: async (req, res) => {
     const result = await orderService.deleteOrder(
       req.params.orderId,
-      req.user._id
+      req.user._id,
     );
     sendSuccessResponse(res, 200, "Order deleted", result);
   },
   getBillDetails: async (req, res) => {
     const result = await orderService.getOrderBillDetails(
       req.params.id,
-      req.user._id
+      req.user._id,
     );
 
     sendSuccessResponse(res, 200, "Bill details fetched", result);
   },
   getActiveOrderByQr: async (req, res) => {
     const result = await orderService.getActiveOrderByQr(
-      req.params.qrId
+      req.params.qrId,
+      req.query.customerId,
     );
+
     sendSuccessResponse(res, 200, "Active order fetched", result);
   },
-  getActiveOrderByQr: async (req, res, next) => {
-    try {
-      const result = await orderService.getActiveOrderByQr(
-        req.params.qrId
-      );
-      sendSuccessResponse(res, 200, "Active order fetched", result);
-    } catch (err) {
-      next(err);
-    }
+  changeTable: async (req, res) => {
+    const { orderId, newTableNumber } = req.body;
+
+    const result = await orderService.changeTable(
+      orderId,
+      newTableNumber,
+      req.user,
+    );
+
+    sendSuccessResponse(res, 200, "Table changed successfully", result);
   },
 };

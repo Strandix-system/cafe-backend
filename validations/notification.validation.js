@@ -1,50 +1,15 @@
 import Joi from "joi";
-import { isValidObjectId } from "mongoose";
-import { RECIPIENT_TYPES } from "../utils/constants.js";
+import { ENTITY_TYPES } from "../utils/constants.js";
 
 const objectId = Joi.string().hex().length(24);
-const internalObjectId = Joi.any().custom((value, helpers) => {
-  if (value === null || value === undefined) {
-    return value;
-  }
-
-  if (isValidObjectId(value)) {
-    return value;
-  }
-
-  return helpers.error("any.invalid");
-}, "ObjectId validation");
-
-const createNotificationPayloadValidator = Joi.object({
-  title: Joi.string().trim().required(),
-  message: Joi.string().trim().required(),
-  notificationType: Joi.string().trim().required(),
-  recipientType: Joi.string()
-    .valid(...Object.values(RECIPIENT_TYPES))
-    .required(),
-  userId: Joi.when("recipientType", {
-    is: RECIPIENT_TYPES.ADMIN,
-    then: internalObjectId.required(),
-    otherwise: internalObjectId.optional(),
-  }),
-  customerId: Joi.when("recipientType", {
-    is: RECIPIENT_TYPES.CUSTOMER,
-    then: internalObjectId.required(),
-    otherwise: internalObjectId.optional(),
-  }),
-  adminId: internalObjectId.optional(),
-  entityId: Joi.any().optional(),
-  recipientRole: Joi.when("recipientType", {
-    is: RECIPIENT_TYPES.ROLE,
-    then: Joi.string().trim().valid("admin", "superadmin").required(),
-    otherwise: Joi.string().trim().optional(),
-  }),
-}).unknown(true);
+const entityType = Joi.string()
+  .trim()
+  .valid(...Object.values(ENTITY_TYPES));
 
 const getNotificationsValidator = {
   query: Joi.object({
     notificationType: Joi.string().trim().optional(),
-    entityType: Joi.string().trim().optional(),
+    entityType: entityType.optional(),
     isRead: Joi.boolean().optional(),
     page: Joi.number().integer().min(0).optional(),
     limit: Joi.number().integer().min(1).optional(),
@@ -67,7 +32,7 @@ const deleteNotificationValidator = {
 
 const markAllReadValidator = {
   body: Joi.object({
-    entityType: Joi.string().trim().optional(),
+    entityType: entityType.optional(),
   }),
 };
 
@@ -77,7 +42,7 @@ const getCustomerNotificationsValidator = {
   }),
   query: Joi.object({
     notificationType: Joi.string().trim().optional(),
-    entityType: Joi.string().trim().optional(),
+    entityType: entityType.optional(),
     isRead: Joi.boolean().optional(),
     page: Joi.number().integer().min(0).optional(),
     limit: Joi.number().integer().min(1).optional(),
@@ -89,12 +54,11 @@ const getCustomerNotificationsValidator = {
 const markAllCustomerNotificationsReadValidator = {
   body: Joi.object({
     customerId: objectId.required(),
-    entityType: Joi.string().trim().optional(),
+    entityType: entityType.optional(),
   }),
 };
 
 export {
-  createNotificationPayloadValidator,
   getNotificationsValidator,
   markSingleReadValidator,
   deleteNotificationValidator,

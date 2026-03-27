@@ -1,6 +1,10 @@
 import DemoRequest from "../../model/demoRequest.js";
 import { notificationService } from "../notification/notification.service.js";
-import { NOTIFICATION_TYPES } from "../../utils/constants.js";
+import {
+  ENTITY_TYPES,
+  NOTIFICATION_TYPES,
+  RECIPIENT_TYPES,
+} from "../../utils/constants.js";
 import { ApiError } from "../../utils/apiError.js";
 
 const demoService = {
@@ -11,9 +15,9 @@ const demoService = {
             title: "New demo request",
             message: `${result.name} requested a demo for ${result.cafeName} in ${result.city}.`,
             notificationType: NOTIFICATION_TYPES.DEMO_REQUEST_CREATED,
-            recipientType: "role",
+            recipientType: RECIPIENT_TYPES.ROLE,
             recipientRole: "superadmin",
-            entityType: "demo_request",
+            entityType: ENTITY_TYPES.DEMO_REQUEST,
             entityId: result._id,
         });
 

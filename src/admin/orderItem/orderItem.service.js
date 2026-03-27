@@ -4,8 +4,12 @@ import Qr from "../../../model/qr.js";
 import { getIO } from "../../../socket.js";
 import { ApiError } from "../../../utils/apiError.js";
 import { notificationService } from "../../notification/notification.service.js";
-import { NOTIFICATION_TYPES } from "../../../utils/constants.js";
-import { ORDER_STATUS } from "../../../utils/constants.js";
+import {
+  ENTITY_TYPES,
+  NOTIFICATION_TYPES,
+  ORDER_STATUS,
+  RECIPIENT_TYPES,
+} from "../../../utils/constants.js";
 import { buildAggregatedItems } from "../../../utils/utils.js";  
 
 const recalculateOrderTotals = async (orderId) => {
@@ -110,10 +114,10 @@ export const orderItemService = {
         title: "Order item updated",
         message: `${updatedItem.menuId?.name || "Your item"} is now ${status}.`,
         notificationType: NOTIFICATION_TYPES.ORDER_ITEM_STATUS_UPDATED,
-        recipientType: "customer",
+        recipientType: RECIPIENT_TYPES.CUSTOMER,
         customerId: orderItem.customerId,
         adminId,
-        entityType: "order",
+        entityType: ENTITY_TYPES.ORDER,
         entityId: orderItem.orderId,
       });
     }

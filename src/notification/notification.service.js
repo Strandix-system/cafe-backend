@@ -1,6 +1,5 @@
 import { Notification } from "../../model/notification.js";
 import { ApiError } from "../../utils/apiError.js";
-import { createNotificationPayloadValidator } from "../../validations/notification.validation.js";
 import {
   createNotificationDocument,
   getCustomerNotificationFilter,
@@ -12,12 +11,6 @@ import {
 
 export const notificationService = {
   createNotification: async (payload) => {
-    const { error } = createNotificationPayloadValidator.validate(payload);
-
-    if (error) {
-      throw new ApiError(400, error.details[0].message);
-    }
-
     const recipients = await resolveRecipients(payload);
     return await Promise.all(
       recipients.map((recipient) =>
@@ -107,21 +100,6 @@ export const notificationService = {
     const query = getUserNotificationFilter(user._id, filter);
     query.isRead = false;
     return await markNotificationsAsRead(query);
-  },
-
-  getUnreadCountForUser: async (user, filter = {}) => {
-    const query = getUserNotificationFilter(user._id, filter);
-    query.isRead = false;
-
-    return await Notification.countDocuments(query);
-  },
-
-  getUnreadCountForCustomer: async (customerId, filter = {}) => {
-    await validateCustomerNotificationAccess(customerId);
-    const query = getCustomerNotificationFilter(customerId, filter);
-    query.isRead = false;
-
-    return await Notification.countDocuments(query);
   },
 
   getCustomerNotifications: async (customerId, filter = {}, options = {}) => {

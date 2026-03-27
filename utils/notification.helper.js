@@ -9,12 +9,29 @@ import {
   emitNotificationToUser,
 } from "../socket.js";
 
+/**
+ * Validates that the provided value is a MongoDB ObjectId for the given field.
+ */
 const validateObjectId = (value, fieldName) => {
   if (!isValidObjectId(value)) {
     throw new ApiError(400, `Valid ${fieldName} is required`);
   }
 };
 
+/**
+ * Returns the first value when an ObjectId is passed as an array.
+ */
+const getSingleObjectIdValue = (value) => {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+
+  return value;
+};
+
+/**
+ * Sends a created notification to the correct socket recipient.
+ */
 const emitNotification = (notificationDoc) => {
   const notification = notificationDoc?.toObject
     ? notificationDoc.toObject()
@@ -37,6 +54,9 @@ const emitNotification = (notificationDoc) => {
   }
 };
 
+/**
+ * Builds the notification payload that will be stored in the database.
+ */
 const buildNotificationData = (payload, recipient) => {
   const notificationData = {
     title: payload.title,
@@ -68,6 +88,9 @@ const buildNotificationData = (payload, recipient) => {
   return notificationData;
 };
 
+/**
+ * Creates a notification document and emits it in real time.
+ */
 const createNotificationDocument = async (payload, recipient) => {
   const notification = await Notification.create(
     buildNotificationData(payload, recipient)
@@ -78,6 +101,9 @@ const createNotificationDocument = async (payload, recipient) => {
   return notification;
 };
 
+/**
+ * Confirms that the customer exists before customer notifications are accessed.
+ */
 const validateCustomerNotificationAccess = async (customerId) => {
   validateObjectId(customerId, "customerId");
 
@@ -88,12 +114,19 @@ const validateCustomerNotificationAccess = async (customerId) => {
   }
 };
 
+/**
+ * Resolves notification recipients based on the requested recipient type.
+ */
 const resolveRecipients = async (payload) => {
   switch (payload.recipientType) {
     case RECIPIENT_TYPES.ADMIN: {
-      validateObjectId(payload.userId, "userId");
+      const targetUserId = getSingleObjectIdValue(
+        payload.userId ?? payload.adminId
+      );
 
-      const user = await User.findById(payload.userId).select("_id role");
+      validateObjectId(targetUserId, "userId");
+
+      const user = await User.findById(targetUserId).select("_id role");
 
       if (!user) {
         throw new ApiError(404, "Recipient admin not found");
@@ -145,6 +178,9 @@ const resolveRecipients = async (payload) => {
   }
 };
 
+/**
+ * Applies optional notification filters to a base query object.
+ */
 const applyNotificationFilter = (query, filter = {}) => {
   const finalQuery = { ...query };
 
@@ -163,14 +199,23 @@ const applyNotificationFilter = (query, filter = {}) => {
   return finalQuery;
 };
 
+/**
+ * Builds the notification query filter for a user recipient.
+ */
 const getUserNotificationFilter = (userId, filter = {}) => {
   return applyNotificationFilter({ userId }, filter);
 };
 
+/**
+ * Builds the notification query filter for a customer recipient.
+ */
 const getCustomerNotificationFilter = (customerId, filter = {}) => {
   return applyNotificationFilter({ customerId }, filter);
 };
 
+/**
+ * Marks all notifications matching the query as read.
+ */
 const markNotificationsAsRead = async (query) => {
   const result = await Notification.updateMany(query, {
     $set: {
@@ -185,10 +230,6 @@ const markNotificationsAsRead = async (query) => {
 };
 
 export {
-  validateObjectId,
-  emitNotification,
-  buildNotificationData,
-  applyNotificationFilter,
   createNotificationDocument,
   validateCustomerNotificationAccess,
   resolveRecipients,

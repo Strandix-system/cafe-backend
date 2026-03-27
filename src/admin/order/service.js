@@ -1,6 +1,7 @@
 import Order from "../../../model/order.js";
 import Menu from "../../../model/menu.js";
 import Customer from "../../../model/customer.js";
+import mongoose from "mongoose";
 import User from "../../../model/user.js";
 import Qr from "../../../model/qr.js";
 import { OrderItem } from "../../../model/orderItem.js";
@@ -8,8 +9,12 @@ import { getIO } from "../../../socket.js";
 import sendWhatsAppMessage from "../../../utils/whatsapp.js";
 import { ApiError } from "../../../utils/apiError.js";
 import { notificationService } from "../../notification/notification.service.js";
-import { NOTIFICATION_TYPES } from "../../../utils/constants.js";
-import { ORDER_STATUS } from "../../../utils/constants.js";
+import {
+  ENTITY_TYPES,
+  NOTIFICATION_TYPES,
+  ORDER_STATUS,
+  RECIPIENT_TYPES,
+} from "../../../utils/constants.js";
 import { buildAggregatedItems } from "../../../utils/utils.js";
 
 const attachOrderItems = async (orders) => {
@@ -28,7 +33,7 @@ const attachOrderItems = async (orders) => {
 
   return orders.map((order) => ({
     order,
-    orderItems: grouped.get(order._id.toString()) || [],
+    orderItems: grouped.get(order._id.toString()) ?? [],
   }));
 };
 
@@ -182,10 +187,10 @@ export const orderService = {
       title: "New order received",
       message: `A new order has been placed for table ${order.tableNumber}.`,
       notificationType: NOTIFICATION_TYPES.ORDER_CREATED,
-      recipientType: "user",
+      recipientType: RECIPIENT_TYPES.ADMIN,
       userId: adminId,
       adminId,
-      entityType: "order",
+      entityType: ENTITY_TYPES.ORDER,
       entityId: order._id,
     });
 
@@ -286,6 +291,11 @@ export const orderService = {
 
       try {
         const io = getIO();
+        const customerIds = (
+          await OrderItem.distinct("customerId", {
+            orderId: updatedOrder._id,
+          })
+        ).filter((custId) => mongoose.Types.ObjectId.isValid(custId));
 
         io.to(adminId.toString()).emit("orderStatusUpdate", {
           orderId: updatedOrder._id,
@@ -293,30 +303,12 @@ export const orderService = {
           order: orderWithItems,
         });
 
-        const customerIds = await OrderItem.distinct("customerId", {
-          orderId: updatedOrder._id,
-        });
         for (const custId of customerIds) {
           const id = custId.toString();
           io.to(`customer-${id}`).emit("orderStatusUpdate", {
             orderId: updatedOrder._id,
             isCompleted,
             order: orderWithItems,
-          });
-        }
-
-        for (const custId of customerIds) {
-          await notificationService.createNotification({
-            title: "Order status updated",
-            message: isCompleted
-              ? `Your order for table ${updatedOrder.tableNumber} is completed.`
-              : `Your order for table ${updatedOrder.tableNumber} was updated.`,
-            notificationType: NOTIFICATION_TYPES.ORDER_STATUS_UPDATED,
-            recipientType: "customer",
-            customerId: custId,
-            adminId,
-            entityType: "order",
-            entityId: updatedOrder._id,
           });
         }
 
@@ -329,6 +321,33 @@ export const orderService = {
         }
       } catch (socketError) {
         console.error("Socket emission error:", socketError);
+      }
+
+      try {
+        const customerIds = (
+          await OrderItem.distinct("customerId", {
+            orderId: updatedOrder._id,
+          })
+        ).filter((custId) => mongoose.Types.ObjectId.isValid(custId));
+
+        await Promise.all(
+          customerIds.map((custId) =>
+            notificationService.createNotification({
+              title: "Order status updated",
+              message: isCompleted
+                ? `Your order for table ${updatedOrder.tableNumber} is completed.`
+                : `Your order for table ${updatedOrder.tableNumber} was updated.`,
+              notificationType: NOTIFICATION_TYPES.ORDER_STATUS_UPDATED,
+              recipientType: RECIPIENT_TYPES.CUSTOMER,
+              customerId: custId,
+              adminId,
+              entityType: ENTITY_TYPES.ORDER,
+              entityId: updatedOrder._id,
+            })
+          )
+        );
+      } catch (notificationError) {
+        console.error("Order status notification error:", notificationError);
       }
 
       return orderWithItems;
@@ -398,7 +417,7 @@ See you again!
               });
             }
           }
-        } catch (whatsappError) {}
+        } catch (whatsappError) { }
       }
 
       return order;
@@ -424,27 +443,6 @@ See you again!
       await Qr.findOneAndUpdate(
         { adminId, tableNumber: order.tableNumber },
         { occupied: false },
-      );
-    }
-    return order;
-  },
-  deleteOrder: async (orderId, adminId) => {
-    if (!orderId) {
-      throw new ApiError(400, "orderId is required");
-    }
-
-    const order = await Order.findOne({ _id: orderId, adminId });
-    if (!order) {
-      throw new ApiError(404, "Order not found");
-    }
-
-    await OrderItem.deleteMany({ orderId });
-    await Order.deleteOne({ _id: orderId });
-
-    if (!order.isCompleted) {
-      await Qr.findOneAndUpdate(
-        { adminId, tableNumber: order.tableNumber },
-        { occupied: false }
       );
     }
     return order;

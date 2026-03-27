@@ -24,6 +24,13 @@ export const NOTIFICATION_TYPES = {
     SUBSCRIPTION_EXPIRED: "subscription_expired",
     SUBSCRIPTION_EXPIRING_SOON: "subscription_expiring_soon",
 };
+export const ENTITY_TYPES = {
+    ORDER: "order",
+    CUSTOMER: "customer",
+    TICKET: "ticket",
+    DEMO_REQUEST: "demo_request",
+    SUBSCRIPTION: "subscription",
+};
 export const ISSUE_STATUSES = {
     PENDING: "pending",
     IN_PROCESS: "in_process",

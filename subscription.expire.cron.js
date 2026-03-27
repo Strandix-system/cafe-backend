@@ -4,23 +4,36 @@ import User from "./model/user.js";
 import { Notification } from "./model/notification.js";
 import { Transaction } from "./model/transaction.js";
 import { notificationService } from "./src/notification/notification.service.js";
-import { NOTIFICATION_TYPES } from "./utils/constants.js";
+import {
+  ENTITY_TYPES,
+  NOTIFICATION_TYPES,
+  RECIPIENT_TYPES,
+} from "./utils/constants.js";
 
 let schedulerInitialized = false;
 let isRunning = false;
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-const ADMIN_RECIPIENT_TYPE = "admin";
-const SUBSCRIPTION_ENTITY_TYPE = "subscription";
+const ADMIN_RECIPIENT_TYPE = RECIPIENT_TYPES.ADMIN;
+const SUBSCRIPTION_ENTITY_TYPE = ENTITY_TYPES.SUBSCRIPTION;
 
+/**
+ * Returns a readable label for an admin used in notification messages.
+ */
 const getAdminLabel = (admin) =>
   admin.cafeName ||
   `${admin.firstName || ""} ${admin.lastName || ""}`.trim() ||
   "Admin";
 
+/**
+ * Calculates how many whole days remain until the subscription end date.
+ */
 const getDiffDays = (endDate) =>
   Math.ceil((new Date(endDate).getTime() - Date.now()) / DAY_IN_MS);
 
+/**
+ * Fetches the latest transaction that contains subscription details for an admin.
+ */
 const getLatestTransaction = async (adminId) =>
   await Transaction.findOne({
     user: adminId,
@@ -29,6 +42,9 @@ const getLatestTransaction = async (adminId) =>
     .sort({ subscriptionEndDate: -1 })
     .select("_id subscriptionEndDate subscriptionStatus");
 
+/**
+ * Builds the base subscription notification content for the admin.
+ */
 const getNotificationPayload = (admin, transaction) => {
   const endDate = new Date(transaction.subscriptionEndDate);
   const diffDays = getDiffDays(endDate);
@@ -62,6 +78,9 @@ const getNotificationPayload = (admin, transaction) => {
   };
 };
 
+/**
+ * Creates the notification title and message that superadmins should receive.
+ */
 const getSuperadminNotificationContent = (payload) => {
   const isExpired =
     payload.notificationType === NOTIFICATION_TYPES.SUBSCRIPTION_EXPIRED;
@@ -76,6 +95,9 @@ const getSuperadminNotificationContent = (payload) => {
   };
 };
 
+/**
+ * Builds the query used to check whether a subscription notification already exists.
+ */
 const buildSubscriptionNotificationQuery = ({
   title,
   message,
@@ -94,6 +116,9 @@ const buildSubscriptionNotificationQuery = ({
   entityId,
 });
 
+/**
+ * Builds the payload used to create a subscription notification.
+ */
 const buildSubscriptionNotificationPayload = ({
   title,
   message,
@@ -112,6 +137,9 @@ const buildSubscriptionNotificationPayload = ({
   entityId,
 });
 
+/**
+ * Checks which subscription notifications already exist for the admin and superadmins.
+ */
 const getSubscriptionNotificationState = async (
   admin,
   payload,
@@ -154,6 +182,9 @@ const getSubscriptionNotificationState = async (
   };
 };
 
+/**
+ * Creates notification tasks only for recipients who have not been notified yet.
+ */
 const createMissingSubscriptionNotifications = ({
   admin,
   payload,
@@ -201,6 +232,9 @@ const createMissingSubscriptionNotifications = ({
   return notificationPromises;
 };
 
+/**
+ * Creates subscription expiry notifications for the admin and all superadmins.
+ */
 export const createSubscriptionNotifications = async (admin, transaction) => {
   const payload = getNotificationPayload(admin, transaction);
 
@@ -232,6 +266,9 @@ export const createSubscriptionNotifications = async (admin, transaction) => {
   await Promise.all(notificationPromises);
 };
 
+/**
+ * Scans admin subscriptions and triggers notifications for expiring or expired ones.
+ */
 const runSubscriptionNotificationScan = async () => {
   if (isRunning || mongoose.connection.readyState !== 1) {
     return;
@@ -260,6 +297,9 @@ const runSubscriptionNotificationScan = async () => {
   }
 };
 
+/**
+ * Starts the cron scheduler once and runs an initial subscription scan.
+ */
 const initSubscriptionNotificationScheduler = () => {
   if (schedulerInitialized) {
     return;
@@ -267,6 +307,9 @@ const initSubscriptionNotificationScheduler = () => {
 
   schedulerInitialized = true;
 
+  /**
+   * Registers the hourly cron job and triggers the first scan immediately.
+   */
   const startScheduler = () => {
     cron.schedule("0 * * * *", runSubscriptionNotificationScan, {
       timezone: "Asia/Kolkata",

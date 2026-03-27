@@ -2,7 +2,12 @@ import { IssueReported } from "../../model/issueReported.js";
 import User from "../../model/user.js";
 import { generateTicketId } from "../../utils/utils.js";
 import { ApiError } from "../../utils/apiError.js";
-import { ISSUE_STATUSES, NOTIFICATION_TYPES } from "../../utils/constants.js";
+import {
+  ENTITY_TYPES,
+  ISSUE_STATUSES,
+  NOTIFICATION_TYPES,
+  RECIPIENT_TYPES,
+} from "../../utils/constants.js";
 import { notificationService } from "../notification/notification.service.js";
 
 export const issueService = {
@@ -29,10 +34,10 @@ export const issueService = {
             title: "New support ticket",
             message: `A new ticket ${ticket.ticketId} has been raised by ${adminLabel}.`,
             notificationType: NOTIFICATION_TYPES.TICKET_RAISED,
-            recipientType: "role",
+            recipientType: RECIPIENT_TYPES.ROLE,
             recipientRole: "superadmin",
             adminId,
-            entityType: "ticket",
+            entityType: ENTITY_TYPES.TICKET,
             entityId: ticket._id,
         });
 
@@ -65,10 +70,10 @@ export const issueService = {
             title: "Ticket status updated",
             message: `Your ticket ${ticket.ticketId} status is now ${status}.`,
             notificationType: NOTIFICATION_TYPES.TICKET_STATUS_UPDATED,
-            recipientType: "admin",
+            recipientType: RECIPIENT_TYPES.ADMIN,
             userId: ticket.adminId,
             adminId: ticket.adminId,
-            entityType: "ticket",
+            entityType: ENTITY_TYPES.TICKET,
             entityId: ticket._id,
         });
 

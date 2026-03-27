@@ -50,22 +50,7 @@ const checkSubscription = async (req, res, next) => {
     }
 
     const endDate = new Date(latestSubscriptionTransaction.subscriptionEndDate);
-    const diffTime = endDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays <= 7) {
-      try {
-        await createSubscriptionNotifications(
-          req.user,
-          latestSubscriptionTransaction
-        );
-      } catch (error) {
-        console.error(
-          "Subscription notification creation failed:",
-          error.message
-        );
-      }
-    }
+    const diffDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
 
     if (diffDays <= 0) {
       req.subscriptionAlert = {
@@ -79,14 +64,17 @@ const checkSubscription = async (req, res, next) => {
       await Transaction.findByIdAndUpdate(latestSubscriptionTransaction._id, {
         subscriptionStatus: "expired",
       });
-    } else if (diffDays <= 7) {
-      req.subscriptionAlert = {
-        type: "expiringSoon",
-        message: `Your subscription will expire in ${diffDays} day(s). Please renew soon.`,
-        endDate,
-        modalClosable: true,
-      };
+
+      return next();
     }
+
+    req.subscriptionAlert = {
+      type: "expiringSoon",
+      message: `Your subscription will expire in ${diffDays} day(s). Please renew soon.`,
+      endDate,
+      modalClosable: true,
+    };
+
 
     req.subscriptionAlert = {
       type: "trialExpired",
@@ -149,7 +137,7 @@ const blockExpiredSubscription = async (req, res, next) => {
     }
 
     return next(
-      new ApiError( 403,"Your 14-day free trial has expired. Please subscribe to continue."));
+      new ApiError(403, "Your 14-day free trial has expired. Please subscribe to continue."));
   } catch (error) {
     next(error);
   }

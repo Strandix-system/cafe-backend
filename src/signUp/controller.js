@@ -3,12 +3,17 @@ import { sendSuccessResponse } from "../../utils/response.js";
 import { pick } from "../../utils/pick.js";
 export const signUpController = {
   createSubscription: async (req, res) => {
-    const result = await signUpService.createSubscription(req.body);
-    sendSuccessResponse(res, 200, "subscription created successfully.", result);
+    const { planId } = req.body || {};
+    const result = await signUpService.createSubscription(req.user._id, planId);
+    sendSuccessResponse(res, 200, "Subscription created successfully.", result);
   },
+
   verifySubscription: async (req, res) => {
-    const result = await signUpService.verifySubscriptionAndCreateUser(req.body);
-    sendSuccessResponse(res, 200, "subscription verified and user created successfully.", result);
+    const result = await signUpService.verifySubscription(
+      req.body,
+      req.user
+    );
+    sendSuccessResponse(res, 200, "Subscription verified successfully.", result);
   },
   checkEmail: async (req, res) => {
     const { email, phoneNumber } = req.body;
@@ -53,6 +58,11 @@ export const signUpController = {
     const result = await signUpService.verifyRenewSubscription(req.body, req.user);
     sendSuccessResponse(res, 200, "Subscription renewed successfully", result);
   },
+  registerUser: async (req, res) => {
+    const result = await signUpService.registerUserWithTrial(req.body);
+    sendSuccessResponse(res, 201, "User registered successfully. 14 days free trial started.", result
+    );
+  }
 };
 
 export default signUpController;

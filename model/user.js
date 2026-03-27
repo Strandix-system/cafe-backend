@@ -91,6 +91,18 @@ const userSchema = new mongoose.Schema(
       facebook: { type: String, default: null },
       twitter: { type: String, default: null },
     },
+    razorpayCustomerId: {
+      type: String,
+      trim: true,
+      default: null,
+      index: true,
+    },
+    razorpaySubscriptionId: {
+      type: String,
+      trim: true,
+      default: null,
+      index: true,
+    },
   },
   {
     timestamps: true,

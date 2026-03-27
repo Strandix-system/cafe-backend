@@ -47,7 +47,7 @@ const transactionSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
-    subscriptionPlanId: {
+    razorpaySubscriptionPlanId: {
       type: String,
       trim: true,
       default: null,

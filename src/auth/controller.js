@@ -18,10 +18,7 @@ export default {
       new Date(user.createdAt).getTime() !==
       new Date(user.updatedAt).getTime();
 
-    sendSuccessResponse(
-      res,
-      200,
-      "Profile fetched successfully",
+    sendSuccessResponse(res,200,"Profile fetched successfully",
       {
         id: user._id,
         ...user,

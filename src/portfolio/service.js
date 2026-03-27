@@ -35,13 +35,27 @@ export const portfolioService = {
     };
   },
   createCustomerFeedback: async (body = {}) => {
-    const customer = await Customer.findById(body.customerId).select("_id");
+    const customer = await Customer.findById(body.customerId).select("_id adminId");
 
     if (!customer) {
       throw new ApiError(404, "Customer not found");
     }
 
-    return await CustomerFeedback.create(body);
+    const customerAdminId = customer.adminId;
+    const adminId = body.adminId;
+
+    if (!customerAdminId || !adminId) {
+      throw new ApiError(400, "adminId is required");
+    }
+
+    if (customerAdminId.toString() !== adminId.toString()) {
+      throw new ApiError(400, "customerId does not belong to this admin");
+    }
+
+    return await CustomerFeedback.create({
+      ...body,
+      adminId,
+    });
   },
   getTopCustomerFeedbacks: async (filter = {}) => {
     const featuredFeedbacks = await CustomerFeedback.find({

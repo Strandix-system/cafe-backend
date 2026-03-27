@@ -40,9 +40,7 @@ export const orderService = {
 
     const adminId = customer.adminId;
 
-    const admin = await User.findOne({ _id: adminId, role: "admin" }).select(
-      "gst",
-    );
+    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst");
     if (!admin) {
       throw new ApiError(404, "Admin not found");
     }
@@ -150,10 +148,8 @@ export const orderService = {
 
     const io = getIO();
 
-    const populatedOrder = await Order.findById(order._id).populate(
-      "adminId",
-      "name email",
-    );
+    const populatedOrder = await Order.findById(order._id)
+      .populate("adminId", "name email");
 
     const [{ orderItems }] = await attachOrderItems([populatedOrder]);
     const aggregatedItems = buildAggregatedItems(orderItems);
@@ -326,10 +322,7 @@ export const orderService = {
         throw new ApiError(404, "Order not found");
       }
       if (!order.isCompleted) {
-        throw new ApiError(
-          400,
-          "Payment status can only be updated when order is completed",
-        );
+        throw new ApiError(400, "Payment status can only be updated when order is completed");
       }
       if (order.paymentStatus === paymentStatus) {
         throw new ApiError(400, "Payment status already updated");
@@ -342,10 +335,8 @@ export const orderService = {
           adminId,
         );
         try {
-          const populatedOrder = await Order.findById(orderId).populate(
-            "adminId",
-            "cafeName",
-          );
+          const populatedOrder = await Order.findById(orderId)
+            .populate("adminId", "cafeName");
 
           const customerIds = await OrderItem.distinct("customerId", {
             orderId,
@@ -384,12 +375,10 @@ See you again!
         } catch (whatsappError) {}
       }
 
+
       return order;
     } catch (error) {
-      throw new ApiError(
-        500,
-        `Error updating payment status: ${error.message}`,
-      );
+      throw new ApiError(500, `Error updating payment status: ${error.message}`);
     }
 
     return order;
@@ -415,10 +404,8 @@ See you again!
     const order = await Order.findOne({
       _id: orderId,
       adminId,
-    }).populate(
-      "adminId",
-      "cafeName gst address city state pincode phoneNumber",
-    );
+    })
+      .populate("adminId", "cafeName gst address city state pincode phoneNumber");
 
     if (!order) {
       throw new ApiError(404, "Order not found");
@@ -429,10 +416,9 @@ See you again!
 
     const subTotal = orderItems.reduce((sum, item) => {
       const menu = item.menuId;
-      const price =
-        menu?.discountPrice && menu.discountPrice > 0
-          ? menu.discountPrice
-          : menu?.price;
+      const price = menu?.discountPrice && menu.discountPrice > 0
+        ? menu.discountPrice
+        : menu?.price;
       return sum + price * item.quantity;
     }, 0);
 

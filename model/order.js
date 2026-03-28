@@ -40,9 +40,14 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    orderNumber: {
+      type: String,
+      unique: true,
+      required: true,
+    },
   },
 
-  { timestamps: true }
+  { timestamps: true },
 );
 
 orderSchema.plugin(paginate);

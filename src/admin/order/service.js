@@ -7,7 +7,13 @@ import { OrderItem } from "../../../model/orderItem.js";
 import { getIO } from "../../../socket.js";
 import sendWhatsAppMessage from "../../../utils/whatsapp.js";
 import { ApiError } from "../../../utils/apiError.js";
-import { ORDER_STATUS } from "../../../utils/constants.js";
+import { notificationService } from "../../notification/notification.service.js";
+import {
+  ENTITY_TYPES,
+  NOTIFICATION_TYPES,
+  ORDER_STATUS,
+  RECIPIENT_TYPES,
+} from "../../../utils/constants.js";
 import { buildAggregatedItems } from "../../../utils/utils.js";
 
 const attachOrderItems = async (orders) => {
@@ -15,7 +21,7 @@ const attachOrderItems = async (orders) => {
   const orderIds = orders.map((o) => o._id);
   const items = await OrderItem.find({ orderId: { $in: orderIds } })
     .populate("menuId")
-    .populate("customerId", "name phoneNumber");
+    .populate("customerId", "name email phoneNumber");
 
   const grouped = new Map();
   for (const item of items) {
@@ -77,6 +83,10 @@ export const orderService = {
         specialInstruction: item.specialInstruction ?? "",
       };
     });
+
+    if (finalItems.some(item => !item.customerId)) {
+      throw new ApiError(400, "customerId is required for each item");
+    }
 
     const gstAmount = (subTotal * gstPercent) / 100;
     const finalTotal = subTotal + gstAmount;
@@ -170,6 +180,17 @@ export const orderService = {
       const id = custId.toString();
       io.to(`customer-${id}`).emit("order:new", orderWithItems);
     }
+
+    await notificationService.createNotification({
+      title: "New order received",
+      message: `A new order has been placed for table ${order.tableNumber}.`,
+      notificationType: NOTIFICATION_TYPES.ORDER_CREATED,
+      recipientType: RECIPIENT_TYPES.ADMIN,
+      userId: adminId,
+      adminId,
+      entityType: ENTITY_TYPES.ORDER,
+      entityId: order._id,
+    });
 
     return orderWithItems;
   },
@@ -283,6 +304,11 @@ export const orderService = {
 
       try {
         const io = getIO();
+        const customerIds = (
+          await OrderItem.distinct("customerId", {
+            orderId: updatedOrder._id,
+          })
+        );
 
         io.to(adminId.toString()).emit("orderStatusUpdate", {
           orderId: updatedOrder._id,
@@ -290,9 +316,6 @@ export const orderService = {
           order: orderWithItems,
         });
 
-        const customerIds = await OrderItem.distinct("customerId", {
-          orderId: updatedOrder._id,
-        });
         for (const custId of customerIds) {
           const id = custId.toString();
           io.to(`customer-${id}`).emit("orderStatusUpdate", {
@@ -311,6 +334,33 @@ export const orderService = {
         }
       } catch (socketError) {
         console.error("Socket emission error:", socketError);
+      }
+
+      try {
+        const customerIds = (
+          await OrderItem.distinct("customerId", {
+            orderId: updatedOrder._id,
+          })
+        );
+
+        await Promise.all(
+          customerIds.map((custId) =>
+            notificationService.createNotification({
+              title: "Order status updated",
+              message: isCompleted
+                ? `Your order for table ${updatedOrder.tableNumber} is completed.`
+                : `Your order for table ${updatedOrder.tableNumber} was updated.`,
+              notificationType: NOTIFICATION_TYPES.ORDER_STATUS_UPDATED,
+              recipientType: RECIPIENT_TYPES.CUSTOMER,
+              customerId: custId,
+              adminId,
+              entityType: ENTITY_TYPES.ORDER,
+              entityId: updatedOrder._id,
+            })
+          )
+        );
+      } catch (notificationError) {
+        console.error("Order status notification error:", notificationError);
       }
 
       return orderWithItems;
@@ -375,7 +425,7 @@ See you again!
               });
             }
           }
-        } catch (whatsappError) {}
+        } catch (whatsappError) { }
       }
 
 

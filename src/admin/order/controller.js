@@ -2,6 +2,14 @@ import { orderService } from "./service.js";
 import { pick } from "../../../utils/pick.js";
 import { sendSuccessResponse } from "../../../utils/response.js";
 
+const handleChangeTable = async (req, res, serviceFn) => {
+  const { orderId, newTableNumber, qrId } = req.body;
+
+  const result = await serviceFn(orderId, newTableNumber, req.user || qrId);
+
+  sendSuccessResponse(res, 200, "Table changed successfully", result);
+};
+
 export const orderController = {
   createPublicOrder: async (req, res) => {
     const order = await orderService.createOrderByCustomerId(req.body);
@@ -64,15 +72,9 @@ export const orderController = {
 
     sendSuccessResponse(res, 200, "Active order fetched", result);
   },
-  changeTable: async (req, res) => {
-    const { orderId, newTableNumber } = req.body;
+  changeTable: (req, res) =>
+    handleChangeTable(req, res, orderService.changeTable),
 
-    const result = await orderService.changeTable(
-      orderId,
-      newTableNumber,
-      req.user,
-    );
-
-    sendSuccessResponse(res, 200, "Table changed successfully", result);
-  },
+  changeTablePublic: (req, res) =>
+    handleChangeTable(req, res, orderService.changeTablePublic),
 };

@@ -30,6 +30,86 @@ const attachOrderItems = async (orders) => {
   }));
 };
 
+const changeTableCore = async ({
+  orderId,
+  newTableNumber,
+  adminId,
+  changedBy,
+}) => {
+  const order = await Order.findOne({
+    _id: orderId,
+    isCompleted: false,
+  });
+
+  if (!order) {
+    throw new ApiError(404, "Active order not found");
+  }
+
+  const oldTableNumber = order.tableNumber;
+
+  if (oldTableNumber === newTableNumber) {
+    throw new ApiError(400, "Already on this table");
+  }
+
+  const newQr = await Qr.findOne({ adminId, tableNumber: newTableNumber });
+
+  if (!newQr) {
+    throw new ApiError(404, "Target table not found");
+  }
+
+  if (newQr.occupied) {
+    throw new ApiError(400, "Table already occupied");
+  }
+
+  const oldQr = await Qr.findOne({ adminId, tableNumber: oldTableNumber });
+
+  order.tableNumber = newTableNumber;
+  await order.save();
+
+  if (oldQr) {
+    oldQr.occupied = false;
+    await oldQr.save();
+  }
+
+  newQr.occupied = true;
+  await newQr.save();
+
+  const io = getIO();
+
+  io.to(adminId.toString()).emit("tableChanged", {
+    orderId: order._id,
+    oldTableNumber,
+    newTableNumber,
+    changedBy,
+  });
+
+  const customerIds = await OrderItem.distinct("customerId", {
+    orderId: order._id,
+  });
+
+  const newQrData = await Qr.findOne({
+    adminId,
+    tableNumber: newTableNumber,
+  });
+
+  for (const custId of customerIds) {
+    io.to(`customer-${custId.toString()}`).emit("tableChanged", {
+      orderId: order._id,
+      oldTableNumber,
+      newTableNumber,
+      changedBy,
+      qrId: newQrData._id,
+    });
+  }
+
+  return {
+    message: "Table changed successfully",
+    orderId: order._id,
+    oldTableNumber,
+    newTableNumber,
+  };
+};
+
 export const orderService = {
   createOrderByCustomerId: async (body) => {
     const { items, customerId, tableNumber } = body;
@@ -624,54 +704,33 @@ See you again!
     };
   },
   changeTable: async (orderId, newTableNumber, user) => {
-    const order = await Order.findOne({
-      _id: orderId,
-      isCompleted: false,
-    });
-
-    if (!order) {
-      throw new ApiError(404, "Active order not found");
-    }
-
     if (user.role !== "admin") {
       throw new ApiError(403, "Only admin can change table");
     }
 
-    const oldTableNumber = order.tableNumber;
+    const adminId = user._id;
 
-    if (oldTableNumber === newTableNumber) {
-      throw new ApiError(400, "Order is already on this table");
-    }
-
-    const adminId = order.adminId;
-
-    const newQr = await Qr.findOne({ adminId, tableNumber: newTableNumber });
-    if (!newQr) {
-      throw new ApiError(404, "Target table not found");
-    }
-
-    if (newQr.occupied) {
-      throw new ApiError(400, "Target table is already occupied");
-    }
-
-    const oldQr = await Qr.findOne({ adminId, tableNumber: oldTableNumber });
-
-    order.tableNumber = newTableNumber;
-    await order.save();
-
-    if (oldQr) {
-      oldQr.occupied = false;
-      await oldQr.save();
-    }
-
-    newQr.occupied = true;
-    await newQr.save();
-
-    return {
-      message: "Table changed successfully",
-      orderId: order._id,
-      oldTableNumber,
+    return await changeTableCore({
+      orderId,
       newTableNumber,
-    };
+      adminId,
+      changedBy: "admin",
+    });
+  },
+  changeTablePublic: async (orderId, newTableNumber, qrId) => {
+    const qr = await Qr.findById(qrId);
+
+    if (!qr) {
+      throw new ApiError(403, "Invalid QR");
+    }
+
+    const adminId = qr.adminId;
+
+    return await changeTableCore({
+      orderId,
+      newTableNumber,
+      adminId,
+      changedBy: "customer",
+    });
   },
 };

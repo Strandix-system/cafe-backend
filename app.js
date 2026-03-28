@@ -6,7 +6,6 @@ import helmet from "helmet";
 import compression from "compression";
 import { webhookRoutes } from "./routes/webhookRoute.js";
 import { errorHandler, notFoundError } from "./middleware/errorHandler.js";
-import connectDB from "./database/dbConnect.js";
 import routes from "./routes/index.js";
 
 env.config();
@@ -63,7 +62,5 @@ app.use("/api", routes);
 app.use(notFoundError);
 
 app.use(errorHandler);
-
-connectDB();
 
 export default app;

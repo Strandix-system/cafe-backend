@@ -157,6 +157,7 @@ export const orderService = {
         gstPercent,
         gstAmount,
         subTotal,
+        orderNumber
       });
       await createOrderItems(order._id, finalItems);
 
@@ -742,6 +743,7 @@ See you again!
       subTotal,
       gstPercent,
       gstAmount,
+      orderNumber: order.orderNumber,
       total,
       createdAt: order.createdAt,
     };

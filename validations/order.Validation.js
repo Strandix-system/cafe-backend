@@ -56,7 +56,6 @@ const getOrdersSchema = {
     isCompleted: Joi.boolean().optional(),
     tableNumber: Joi.number(),
     paymentStatus: Joi.boolean(),
-    search: Joi.string(),
     page: Joi.number().optional(),
     limit: Joi.number().optional(),
     sortBy: Joi.string().trim().optional(),

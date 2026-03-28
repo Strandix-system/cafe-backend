@@ -48,7 +48,7 @@ export const portfolioService = {
       throw new ApiError(400, "adminId is required");
     }
 
-    if (customerAdminId.toString() !== adminId.toString()) {
+    if (customerAdminId !== adminId) {
       throw new ApiError(400, "customerId does not belong to this admin");
     }
 

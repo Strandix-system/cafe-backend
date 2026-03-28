@@ -321,40 +321,48 @@ export const orderService = {
   updatePaymentStatus: async (orderId, paymentStatus, adminId) => {
     try {
       const order = await Order.findOne({ _id: orderId, adminId });
+
       if (!order) {
         throw new ApiError(404, "Order not found");
       }
+
       if (!order.isCompleted) {
-        throw new ApiError(400, "Payment status can only be updated when order is completed");
+        throw new ApiError(
+          400,
+          "Payment status can only be updated when order is completed"
+        );
       }
+
       if (order.paymentStatus === paymentStatus) {
-        throw new ApiError(400, "Payment status already updated");
+        return order;
       }
+
       order.paymentStatus = paymentStatus;
       await order.save();
+
       if (paymentStatus === true) {
-        const billDetails = await orderService.getOrderBillDetails(
-          orderId,
-          adminId,
-        );
         try {
-          const populatedOrder = await Order.findById(orderId)
-            .populate("adminId", "cafeName");
+          const [billDetails, populatedOrder] = await Promise.all([
+            orderService.getOrderBillDetails(orderId, adminId),
+            Order.findById(orderId).populate("adminId", "cafeName"),
+          ]);
 
           const customerIds = await OrderItem.distinct("customerId", {
             orderId,
           });
+
           if (customerIds.length) {
             const customers = await Customer.find({
               _id: { $in: customerIds },
             }).select("name phoneNumber");
 
-            for (const customer of customers) {
-              if (!customer?.phoneNumber) continue;
+            await Promise.all(
+              customers.map((customer) => {
+                if (!customer?.phoneNumber) return null;
 
-              const formattedPhone = `91${customer.phoneNumber}`;
+                const formattedPhone = `91${customer.phoneNumber}`;
 
-              const message = `
+                const message = `
 Hello ${customer.name},
 
 ✅ Payment received successfully.
@@ -367,24 +375,24 @@ Your bill PDF is ready in the app.
 
 Thank you for visiting ${populatedOrder.adminId.cafeName}
 See you again!
-          `;
+              `;
 
-              await sendWhatsAppMessage({
-                to: formattedPhone,
-                message,
-              });
-            }
+                return sendWhatsAppMessage({
+                  to: formattedPhone,
+                  message,
+                });
+              })
+            );
           }
-        } catch (whatsappError) {}
+        } catch (err) {
+          console.error("WhatsApp notification failed:", err.message);
+        }
       }
-
 
       return order;
     } catch (error) {
-      throw new ApiError(500, `Error updating payment status: ${error.message}`);
+      throw new ApiError(500, error.message);
     }
-
-    return order;
   },
   deleteOrder: async (orderId, adminId) => {
     const order = await Order.findOne({ _id: orderId, adminId });

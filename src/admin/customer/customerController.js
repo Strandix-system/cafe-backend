@@ -1,33 +1,36 @@
-import customerService from "./customerServer.js";
-import { pick } from "../../../utils/pick.js";
-import { sendSuccessResponse } from "../../../utils/response.js";
+import customerService from './customerServer.js';
+import { pick } from '../../../utils/pick.js';
+import { sendSuccessResponse } from '../../../utils/response.js';
 
 const customerController = {
   createCustomer: async (req, res) => {
     const customer = await customerService.createCustomer(req.body);
-    sendSuccessResponse(res, 201, "Customer created", customer);
+    sendSuccessResponse(res, 201, 'Customer created', customer);
   },
   getCustomers: async (req, res) => {
-    const filter = pick(req.query, ["search", "adminId", "status"]);
-    const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
+    const filter = pick(req.query, ['search', 'adminId', 'status']);
+    const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
     const customers = await customerService.getCustomers(
       filter,
       options,
-      req.user
+      req.user,
     );
-    sendSuccessResponse(res, 200, "Customers fetched", customers);
+    sendSuccessResponse(res, 200, 'Customers fetched', customers);
   },
   getCustomerById: async (req, res) => {
     const customer = await customerService.getCustomerById(req.params.id);
-    sendSuccessResponse(res, 200, "Customer fetched", customer);
+    sendSuccessResponse(res, 200, 'Customer fetched', customer);
   },
   updateCustomer: async (req, res) => {
-    const customer = await customerService.updateCustomer(req.params.id, req.body);
-    sendSuccessResponse(res, 200, "Customer updated", customer);
+    const customer = await customerService.updateCustomer(
+      req.params.id,
+      req.body,
+    );
+    sendSuccessResponse(res, 200, 'Customer updated', customer);
   },
   deleteCustomer: async (req, res) => {
     const result = await customerService.deleteCustomer(req.params.id);
-    sendSuccessResponse(res, 200, "Customer deleted", result);
+    sendSuccessResponse(res, 200, 'Customer deleted', result);
   },
 };
 

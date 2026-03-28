@@ -1,10 +1,10 @@
-import mongoose from "mongoose";
-import { paginate } from "../model/plugin/paginate.plugin.js"
+import mongoose from 'mongoose';
+import { paginate } from '../model/plugin/paginate.plugin.js';
 const cafeLayoutSchema = new mongoose.Schema(
   {
     adminId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
     },
 
@@ -23,26 +23,26 @@ const cafeLayoutSchema = new mongoose.Schema(
     },
     defaultLayoutId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "CafeLayout",
+      ref: 'CafeLayout',
       default: null,
     },
     active: {
       type: Boolean,
       default: false,
-    }
+    },
   },
   {
     timestamps: true,
     toJSON: { virtuals: true },
-    toObject: { virtuals: true }
-  }
+    toObject: { virtuals: true },
+  },
 );
 cafeLayoutSchema.virtual('menus', {
-  ref: 'Menu',             // The name of your Menu model
-  localField: 'adminId',   // Field in CafeLayout
+  ref: 'Menu', // The name of your Menu model
+  localField: 'adminId', // Field in CafeLayout
   foreignField: 'adminId', // Field in Menu
 });
 
-cafeLayoutSchema.plugin(paginate)
+cafeLayoutSchema.plugin(paginate);
 
-export default mongoose.model("CafeLayout", cafeLayoutSchema);
+export default mongoose.model('CafeLayout', cafeLayoutSchema);

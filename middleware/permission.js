@@ -1,32 +1,22 @@
-import { ApiError } from "../utils/apiError.js";
+import { ApiError } from '../utils/apiError.js';
 
 export const allowRoles = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      throw new ApiError(401, "Unauthorized");
+      throw new ApiError(401, 'Unauthorized');
     }
 
-    if (req.user.role === "superadmin") {
+    if (req.user.role === 'superadmin') {
       return next();
     }
 
     if (!roles.includes(req.user.role)) {
-      throw new ApiError(403, "Access denied");
+      throw new ApiError(403, 'Access denied');
     }
 
     next();
   };
 };
-
-
-
-
-
-
-
-
-
-
 
 // const roles = {
 //     superadmin: ['create', 'read', 'update', 'delete', 'download', 'upload'],

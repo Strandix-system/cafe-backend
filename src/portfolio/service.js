@@ -1,8 +1,8 @@
-import mongoose from "mongoose";
-import Customer from "../../model/customer.js";
-import Menu from "../../model/menu.js";
-import { CustomerFeedback } from "../../model/customerFeedback.js";
-import { ApiError } from "../../utils/apiError.js";
+import mongoose from 'mongoose';
+import Customer from '../../model/customer.js';
+import Menu from '../../model/menu.js';
+import { CustomerFeedback } from '../../model/customerFeedback.js';
+import { ApiError } from '../../utils/apiError.js';
 
 export const portfolioService = {
   aboutStats: async (filter = {}) => {
@@ -19,7 +19,7 @@ export const portfolioService = {
         {
           $group: {
             _id: null,
-            averageRating: { $avg: "$rate" },
+            averageRating: { $avg: '$rate' },
           },
         },
       ]),
@@ -35,21 +35,23 @@ export const portfolioService = {
     };
   },
   createCustomerFeedback: async (body = {}) => {
-    const customer = await Customer.findById(body.customerId).select("_id adminId");
+    const customer = await Customer.findById(body.customerId).select(
+      '_id adminId',
+    );
 
     if (!customer) {
-      throw new ApiError(404, "Customer not found");
+      throw new ApiError(404, 'Customer not found');
     }
 
     const customerAdminId = customer.adminId;
     const adminId = body.adminId;
 
     if (!customerAdminId || !adminId) {
-      throw new ApiError(400, "adminId is required");
+      throw new ApiError(400, 'adminId is required');
     }
 
     if (customerAdminId !== adminId) {
-      throw new ApiError(400, "customerId does not belong to this admin");
+      throw new ApiError(400, 'customerId does not belong to this admin');
     }
 
     return await CustomerFeedback.create({
@@ -62,7 +64,7 @@ export const portfolioService = {
       adminId: filter.adminId,
       isPortfolioFeatured: true,
     })
-      .populate("customerId", "name phoneNumber")
+      .populate('customerId', 'name phoneNumber')
       .sort({ createdAt: -1 })
       .limit(5);
 
@@ -76,7 +78,7 @@ export const portfolioService = {
       adminId: filter.adminId,
       _id: { $nin: featuredIds },
     })
-      .populate("customerId", "name phoneNumber")
+      .populate('customerId', 'name phoneNumber')
       .sort({ rate: -1, createdAt: -1 })
       .limit(remainingSlots);
 
@@ -88,7 +90,7 @@ export const portfolioService = {
       adminId,
     });
 
-    if (!feedback) throw new ApiError(404, "Customer feedback not found");
+    if (!feedback) throw new ApiError(404, 'Customer feedback not found');
 
     if (body.isPortfolioFeatured === true) {
       const selectedCount = await CustomerFeedback.countDocuments({
@@ -97,7 +99,10 @@ export const portfolioService = {
       });
 
       if (selectedCount >= 5 && !feedback.isPortfolioFeatured) {
-        throw new ApiError(400, "You can select a maximum of 5 customer feedbacks");
+        throw new ApiError(
+          400,
+          'You can select a maximum of 5 customer feedbacks',
+        );
       }
     }
 
@@ -110,14 +115,16 @@ export const portfolioService = {
     if (filter.search) {
       const matchedCustomers = await Customer.find({
         $or: [
-          { name: { $regex: filter.search, $options: "i" } },
-          { phoneNumber: { $regex: filter.search, $options: "i" } },
+          { name: { $regex: filter.search, $options: 'i' } },
+          { phoneNumber: { $regex: filter.search, $options: 'i' } },
         ],
-      }).select("_id");
+      }).select('_id');
 
       filter.$or = [
-        { description: { $regex: filter.search, $options: "i" } },
-        { customerId: { $in: matchedCustomers.map((customer) => customer._id) } },
+        { description: { $regex: filter.search, $options: 'i' } },
+        {
+          customerId: { $in: matchedCustomers.map((customer) => customer._id) },
+        },
       ];
     }
     delete filter.search;
@@ -131,7 +138,7 @@ export const portfolioService = {
     });
 
     if (!feedback) {
-      throw new ApiError(404, "Customer feedback not found");
+      throw new ApiError(404, 'Customer feedback not found');
     }
   },
 };

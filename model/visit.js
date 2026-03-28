@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
-import { paginate } from "./plugin/paginate.plugin.js";
+import mongoose from 'mongoose';
+import { paginate } from './plugin/paginate.plugin.js';
 
 const visitSchema = new mongoose.Schema({
   ip: String,
@@ -10,4 +10,4 @@ const visitSchema = new mongoose.Schema({
   },
 });
 visitSchema.plugin(paginate);
-export default mongoose.model("Visit", visitSchema);
+export default mongoose.model('Visit', visitSchema);

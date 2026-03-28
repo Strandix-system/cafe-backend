@@ -1,20 +1,22 @@
-import Joi from "joi";
-import { ORDER_STATUS } from "../utils/constants.js";
+import Joi from 'joi';
+import { ORDER_STATUS } from '../utils/constants.js';
 // reusable ObjectId validator
 const objectId = Joi.string().regex(/^[0-9a-fA-F]{24}$/);
 
- const updateItemStatusSchema = {
+const updateItemStatusSchema = {
   body: Joi.object({
     orderItemId: objectId.required(),
     orderId: objectId.required(),
     status: Joi.string()
-      .valid(...Object.values(ORDER_STATUS)).required().messages({
-        "any.only": "Invalid order status",
-        "string.empty": "Status is required",
+      .valid(...Object.values(ORDER_STATUS))
+      .required()
+      .messages({
+        'any.only': 'Invalid order status',
+        'string.empty': 'Status is required',
       }),
   }),
 };
- const updateQuantitySchema = {
+const updateQuantitySchema = {
   body: Joi.object({
     orderItemId: objectId.required(),
     orderId: objectId.optional(),
@@ -23,14 +25,19 @@ const objectId = Joi.string().regex(/^[0-9a-fA-F]{24}$/);
     userId: objectId.optional(),
   }),
 };
- const deleteItemSchema = {
+const deleteItemSchema = {
   params: Joi.object({
     orderItemId: objectId.required(),
   }),
 };
- const getItemsSchema = {
+const getItemsSchema = {
   params: Joi.object({
     orderId: objectId.required(),
   }),
 };
-export { updateItemStatusSchema, deleteItemSchema, updateQuantitySchema, getItemsSchema };
+export {
+  updateItemStatusSchema,
+  deleteItemSchema,
+  updateQuantitySchema,
+  getItemsSchema,
+};

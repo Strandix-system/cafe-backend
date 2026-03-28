@@ -1,11 +1,11 @@
-import mongoose from "mongoose";
-import { paginate } from "../model/plugin/paginate.plugin.js";
+import mongoose from 'mongoose';
+import { paginate } from '../model/plugin/paginate.plugin.js';
 
 const orderSchema = new mongoose.Schema(
   {
     adminId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
     },
     orderBy: {
@@ -42,9 +42,9 @@ const orderSchema = new mongoose.Schema(
     },
   },
 
-  { timestamps: true }
+  { timestamps: true },
 );
 
 orderSchema.plugin(paginate);
 
-export default mongoose.model("Order", orderSchema);
+export default mongoose.model('Order', orderSchema);

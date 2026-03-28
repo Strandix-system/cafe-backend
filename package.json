@@ -1,5 +1,5 @@
 {
-  "name": "paxapp",
+  "name": "aeternis-backend",
   "version": "1.0.0",
   "description": "",
   "type": "module",
@@ -7,7 +7,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "repository": {
     "type": "git",
@@ -56,5 +58,15 @@
     "stripe": "^16.12.0",
     "twilio": "^5.4.4",
     "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.1"
+  },
+  "lint-staged": {
+    "*.{js,ts,json}": [
+      "prettier --write"
+    ]
   }
 }

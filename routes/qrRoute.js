@@ -1,31 +1,28 @@
-import express from "express";
-import qrController from "../src/admin/qr/controller.js";
-import { tokenVerification } from "../middleware/auth.js";
-import { allowRoles } from "../middleware/permission.js";
+import express from 'express';
+import qrController from '../src/admin/qr/controller.js';
+import { tokenVerification } from '../middleware/auth.js';
+import { allowRoles } from '../middleware/permission.js';
 
 const router = express.Router();
 
 router.post(
-  "/create",
+  '/create',
   tokenVerification,
-  allowRoles("admin"),
-  qrController.createQr
+  allowRoles('admin'),
+  qrController.createQr,
+);
+router.get('/scan/:qrId', qrController.scanQr);
+router.get(
+  '/get-all',
+  tokenVerification,
+  allowRoles('admin'),
+  qrController.getAllQr,
 );
 router.get(
-  "/scan/:qrId",     
-  qrController.scanQr
-);
-router.get(
-  "/get-all",
+  '/count/:layoutId',
   tokenVerification,
-  allowRoles("admin"),
-  qrController.getAllQr
+  allowRoles('admin'),
+  qrController.getQrCountforLayout,
 );
-router.get(
-  "/count/:layoutId",
-  tokenVerification,
-  allowRoles("admin"),
-  qrController.getQrCountforLayout
-);  
 
 export default router;

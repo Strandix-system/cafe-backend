@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
-import { paginate } from "../model/plugin/paginate.plugin.js"
+import mongoose from 'mongoose';
+import { paginate } from '../model/plugin/paginate.plugin.js';
 
 const demoRequestSchema = new mongoose.Schema(
   {
@@ -34,12 +34,12 @@ const demoRequestSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["requested", "full_filled", "inquiry","not_interested"],
-      default: "requested",
+      enum: ['requested', 'full_filled', 'inquiry', 'not_interested'],
+      default: 'requested',
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
- 
-demoRequestSchema.plugin(paginate)
-export default mongoose.model("demoRequest",demoRequestSchema);
+
+demoRequestSchema.plugin(paginate);
+export default mongoose.model('demoRequest', demoRequestSchema);

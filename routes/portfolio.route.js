@@ -1,30 +1,30 @@
-import express from "express";
-import { portfolioController } from "../src/portfolio/controller.js";
-import { validate } from "../middleware/validate.js";
+import express from 'express';
+import { portfolioController } from '../src/portfolio/controller.js';
+import { validate } from '../middleware/validate.js';
 import {
   aboutStatsValidator,
   createCustomerFeedbackValidator,
   topCustomerFeedbackValidator,
-} from "../validations/portfolio.validation.js";
-import { tokenVerification } from "../middleware/auth.js";
+} from '../validations/portfolio.validation.js';
+import { tokenVerification } from '../middleware/auth.js';
 
 export const portfolioRoute = express.Router();
 
 portfolioRoute.get(
-  "/about-stats/:adminId",
+  '/about-stats/:adminId',
   validate(aboutStatsValidator),
-  portfolioController.aboutStats
+  portfolioController.aboutStats,
 );
 
 portfolioRoute.post(
-  "/customer-feedback",
+  '/customer-feedback',
   (req, res, next) => tokenVerification(req, res, next, true),
   validate(createCustomerFeedbackValidator),
-  portfolioController.createCustomerFeedback
+  portfolioController.createCustomerFeedback,
 );
 
 portfolioRoute.get(
-  "/top-feedback/:adminId",
+  '/top-feedback/:adminId',
   validate(topCustomerFeedbackValidator),
-  portfolioController.getTopCustomerFeedbacks
+  portfolioController.getTopCustomerFeedbacks,
 );

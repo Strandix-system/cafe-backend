@@ -1,66 +1,63 @@
-import express from "express";
-import cafeLayoutController from "../src/admin/layout/controller.js";
-import { tokenVerification } from "../middleware/auth.js";
-import { allowRoles } from "../middleware/permission.js";
-import { uploadLayoutImages } from "../middleware/upload.js";
+import express from 'express';
+import cafeLayoutController from '../src/admin/layout/controller.js';
+import { tokenVerification } from '../middleware/auth.js';
+import { allowRoles } from '../middleware/permission.js';
+import { uploadLayoutImages } from '../middleware/upload.js';
 
 const router = express.Router();
 router.post(
-  "/create",
+  '/create',
   tokenVerification,
-  allowRoles("superadmin", "admin"),
+  allowRoles('superadmin', 'admin'),
   uploadLayoutImages,
-  cafeLayoutController.createCafeLayout
+  cafeLayoutController.createCafeLayout,
 );
 
 // used by portfolio website
 router.get(
-  "/get-layout/:id",
+  '/get-layout/:id',
   // tokenVerification,
   // allowRoles("superadmin", "admin"),
-  cafeLayoutController.getLayoutById
+  cafeLayoutController.getLayoutById,
 );
 
 router.patch(
-  "/update-status",
+  '/update-status',
   tokenVerification,
-  allowRoles("admin", " superadmin"),
-  cafeLayoutController.updateLayoutStatus
+  allowRoles('admin', ' superadmin'),
+  cafeLayoutController.updateLayoutStatus,
 );
 router.delete(
-  "/delete/:id",
+  '/delete/:id',
   tokenVerification,
-  allowRoles("superadmin","admin"),
-  cafeLayoutController.deleteCafeLayout
+  allowRoles('superadmin', 'admin'),
+  cafeLayoutController.deleteCafeLayout,
 );
 router.patch(
-  "/update/:id",
+  '/update/:id',
   tokenVerification,
-  allowRoles("admin", " superadmin"),
+  allowRoles('admin', ' superadmin'),
   uploadLayoutImages,
-  cafeLayoutController.updateCafeLayout
+  cafeLayoutController.updateCafeLayout,
 );
 router.get(
-  "/admin-layout",
+  '/admin-layout',
   tokenVerification,
-  allowRoles("admin"),
-  cafeLayoutController.getCafeLayoutByAdmin
+  allowRoles('admin'),
+  cafeLayoutController.getCafeLayoutByAdmin,
 );
+router.get('/active/:id', cafeLayoutController.getActiveLayout);
 router.get(
-  "/active/:id",
-  cafeLayoutController.getActiveLayout
-);
-router.get(
-  "/all-layouts",
+  '/all-layouts',
   tokenVerification,
-  allowRoles("superadmin", "admin"),
-  cafeLayoutController.getAllLayout
+  allowRoles('superadmin', 'admin'),
+  cafeLayoutController.getAllLayout,
 );
 router.get(
-  "/:id",
+  '/:id',
   tokenVerification,
-  allowRoles("superadmin", "admin"),
-  cafeLayoutController.getLayoutById
-)
+  allowRoles('superadmin', 'admin'),
+  cafeLayoutController.getLayoutById,
+);
 
 export default router;

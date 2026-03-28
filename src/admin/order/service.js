@@ -1,27 +1,27 @@
-import Order from "../../../model/order.js";
-import Menu from "../../../model/menu.js";
-import Customer from "../../../model/customer.js";
-import User from "../../../model/user.js";
-import Qr from "../../../model/qr.js";
-import { OrderItem } from "../../../model/orderItem.js";
-import { getIO } from "../../../socket.js";
-import sendWhatsAppMessage from "../../../utils/whatsapp.js";
-import { ApiError } from "../../../utils/apiError.js";
-import { notificationService } from "../../notification/notification.service.js";
+import Order from '../../../model/order.js';
+import Menu from '../../../model/menu.js';
+import Customer from '../../../model/customer.js';
+import User from '../../../model/user.js';
+import Qr from '../../../model/qr.js';
+import { OrderItem } from '../../../model/orderItem.js';
+import { getIO } from '../../../socket.js';
+import sendWhatsAppMessage from '../../../utils/whatsapp.js';
+import { ApiError } from '../../../utils/apiError.js';
+import { notificationService } from '../../notification/notification.service.js';
 import {
   ENTITY_TYPES,
   NOTIFICATION_TYPES,
   ORDER_STATUS,
   RECIPIENT_TYPES,
-} from "../../../utils/constants.js";
-import { buildAggregatedItems } from "../../../utils/utils.js";
+} from '../../../utils/constants.js';
+import { buildAggregatedItems } from '../../../utils/utils.js';
 
 const attachOrderItems = async (orders) => {
   if (!orders || !orders.length) return [];
   const orderIds = orders.map((o) => o._id);
   const items = await OrderItem.find({ orderId: { $in: orderIds } })
-    .populate("menuId")
-    .populate("customerId", "name email phoneNumber");
+    .populate('menuId')
+    .populate('customerId', 'name email phoneNumber');
 
   const grouped = new Map();
   for (const item of items) {
@@ -41,17 +41,19 @@ export const orderService = {
     const { items, customerId, tableNumber } = body;
     const customer = await Customer.findById(customerId);
     if (!customer) {
-      throw new ApiError(404, "Customer not found");
+      throw new ApiError(404, 'Customer not found');
     }
 
     const adminId = customer.adminId;
     if (!adminId) {
-      throw new ApiError(400, "Customer adminId is missing");
+      throw new ApiError(400, 'Customer adminId is missing');
     }
 
-    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst");
+    const admin = await User.findOne({ _id: adminId, role: 'admin' }).select(
+      'gst',
+    );
     if (!admin) {
-      throw new ApiError(404, "Admin not found");
+      throw new ApiError(404, 'Admin not found');
     }
 
     const gstPercent = admin.gst;
@@ -61,7 +63,7 @@ export const orderService = {
     });
 
     if (menus?.length !== items.length) {
-      throw new ApiError(400, "Invalid menu item");
+      throw new ApiError(400, 'Invalid menu item');
     }
 
     let subTotal = 0;
@@ -80,12 +82,12 @@ export const orderService = {
         customerId: item.customerId ?? customerId,
         menuId: item.menuId,
         quantity: item.quantity,
-        specialInstruction: item.specialInstruction ?? "",
+        specialInstruction: item.specialInstruction ?? '',
       };
     });
 
-    if (finalItems.some(item => !item.customerId)) {
-      throw new ApiError(400, "customerId is required for each item");
+    if (finalItems.some((item) => !item.customerId)) {
+      throw new ApiError(400, 'customerId is required for each item');
     }
 
     const gstAmount = (subTotal * gstPercent) / 100;
@@ -93,7 +95,7 @@ export const orderService = {
 
     const qr = await Qr.findOne({ adminId, tableNumber });
     if (!qr) {
-      throw new ApiError(404, "Table not found");
+      throw new ApiError(404, 'Table not found');
     }
 
     const latestActiveOrder = await Order.findOne({
@@ -162,8 +164,10 @@ export const orderService = {
 
     const io = getIO();
 
-    const populatedOrder = await Order.findById(order._id)
-      .populate("adminId", "name email");
+    const populatedOrder = await Order.findById(order._id).populate(
+      'adminId',
+      'name email',
+    );
 
     const [{ orderItems }] = await attachOrderItems([populatedOrder]);
     const aggregatedItems = buildAggregatedItems(orderItems);
@@ -173,8 +177,8 @@ export const orderService = {
       orderItems: orderItems.map((i) => i.toObject()),
     };
 
-    io.to(adminId.toString()).emit("order:new", orderWithItems);
-    const customerIds = await OrderItem.distinct("customerId", {
+    io.to(adminId.toString()).emit('order:new', orderWithItems);
+    const customerIds = await OrderItem.distinct('customerId', {
       orderId: order._id,
     });
 
@@ -182,16 +186,16 @@ export const orderService = {
       const id = custId.toString();
 
       // FULL TABLE ORDER (for shared view)
-      io.to(`customer-${id}`).emit("table:orderUpdated", {
+      io.to(`customer-${id}`).emit('table:orderUpdated', {
         order: orderWithItems,
       });
 
       // PERSONAL ORDER (for "My Orders")
       const myItems = orderItems.filter(
-        (item) => item.customerId?._id?.toString() === id
+        (item) => item.customerId?._id?.toString() === id,
       );
 
-      io.to(`customer-${id}`).emit("my:orderUpdated", {
+      io.to(`customer-${id}`).emit('my:orderUpdated', {
         orderId: order._id,
         items: buildAggregatedItems(myItems),
       });
@@ -205,18 +209,20 @@ export const orderService = {
 
     const adminId = user?._id;
     if (!adminId) {
-      throw new ApiError(401, "Unauthorized");
+      throw new ApiError(401, 'Unauthorized');
     }
 
-    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst");
+    const admin = await User.findOne({ _id: adminId, role: 'admin' }).select(
+      'gst',
+    );
     if (!admin) {
-      throw new ApiError(404, "Admin not found");
+      throw new ApiError(404, 'Admin not found');
     }
 
     const gstPercent = admin.gst;
 
-    const phoneNumber = customer?.phoneNumber ?? "";
-    const name = customer?.name ?? "";
+    const phoneNumber = customer?.phoneNumber ?? '';
+    const name = customer?.name ?? '';
 
     let dbCustomer = await Customer.findOne({ phoneNumber, adminId });
     if (dbCustomer) {
@@ -236,7 +242,7 @@ export const orderService = {
     });
 
     if (menus?.length !== items.length) {
-      throw new ApiError(400, "Invalid menu item");
+      throw new ApiError(400, 'Invalid menu item');
     }
 
     let subTotal = 0;
@@ -255,7 +261,7 @@ export const orderService = {
         customerId,
         menuId: item.menuId,
         quantity: item.quantity,
-        specialInstruction: item.specialInstruction ?? "",
+        specialInstruction: item.specialInstruction ?? '',
       };
     });
 
@@ -264,7 +270,7 @@ export const orderService = {
 
     const qr = await Qr.findOne({ adminId, tableNumber });
     if (!qr) {
-      throw new ApiError(404, "Table not found");
+      throw new ApiError(404, 'Table not found');
     }
 
     const latestActiveOrder = await Order.findOne({
@@ -286,10 +292,10 @@ export const orderService = {
     let order;
 
     if (latestActiveOrder) {
-     if (!latestActiveOrder.orderBy.equals(adminId)) {
+      if (!latestActiveOrder.orderBy.equals(adminId)) {
         throw new ApiError(
           403,
-          "This active order was created by customer; admin cannot add items via offline flow",
+          'This active order was created by customer; admin cannot add items via offline flow',
         );
       }
 
@@ -331,8 +337,10 @@ export const orderService = {
 
     const io = getIO();
 
-    const populatedOrder = await Order.findById(order._id)
-      .populate("adminId", "name email");
+    const populatedOrder = await Order.findById(order._id).populate(
+      'adminId',
+      'name email',
+    );
 
     const [{ orderItems }] = await attachOrderItems([populatedOrder]);
     const aggregatedItems = buildAggregatedItems(orderItems);
@@ -342,17 +350,17 @@ export const orderService = {
       orderItems: orderItems.map((i) => i.toObject()),
     };
 
-    io.to(adminId.toString()).emit("order:new", orderWithItems);
-    const customerIds = await OrderItem.distinct("customerId", {
+    io.to(adminId.toString()).emit('order:new', orderWithItems);
+    const customerIds = await OrderItem.distinct('customerId', {
       orderId: order._id,
     });
     for (const custId of customerIds) {
       const id = custId.toString();
-      io.to(`customer-${id}`).emit("order:new", orderWithItems);
+      io.to(`customer-${id}`).emit('order:new', orderWithItems);
     }
 
     await notificationService.createNotification({
-      title: "New order received",
+      title: 'New order received',
       message: `A new order has been placed for table ${order.tableNumber}.`,
       notificationType: NOTIFICATION_TYPES.ORDER_CREATED,
       recipientType: RECIPIENT_TYPES.ADMIN,
@@ -366,8 +374,8 @@ export const orderService = {
   },
   getOrders: async (adminId, filter, options) => {
     if (filter?.isCompleted !== undefined) {
-      if (typeof filter.isCompleted === "string") {
-        filter.isCompleted = filter.isCompleted.toLowerCase() === "true";
+      if (typeof filter.isCompleted === 'string') {
+        filter.isCompleted = filter.isCompleted.toLowerCase() === 'true';
       }
     }
 
@@ -384,7 +392,7 @@ export const orderService = {
         customerId: i.customerId?._id,
         quantity: i.quantity,
         status: i.status,
-        specialInstruction: i.specialInstruction ?? "",
+        specialInstruction: i.specialInstruction ?? '',
         timestamps: {
           createdAt: i.createdAt,
           updatedAt: i.updatedAt,
@@ -396,7 +404,7 @@ export const orderService = {
   getMyOrders: async (filter, options) => {
     const { userId, ...restFilter } = filter;
 
-    const orderIds = await OrderItem.distinct("orderId", {
+    const orderIds = await OrderItem.distinct('orderId', {
       customerId: userId,
     });
 
@@ -425,7 +433,7 @@ export const orderService = {
         customerId: i.customerId?._id,
         quantity: i.quantity,
         status: i.status,
-        specialInstruction: i.specialInstruction ?? "",
+        specialInstruction: i.specialInstruction ?? '',
         timestamps: {
           createdAt: i.createdAt,
           updatedAt: i.updatedAt,
@@ -437,19 +445,18 @@ export const orderService = {
   },
   updateIsCompletedStatus: async (orderId, isCompleted, adminId) => {
     try {
-
       if (isCompleted === true) {
         await OrderItem.updateMany(
           {
             orderId,
-            status: { $in: [ORDER_STATUS.PENDING, ORDER_STATUS.PREPARING] }
+            status: { $in: [ORDER_STATUS.PENDING, ORDER_STATUS.PREPARING] },
           },
           {
             $set: {
-              status: "served",
+              status: 'served',
               servedAt: new Date(), // optional but useful
             },
-          }
+          },
         );
       }
 
@@ -460,10 +467,10 @@ export const orderService = {
           new: true,
           runValidators: true,
         },
-      ).populate("adminId", "name email");
+      ).populate('adminId', 'name email');
 
       if (!updatedOrder) {
-        throw new ApiError(404, "Order not found");
+        throw new ApiError(404, 'Order not found');
       }
       const [{ orderItems }] = await attachOrderItems([updatedOrder]);
       const orderWithItems = {
@@ -474,13 +481,11 @@ export const orderService = {
 
       try {
         const io = getIO();
-        const customerIds = (
-          await OrderItem.distinct("customerId", {
-            orderId: updatedOrder._id,
-          })
-        );
+        const customerIds = await OrderItem.distinct('customerId', {
+          orderId: updatedOrder._id,
+        });
 
-        io.to(adminId.toString()).emit("orderStatusUpdate", {
+        io.to(adminId.toString()).emit('orderStatusUpdate', {
           orderId: updatedOrder._id,
           isCompleted,
           order: orderWithItems,
@@ -488,7 +493,7 @@ export const orderService = {
 
         for (const custId of customerIds) {
           const id = custId.toString();
-          io.to(`customer-${id}`).emit("orderStatusUpdate", {
+          io.to(`customer-${id}`).emit('orderStatusUpdate', {
             orderId: updatedOrder._id,
             isCompleted,
             order: orderWithItems,
@@ -496,27 +501,25 @@ export const orderService = {
         }
 
         if (isCompleted === true) {
-          io.to(adminId.toString()).emit("completeOrder", updatedOrder._id);
+          io.to(adminId.toString()).emit('completeOrder', updatedOrder._id);
           await Qr.findOneAndUpdate(
             { adminId, tableNumber: updatedOrder.tableNumber },
             { occupied: false },
           );
         }
       } catch (socketError) {
-        console.error("Socket emission error:", socketError);
+        console.error('Socket emission error:', socketError);
       }
 
       try {
-        const customerIds = (
-          await OrderItem.distinct("customerId", {
-            orderId: updatedOrder._id,
-          })
-        );
+        const customerIds = await OrderItem.distinct('customerId', {
+          orderId: updatedOrder._id,
+        });
 
         await Promise.all(
           customerIds.map((custId) =>
             notificationService.createNotification({
-              title: "Order status updated",
+              title: 'Order status updated',
               message: isCompleted
                 ? `Your order for table ${updatedOrder.tableNumber} is completed.`
                 : `Your order for table ${updatedOrder.tableNumber} was updated.`,
@@ -526,11 +529,11 @@ export const orderService = {
               adminId,
               entityType: ENTITY_TYPES.ORDER,
               entityId: updatedOrder._id,
-            })
-          )
+            }),
+          ),
         );
       } catch (notificationError) {
-        console.error("Order status notification error:", notificationError);
+        console.error('Order status notification error:', notificationError);
       }
 
       return orderWithItems;
@@ -542,13 +545,16 @@ export const orderService = {
     try {
       const order = await Order.findOne({ _id: orderId, adminId });
       if (!order) {
-        throw new ApiError(404, "Order not found");
+        throw new ApiError(404, 'Order not found');
       }
       if (!order.isCompleted) {
-        throw new ApiError(400, "Payment status can only be updated when order is completed");
+        throw new ApiError(
+          400,
+          'Payment status can only be updated when order is completed',
+        );
       }
       if (order.paymentStatus === paymentStatus) {
-        throw new ApiError(400, "Payment status already updated");
+        throw new ApiError(400, 'Payment status already updated');
       }
       order.paymentStatus = paymentStatus;
       await order.save();
@@ -558,16 +564,18 @@ export const orderService = {
           adminId,
         );
         try {
-          const populatedOrder = await Order.findById(orderId)
-            .populate("adminId", "cafeName");
+          const populatedOrder = await Order.findById(orderId).populate(
+            'adminId',
+            'cafeName',
+          );
 
-          const customerIds = await OrderItem.distinct("customerId", {
+          const customerIds = await OrderItem.distinct('customerId', {
             orderId,
           });
           if (customerIds.length) {
             const customers = await Customer.find({
               _id: { $in: customerIds },
-            }).select("name phoneNumber");
+            }).select('name phoneNumber');
 
             for (const customer of customers) {
               if (!customer?.phoneNumber) continue;
@@ -595,13 +603,15 @@ See you again!
               });
             }
           }
-        } catch (whatsappError) { }
+        } catch (whatsappError) {}
       }
-
 
       return order;
     } catch (error) {
-      throw new ApiError(500, `Error updating payment status: ${error.message}`);
+      throw new ApiError(
+        500,
+        `Error updating payment status: ${error.message}`,
+      );
     }
 
     return order;
@@ -609,7 +619,7 @@ See you again!
   deleteOrder: async (orderId, adminId) => {
     const order = await Order.findOne({ _id: orderId, adminId });
     if (!order) {
-      throw new ApiError(404, "Order not found");
+      throw new ApiError(404, 'Order not found');
     }
 
     await OrderItem.deleteMany({ orderId });
@@ -627,21 +637,24 @@ See you again!
     const order = await Order.findOne({
       _id: orderId,
       adminId,
-    })
-      .populate("adminId", "cafeName gst address city state pincode phoneNumber");
+    }).populate(
+      'adminId',
+      'cafeName gst address city state pincode phoneNumber',
+    );
 
     if (!order) {
-      throw new ApiError(404, "Order not found");
+      throw new ApiError(404, 'Order not found');
     }
     const orderItems = await OrderItem.find({ orderId })
-      .populate("customerId", "name")
-      .populate("menuId", "name price discountPrice");
+      .populate('customerId', 'name')
+      .populate('menuId', 'name price discountPrice');
 
     const subTotal = orderItems.reduce((sum, item) => {
       const menu = item.menuId;
-      const price = menu?.discountPrice && menu.discountPrice > 0
-        ? menu.discountPrice
-        : menu?.price;
+      const price =
+        menu?.discountPrice && menu.discountPrice > 0
+          ? menu.discountPrice
+          : menu?.price;
       return sum + price * item.quantity;
     }, 0);
 
@@ -651,26 +664,26 @@ See you again!
 
     const customerMap = new Map();
     for (const item of orderItems) {
-      const custId = item.customerId?._id?.toString() ?? "unknown";
+      const custId = item.customerId?._id?.toString() ?? 'unknown';
       if (!customerMap.has(custId)) {
         customerMap.set(custId, {
           customerId: item.customerId?._id ?? null,
-          name: item.customerId?.name ?? "Unknown",
+          name: item.customerId?.name ?? 'Unknown',
           items: new Map(),
           subTotal: 0,
         });
       }
       const entry = customerMap.get(custId);
-      const menuId = `${item.menuId?._id?.toString()}-${item.specialInstruction ?? ""}`;
+      const menuId = `${item.menuId?._id?.toString()}-${item.specialInstruction ?? ''}`;
       if (!entry.items.has(menuId)) {
         entry.items.set(menuId, {
-          name: item.menuId?.name ?? "Unknown",
+          name: item.menuId?.name ?? 'Unknown',
           quantity: 0,
           price:
             item.menuId?.discountPrice && item.menuId.discountPrice > 0
               ? item.menuId.discountPrice
               : (item.menuId?.price ?? 0),
-          specialInstruction: item.specialInstruction ?? "",
+          specialInstruction: item.specialInstruction ?? '',
         });
       }
       const itemEntry = entry.items.get(menuId);
@@ -681,20 +694,20 @@ See you again!
     const customers = {};
 
     for (const entry of customerMap.values()) {
-      const customerName = entry.name ?? "Unknown";
+      const customerName = entry.name ?? 'Unknown';
 
       customers[customerName] = Array.from(entry.items.values()).map((i) => ({
         name: i.name,
         quantity: i.quantity,
         price: i.price,
         amount: i.price * i.quantity,
-        specialInstruction: i.specialInstruction ?? "",
+        specialInstruction: i.specialInstruction ?? '',
       }));
     }
 
     return {
       cafeName: order.adminId.cafeName,
-      address: `${order.adminId.address ?? ""}, ${order.adminId.city ?? ""}`,
+      address: `${order.adminId.address ?? ''}, ${order.adminId.city ?? ''}`,
       phoneNumber: order.adminId.phoneNumber,
       tableNumber: order.tableNumber,
       customers,
@@ -706,14 +719,14 @@ See you again!
     };
   },
   getActiveOrderByQr: async (qrId, customerId) => {
-    const qr = await Qr.findById(qrId).populate("adminId");
+    const qr = await Qr.findById(qrId).populate('adminId');
     if (!qr) {
-      throw new ApiError(400, "Invalid QR");
+      throw new ApiError(400, 'Invalid QR');
     }
     if (!qr.adminId || !qr.adminId.isActive) {
       throw new ApiError(
         400,
-        "This QR is disabled because the account is inactive",
+        'This QR is disabled because the account is inactive',
       );
     }
 
@@ -726,7 +739,7 @@ See you again!
         const existingOrder = await Order.findOne({
           _id: existingOrderItem.orderId,
           isCompleted: false,
-        }).populate("adminId", "name email");
+        }).populate('adminId', 'name email');
 
         if (existingOrder) {
           const [{ orderItems }] = await attachOrderItems([existingOrder]);
@@ -765,7 +778,7 @@ See you again!
           return {
             active: true,
             isDifferentTable: existingOrder.tableNumber !== qr.tableNumber,
-            message: "You already have an active order",
+            message: 'You already have an active order',
             order: orderWithItems,
             currentTable: existingOrder.tableNumber,
             newTable: qr.tableNumber,
@@ -780,14 +793,14 @@ See you again!
       isCompleted: false,
     })
       .sort({ createdAt: -1 })
-      .populate("adminId", "name email");
+      .populate('adminId', 'name email');
 
     if (!latestActiveOrder) {
       return { active: false, order: null, tableNumber: qr.tableNumber };
     }
 
     if (customerId) {
-      const customerIds = await OrderItem.distinct("customerId", {
+      const customerIds = await OrderItem.distinct('customerId', {
         orderId: latestActiveOrder._id,
       });
 
@@ -798,7 +811,7 @@ See you again!
       if (!isOwner) {
         return {
           active: false,
-          message: "Start a new order",
+          message: 'Start a new order',
           tableNumber: qr.tableNumber,
         };
       }
@@ -842,7 +855,7 @@ See you again!
 
     return {
       active: true,
-      message: "An active order already exists. You can add more items.",
+      message: 'An active order already exists. You can add more items.',
       order: orderWithItems,
       tableNumber: qr.tableNumber,
     };
@@ -854,28 +867,28 @@ See you again!
     });
 
     if (!order) {
-      throw new ApiError(404, "Active order not found");
+      throw new ApiError(404, 'Active order not found');
     }
 
-    if (user.role !== "admin") {
-      throw new ApiError(403, "Only admin can change table");
+    if (user.role !== 'admin') {
+      throw new ApiError(403, 'Only admin can change table');
     }
 
     const oldTableNumber = order.tableNumber;
 
     if (oldTableNumber === newTableNumber) {
-      throw new ApiError(400, "Order is already on this table");
+      throw new ApiError(400, 'Order is already on this table');
     }
 
     const adminId = order.adminId;
 
     const newQr = await Qr.findOne({ adminId, tableNumber: newTableNumber });
     if (!newQr) {
-      throw new ApiError(404, "Target table not found");
+      throw new ApiError(404, 'Target table not found');
     }
 
     if (newQr.occupied) {
-      throw new ApiError(400, "Target table is already occupied");
+      throw new ApiError(400, 'Target table is already occupied');
     }
 
     const oldQr = await Qr.findOne({ adminId, tableNumber: oldTableNumber });
@@ -892,7 +905,7 @@ See you again!
     await newQr.save();
 
     return {
-      message: "Table changed successfully",
+      message: 'Table changed successfully',
       orderId: order._id,
       oldTableNumber,
       newTableNumber,

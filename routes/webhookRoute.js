@@ -1,12 +1,12 @@
-import express from "express";
-import { webhookController } from "../src/webhooks/controller.js";
+import express from 'express';
+import { webhookController } from '../src/webhooks/controller.js';
 
 const router = express.Router();
 
 router.post(
-  "/razorpay-webhook",
-  express.raw({ type: "application/json" }),
-  webhookController.razorpayWebhook
+  '/razorpay-webhook',
+  express.raw({ type: 'application/json' }),
+  webhookController.razorpayWebhook,
 );
 
 export const webhookRoutes = router;

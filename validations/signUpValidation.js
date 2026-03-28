@@ -1,10 +1,16 @@
-import Joi from "joi";
+import Joi from 'joi';
 
 const objectIdRule = Joi.string().hex().length(24);
 const phoneRule = Joi.number().min(6000000000).max(9999999999).strict();
-const razorpayPaymentIdRule = Joi.string().trim().pattern(/^pay_[A-Za-z0-9]+$/);
-const razorpaySubscriptionIdRule = Joi.string().trim().pattern(/^sub_[A-Za-z0-9]+$/);
-const razorpaySignatureRule = Joi.string().trim().pattern(/^[a-fA-F0-9]{64}$/);
+const razorpayPaymentIdRule = Joi.string()
+  .trim()
+  .pattern(/^pay_[A-Za-z0-9]+$/);
+const razorpaySubscriptionIdRule = Joi.string()
+  .trim()
+  .pattern(/^sub_[A-Za-z0-9]+$/);
+const razorpaySignatureRule = Joi.string()
+  .trim()
+  .pattern(/^[a-fA-F0-9]{64}$/);
 
 const createSubscriptionValidation = {
   body: Joi.object().keys({
@@ -32,7 +38,9 @@ const verifySubscriptionValidation = {
 
 const getTransactionsValidation = {
   query: Joi.object().keys({
-    status: Joi.string().valid("created", "active", "cancelled", "completed", "expired").optional(),
+    status: Joi.string()
+      .valid('created', 'active', 'cancelled', 'completed', 'expired')
+      .optional(),
     userId: objectIdRule.optional(),
     adminId: objectIdRule.optional(),
     search: Joi.string().trim().optional(),
@@ -62,5 +70,5 @@ export {
   getTransactionsValidation,
   renewSubscriptionValidation,
   verifyRenewSubscriptionValidation,
-  signUpValidation
+  signUpValidation,
 };

@@ -1,63 +1,63 @@
-import express from "express";
-import { signUpController } from "../src/signUp/controller.js";
-import { tokenVerification } from "../middleware/auth.js";
-import { allowRoles } from "../middleware/permission.js";
-import { validate } from "../middleware/validate.js";
-import { checkEmailValidation } from "../validations/authValidation.js";
+import express from 'express';
+import { signUpController } from '../src/signUp/controller.js';
+import { tokenVerification } from '../middleware/auth.js';
+import { allowRoles } from '../middleware/permission.js';
+import { validate } from '../middleware/validate.js';
+import { checkEmailValidation } from '../validations/authValidation.js';
 import {
   createSubscriptionValidation,
   verifySubscriptionValidation,
   getTransactionsValidation,
   renewSubscriptionValidation,
   verifyRenewSubscriptionValidation,
-  signUpValidation
-} from "../validations/signUpValidation.js";
+  signUpValidation,
+} from '../validations/signUpValidation.js';
 const router = express.Router();
 
 router.post(
-  "/create-subscription",
+  '/create-subscription',
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles('admin'),
   validate(createSubscriptionValidation),
-  signUpController.createSubscription
+  signUpController.createSubscription,
 );
 router.post(
-  "/verify-subscription",
+  '/verify-subscription',
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles('admin'),
   validate(verifySubscriptionValidation),
-  signUpController.verifySubscription
+  signUpController.verifySubscription,
 );
 router.post(
-  "/check-email",
+  '/check-email',
   validate(checkEmailValidation),
-  signUpController.checkEmail
+  signUpController.checkEmail,
 );
-router.get("/plans", signUpController.getAllPlans);
+router.get('/plans', signUpController.getAllPlans);
 router.get(
-  "/transactions",
+  '/transactions',
   tokenVerification,
-  allowRoles("admin", "superadmin"),
+  allowRoles('admin', 'superadmin'),
   validate(getTransactionsValidation),
-  signUpController.getTransactions
+  signUpController.getTransactions,
 );
 router.post(
-  "/renew-subscription",
+  '/renew-subscription',
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles('admin'),
   validate(renewSubscriptionValidation),
-  signUpController.renewSubscription
+  signUpController.renewSubscription,
 );
 router.post(
-  "/verify-renew-subscription",
+  '/verify-renew-subscription',
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles('admin'),
   validate(verifyRenewSubscriptionValidation),
-  signUpController.verifyRenewSubscription
+  signUpController.verifyRenewSubscription,
 );
 router.post(
-  "/create-user",
+  '/create-user',
   validate(signUpValidation),
-  signUpController.registerUser
+  signUpController.registerUser,
 );
 export const signUpRoutes = router;

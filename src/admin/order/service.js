@@ -11,10 +11,9 @@ import {
   NOTIFICATION_TYPES,
   ORDER_STATUS,
   RECIPIENT_TYPES,
-} from '../../../utils/constants.js';
-import { buildAggregatedItems } from '../../../utils/utils.js';
-import sendWhatsAppMessage from '../../../utils/whatsapp.js';
-import { notificationService } from '../../notification/notification.service.js';
+} from "../../../utils/constants.js";
+import { buildAggregatedItems } from "../../../utils/utils.js";
+import { generateOrderNumber } from "../../../utils/utils.js";
 
 const attachOrderItems = async (orders) => {
   if (!orders || !orders.length) return [];
@@ -147,6 +146,9 @@ export const orderService = {
         qr.occupied = false;
         await qr.save();
       }
+
+      const orderNumber = await generateOrderNumber(adminId);
+
       order = await Order.create({
         adminId,
         orderBy: customerId,
@@ -328,6 +330,7 @@ export const orderService = {
         gstPercent,
         gstAmount,
         subTotal,
+        orderNumber,
       });
       await createOrderItems(order._id, finalItems);
 
@@ -380,7 +383,37 @@ export const orderService = {
     }
 
     const { populate: _populate, ...safeOptions } = options ?? {};
-    const result = await Order.paginate({ adminId, ...filter }, safeOptions);
+    const query = { adminId };
+
+    if (filter?.isCompleted !== undefined) {
+      query.isCompleted = filter.isCompleted;
+    }
+
+    if (filter?.tableNumber !== undefined) {
+      query.tableNumber = Number(filter.tableNumber);
+    }
+
+    if (filter?.paymentStatus !== undefined) {
+      query.paymentStatus =
+        typeof filter.paymentStatus === "string"
+          ? filter.paymentStatus.toLowerCase() === "true"
+          : filter.paymentStatus;
+    }
+
+    if (filter?.search) {
+      const searchValue = filter.search.trim();
+
+      const isOrderNumberSearch =
+        searchValue.length > 1 || searchValue.startsWith("0");
+
+      if (isOrderNumberSearch) {
+        query.orderNumber = new RegExp(searchValue, "i");
+      } else {
+        query.tableNumber = Number(searchValue);
+      }
+    }
+
+    const result = await Order.paginate(query, safeOptions);
 
     const ordersWithItems = await attachOrderItems(result.results);
     result.results = ordersWithItems.map(({ order, orderItems }) => ({

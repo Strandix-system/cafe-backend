@@ -18,6 +18,11 @@ export const orderController = {
     const result = await orderService.getOrders(adminId, filter, options);
     sendSuccessResponse(res, 200, "Orders fetched", result);
   },
+  getOrderById: async (req, res) => {
+    const orderId = req.params.orderId;
+    const result = await orderService.getOrderById(orderId, req.user._id);
+    sendSuccessResponse(res, 200, 'Order details fetched', result);
+  },
   getMyOrders: async (req, res) => {
     const filter = pick(req.query, ["userId"]);
     const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);

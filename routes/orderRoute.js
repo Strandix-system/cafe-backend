@@ -126,4 +126,11 @@ router.delete(
   orderController.deleteOrder
 );
 
+router.get(
+  '/admin/:orderId',
+  tokenVerification,
+  allowRoles('admin'),
+  orderController.getOrderById,
+);
+
 export default router;

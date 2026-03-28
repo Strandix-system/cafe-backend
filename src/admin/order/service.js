@@ -471,6 +471,21 @@ export const orderService = {
 
     return result;
   },
+  getOrderById: async (orderId, adminId) => {
+    const order = await Order.findOne({ _id: orderId, adminId }).populate(
+      'adminId',
+      'name email',
+    );
+    if (!order) {
+      throw new ApiError(404, 'Order not found');
+    }
+    const [{ orderItems }] = await attachOrderItems([order]);
+    return {
+      ...order.toObject(),
+      items: buildAggregatedItems(orderItems),
+      orderItems: orderItems.map((i) => i.toObject()),
+    };
+  },
   updateIsCompletedStatus: async (orderId, isCompleted, adminId) => {
     try {
 
@@ -640,7 +655,7 @@ See you again!
               })
             );
           }
-        } catch (whatsappError) { }
+        } catch (_whatsappError) { }
       }
 
       return order;

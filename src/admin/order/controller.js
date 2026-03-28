@@ -7,6 +7,10 @@ export const orderController = {
     const order = await orderService.createOrderByCustomerId(req.body);
     sendSuccessResponse(res, 201, "Order placed", order);
   },
+  createOfflineOrder: async (req, res) => {
+    const order = await orderService.createOfflineOrderByAdmin(req.body, req.user);
+    sendSuccessResponse(res, 201, "Offline order created", order);
+  },
   getOrders: async (req, res) => {
     const adminId = req.user._id;
     const filter = pick(req.query, ["isCompleted", "tableNumber", "paymentStatus", "search"]);

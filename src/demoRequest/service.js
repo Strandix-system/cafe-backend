@@ -1,9 +1,26 @@
 import DemoRequest from "../../model/demoRequest.js";
+import { notificationService } from "../notification/notification.service.js";
+import {
+  ENTITY_TYPES,
+  NOTIFICATION_TYPES,
+  RECIPIENT_TYPES,
+} from "../../utils/constants.js";
 import { ApiError } from "../../utils/apiError.js";
 
 const demoService = {
     createDemoRequest: async (body) => {
         const result = await DemoRequest.create(body);
+
+        await notificationService.createNotification({
+            title: "New demo request",
+            message: `${result.name} requested a demo for ${result.cafeName} in ${result.city}.`,
+            notificationType: NOTIFICATION_TYPES.DEMO_REQUEST_CREATED,
+            recipientType: RECIPIENT_TYPES.ROLE,
+            recipientRole: "superadmin",
+            entityType: ENTITY_TYPES.DEMO_REQUEST,
+            entityId: result._id,
+        });
+
         return result;
     },
 

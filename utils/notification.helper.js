@@ -11,7 +11,6 @@ import {
 import { ApiError } from './apiError.js';
 import { RECIPIENT_TYPES } from './constants.js';
 
-
 /**
  * Validates that the provided value is a MongoDB ObjectId for the given field.
  */

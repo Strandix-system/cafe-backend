@@ -11,9 +11,9 @@ import {
   NOTIFICATION_TYPES,
   ORDER_STATUS,
   RECIPIENT_TYPES,
-} from "../../../utils/constants.js";
-import { buildAggregatedItems } from "../../../utils/utils.js";
-import { generateOrderNumber } from "../../../utils/utils.js";
+} from '../../../utils/constants.js';
+import { buildAggregatedItems } from '../../../utils/utils.js';
+import { generateOrderNumber } from '../../../utils/utils.js';
 import sendWhatsAppMessage from '../../../utils/whatsapp.js';
 import { notificationService } from '../../notification/notification.service.js';
 
@@ -400,8 +400,8 @@ export const orderService = {
 
     if (filter?.paymentStatus !== undefined) {
       query.paymentStatus =
-        typeof filter.paymentStatus === "string"
-          ? filter.paymentStatus.toLowerCase() === "true"
+        typeof filter.paymentStatus === 'string'
+          ? filter.paymentStatus.toLowerCase() === 'true'
           : filter.paymentStatus;
     }
 
@@ -409,10 +409,10 @@ export const orderService = {
       const searchValue = filter.search.trim();
 
       const isOrderNumberSearch =
-        searchValue.length > 1 || searchValue.startsWith("0");
+        searchValue.length > 1 || searchValue.startsWith('0');
 
       if (isOrderNumberSearch) {
-        query.orderNumber = new RegExp(searchValue, "i");
+        query.orderNumber = new RegExp(searchValue, 'i');
       } else {
         query.tableNumber = Number(searchValue);
       }
@@ -641,7 +641,7 @@ See you again!
               });
             }
           }
-        } catch (_whatsappError) { }
+        } catch (_whatsappError) {}
       }
 
       return order;

@@ -1,6 +1,6 @@
-import crypto from "crypto";
+import crypto from 'crypto';
 
-import Order from "../model/order.js";
+import Order from '../model/order.js';
 
 export const generateTicketId = () =>
   `TKT-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
@@ -47,7 +47,7 @@ export const buildAggregatedItems = (orderItems = []) => {
     quantity: entry.quantity,
     price: entry.price,
     customers: Array.from(entry.customers.values()),
-    specialInstruction: entry.specialInstruction ?? "",
+    specialInstruction: entry.specialInstruction ?? '',
     amount: entry.price * entry.quantity,
   }));
 };
@@ -77,7 +77,7 @@ export const generateOrderNumber = async (adminId) => {
     },
   })
     .sort({ createdAt: -1 })
-    .select("orderNumber");
+    .select('orderNumber');
 
   let nextSequence = 1;
 
@@ -85,5 +85,5 @@ export const generateOrderNumber = async (adminId) => {
     nextSequence = parseInt(lastOrder.orderNumber, 10) + 1;
   }
 
-  return String(nextSequence).padStart(4, "0");
+  return String(nextSequence).padStart(4, '0');
 };

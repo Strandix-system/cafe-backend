@@ -39,6 +39,9 @@ export const orderService = {
     }
 
     const adminId = customer.adminId;
+    if (!adminId) {
+      throw new ApiError(400, "Customer adminId is missing");
+    }
 
     const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst");
     if (!admin) {

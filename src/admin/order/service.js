@@ -137,6 +137,7 @@ export const orderService = {
       }
       order = await Order.create({
         adminId,
+        orderBy: customerId,
         tableNumber,
         totalAmount: Math.round(finalTotal),
         gstPercent,
@@ -272,10 +273,10 @@ export const orderService = {
       );
     };
 
-    let order = null;
+    let order;
 
     if (latestActiveOrder) {
-      if (String(latestActiveOrder.orderBy || "customer") !== "admin") {
+     if (!latestActiveOrder.orderBy.equals(adminId)) {
         throw new ApiError(
           403,
           "This active order was created by customer; admin cannot add items via offline flow",
@@ -305,7 +306,7 @@ export const orderService = {
 
       order = await Order.create({
         adminId,
-        orderBy: "admin",
+        orderBy: adminId,
         tableNumber,
         totalAmount: Math.round(finalTotal),
         gstPercent,

@@ -9,11 +9,8 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
     orderBy: {
-      type: String,
-      enum: ["customer", "admin"],
-      default: "customer",
-      lowercase: true,
-      trim: true,
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
     },
     tableNumber: {
       type: Number,

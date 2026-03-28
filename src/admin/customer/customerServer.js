@@ -1,5 +1,11 @@
 import Customer from "../../../model/customer.js";
 import mongoose from "mongoose";
+import { notificationService } from "../../notification/notification.service.js";
+import {
+  ENTITY_TYPES,
+  NOTIFICATION_TYPES,
+  RECIPIENT_TYPES,
+} from "../../../utils/constants.js";
 import { ApiError } from "../../../utils/apiError.js";
 
 const customerService = {
@@ -26,6 +32,19 @@ const customerService = {
       phoneNumber,
       adminId,
     });
+
+    if (adminId) {
+      await notificationService.createNotification({
+        title: "New customer joined",
+        message: `${name} has been added as a new customer.`,
+        notificationType: NOTIFICATION_TYPES.CUSTOMER_CREATED,
+        recipientType: RECIPIENT_TYPES.ADMIN,
+        userId: adminId,
+        adminId,
+        entityType: ENTITY_TYPES.CUSTOMER,
+        entityId: newCustomer._id,
+      });
+    }
 
     return newCustomer.toObject();
   },

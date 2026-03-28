@@ -42,9 +42,13 @@ const createOfflineOrderSchema = {
 
 const getOrdersSchema = {
     query: Joi.object({
+        search: Joi.string().trim().optional(),
         isCompleted: Joi.boolean().optional(),
+        tableNumber: Joi.number().optional(),
+        paymentStatus: Joi.boolean().optional(),
         page: Joi.number().optional(),
         limit: Joi.number().optional(),
+        sortBy: Joi.string().trim().optional(),
         populate: Joi.any().optional(),
     }),
 };

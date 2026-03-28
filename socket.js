@@ -1,7 +1,7 @@
 import { Server } from "socket.io";
 let io;
 
-export const socketRooms = {
+const socketRooms = {
     user: (userId) => `user:${userId}`,
     admin: (adminId) => `admin:${adminId}`,
     customer: (customerId) => `customer:${customerId}`,
@@ -30,7 +30,7 @@ const emitToRooms = (rooms, event, payload) => {
     broadcaster.emit(event, payload);
 };
 
-export const initSocket = (server) => {
+const initSocket = (server) => {
     io = new Server(server, {
         cors: {
             origin: "*",
@@ -106,14 +106,14 @@ export const initSocket = (server) => {
     return io;
 };
 
-export const getIO = () => {
+const getIO = () => {
     if (!io) {
         throw new Error("Socket not initialized");
     }
     return io;
 };
 
-export const emitNotificationToUser = (userId, payload) => {
+const emitNotificationToUser = (userId, payload) => {
     const id = userId?.toString();
     if (!id) {
         return;
@@ -126,7 +126,7 @@ export const emitNotificationToUser = (userId, payload) => {
     );
 };
 
-export const emitNotificationToCustomer = (customerId, payload) => {
+const emitNotificationToCustomer = (customerId, payload) => {
     const id = customerId?.toString();
     if (!id) {
         return;
@@ -137,4 +137,12 @@ export const emitNotificationToCustomer = (customerId, payload) => {
         "notification:new",
         payload
     );
+};
+
+export {
+    socketRooms,
+    initSocket,
+    getIO,
+    emitNotificationToUser,
+    emitNotificationToCustomer,
 };

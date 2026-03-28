@@ -73,8 +73,9 @@ const buildNotificationData = (payload, recipient) => {
     notificationData.customerId = recipient.customerId;
   }
 
-  if (recipient.adminId || payload.adminId) {
-    notificationData.adminId = recipient.adminId || payload.adminId;
+  const adminId = recipient.adminId ?? payload.adminId;
+  if (adminId != null) {
+    notificationData.adminId = adminId;
   }
 
   if (payload.entityType) {
@@ -136,7 +137,7 @@ const resolveRecipients = async (payload) => {
         {
           recipientType: RECIPIENT_TYPES.ADMIN,
           userId: user._id,
-          adminId: payload.adminId || null,
+          adminId: payload.adminId ?? null,
         },
       ];
     }
@@ -147,7 +148,7 @@ const resolveRecipients = async (payload) => {
         {
           recipientType: RECIPIENT_TYPES.CUSTOMER,
           customerId: payload.customerId,
-          adminId: payload.adminId || null,
+          adminId: payload.adminId ?? null,
         },
       ];
 
@@ -169,7 +170,7 @@ const resolveRecipients = async (payload) => {
       return users.map((user) => ({
         recipientType: RECIPIENT_TYPES.ADMIN,
         userId: user._id,
-        adminId: payload.adminId || null,
+        adminId: payload.adminId ?? null,
       }));
     }
 

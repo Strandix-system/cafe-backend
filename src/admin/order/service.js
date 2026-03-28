@@ -1,7 +1,6 @@
 import Order from "../../../model/order.js";
 import Menu from "../../../model/menu.js";
 import Customer from "../../../model/customer.js";
-import mongoose from "mongoose";
 import User from "../../../model/user.js";
 import Qr from "../../../model/qr.js";
 import { OrderItem } from "../../../model/orderItem.js";
@@ -295,7 +294,7 @@ export const orderService = {
           await OrderItem.distinct("customerId", {
             orderId: updatedOrder._id,
           })
-        ).filter((custId) => mongoose.Types.ObjectId.isValid(custId));
+        );
 
         io.to(adminId.toString()).emit("orderStatusUpdate", {
           orderId: updatedOrder._id,
@@ -328,7 +327,7 @@ export const orderService = {
           await OrderItem.distinct("customerId", {
             orderId: updatedOrder._id,
           })
-        ).filter((custId) => mongoose.Types.ObjectId.isValid(custId));
+        );
 
         await Promise.all(
           customerIds.map((custId) =>
@@ -726,3 +725,5 @@ See you again!
     };
   },
 };
+
+

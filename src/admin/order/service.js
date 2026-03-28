@@ -590,7 +590,7 @@ export const orderService = {
       if (!order.isCompleted) {
         throw new ApiError(
           400,
-          "Payment status can only be updated when order is completed"
+          'Payment status can only be updated when order is completed',
         );
       }
 
@@ -605,7 +605,7 @@ export const orderService = {
         try {
           const [billDetails, populatedOrder] = await Promise.all([
             orderService.getOrderBillDetails(orderId, adminId),
-            Order.findById(orderId).populate("adminId", "cafeName"),
+            Order.findById(orderId).populate('adminId', 'cafeName'),
           ]);
 
           const customerIds = await OrderItem.distinct('customerId', {
@@ -642,10 +642,10 @@ See you again!
                   to: formattedPhone,
                   message,
                 });
-              })
+              }),
             );
           }
-        } catch (_whatsappError) { }
+        } catch (_whatsappError) {}
       }
 
       return order;

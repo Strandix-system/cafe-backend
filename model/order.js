@@ -8,6 +8,10 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    orderBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
     tableNumber: {
       type: Number,
       required: true,

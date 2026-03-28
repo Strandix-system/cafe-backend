@@ -20,6 +20,26 @@ const createOrderSchema = {
     }),
 };
 
+const createOfflineOrderSchema = {
+    body: Joi.object({
+        tableNumber: Joi.number().min(1).required(),
+        customer: Joi.object({
+            name: Joi.string().min(2).max(50).required(),
+            phoneNumber: Joi.string().pattern(/^[0-9]{10}$/).required(),
+        }).required(),
+        items: Joi.array()
+            .items(
+                Joi.object({
+                    menuId: objectId.required(),
+                    quantity: Joi.number().min(1).required(),
+                    specialInstruction: Joi.string().trim().allow("", null).max(200).optional(),
+                })
+            )
+            .min(1)
+            .required(),
+    }),
+};
+
 const getOrdersSchema = {
     query: Joi.object({
         search: Joi.string().trim().optional(),
@@ -81,4 +101,4 @@ const changeTableSchema = {
     }),
 };
 
-export { createOrderSchema, getActiveOrderSchema, getOrdersSchema, updateIsCompletedSchema, getMyOrdersSchema, updatePaymentStatusSchema, getBillSchema, deleteOrderSchema, changeTableSchema };   
+export { createOrderSchema, createOfflineOrderSchema, getActiveOrderSchema, getOrdersSchema, updateIsCompletedSchema, getMyOrdersSchema, updatePaymentStatusSchema, getBillSchema, deleteOrderSchema, changeTableSchema };   

@@ -7,15 +7,22 @@ import { OrderItem } from "../../../model/orderItem.js";
 import { getIO } from "../../../socket.js";
 import sendWhatsAppMessage from "../../../utils/whatsapp.js";
 import { ApiError } from "../../../utils/apiError.js";
-import { ORDER_STATUS } from "../../../utils/constants.js";
+import { notificationService } from "../../notification/notification.service.js";
+import {
+  ENTITY_TYPES,
+  NOTIFICATION_TYPES,
+  ORDER_STATUS,
+  RECIPIENT_TYPES,
+} from "../../../utils/constants.js";
 import { buildAggregatedItems } from "../../../utils/utils.js";
+import { generateOrderNumber } from "../../../utils/utils.js";
 
 const attachOrderItems = async (orders) => {
   if (!orders || !orders.length) return [];
   const orderIds = orders.map((o) => o._id);
   const items = await OrderItem.find({ orderId: { $in: orderIds } })
     .populate("menuId")
-    .populate("customerId", "name phoneNumber");
+    .populate("customerId", "name email phoneNumber");
 
   const grouped = new Map();
   for (const item of items) {
@@ -78,6 +85,10 @@ export const orderService = {
       };
     });
 
+    if (finalItems.some(item => !item.customerId)) {
+      throw new ApiError(400, "customerId is required for each item");
+    }
+
     const gstAmount = (subTotal * gstPercent) / 100;
     const finalTotal = subTotal + gstAmount;
 
@@ -135,8 +146,12 @@ export const orderService = {
         qr.occupied = false;
         await qr.save();
       }
+
+      const orderNumber = await generateOrderNumber(adminId);
+
       order = await Order.create({
         adminId,
+        orderBy: customerId,
         tableNumber,
         totalAmount: Math.round(finalTotal),
         gstPercent,
@@ -166,10 +181,191 @@ export const orderService = {
     const customerIds = await OrderItem.distinct("customerId", {
       orderId: order._id,
     });
+
+    for (const custId of customerIds) {
+      const id = custId.toString();
+
+      // FULL TABLE ORDER (for shared view)
+      io.to(`customer-${id}`).emit("table:orderUpdated", {
+        order: orderWithItems,
+      });
+
+      // PERSONAL ORDER (for "My Orders")
+      const myItems = orderItems.filter(
+        (item) => item.customerId?._id?.toString() === id
+      );
+
+      io.to(`customer-${id}`).emit("my:orderUpdated", {
+        orderId: order._id,
+        items: buildAggregatedItems(myItems),
+      });
+    }
+
+    return orderWithItems;
+  },
+  // offline order created by admin from admin panel.
+  createOfflineOrderByAdmin: async (body, user) => {
+    const { items, tableNumber, customer } = body;
+
+    const adminId = user?._id;
+    if (!adminId) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst");
+    if (!admin) {
+      throw new ApiError(404, "Admin not found");
+    }
+
+    const gstPercent = admin.gst;
+
+    const phoneNumber = customer?.phoneNumber ?? "";
+    const name = customer?.name ?? "";
+
+    let dbCustomer = await Customer.findOne({ phoneNumber, adminId });
+    if (dbCustomer) {
+      if (name && dbCustomer.name !== name) {
+        dbCustomer.name = name;
+        await dbCustomer.save();
+      }
+    } else {
+      dbCustomer = await Customer.create({ name, phoneNumber, adminId });
+    }
+
+    const customerId = dbCustomer._id;
+
+    const menuIds = items.map((menu) => menu.menuId);
+    const menus = await Menu.find({
+      _id: { $in: menuIds },
+    });
+
+    if (menus?.length !== items.length) {
+      throw new ApiError(400, "Invalid menu item");
+    }
+
+    let subTotal = 0;
+
+    const finalItems = items.map((item) => {
+      const menu = menus.find((m) => m._id.toString() === item.menuId);
+
+      const price =
+        menu.discountPrice && menu.discountPrice > 0
+          ? menu.discountPrice
+          : menu.price;
+
+      subTotal += price * item.quantity;
+
+      return {
+        customerId,
+        menuId: item.menuId,
+        quantity: item.quantity,
+        specialInstruction: item.specialInstruction ?? "",
+      };
+    });
+
+    const gstAmount = (subTotal * gstPercent) / 100;
+    const finalTotal = subTotal + gstAmount;
+
+    const qr = await Qr.findOne({ adminId, tableNumber });
+    if (!qr) {
+      throw new ApiError(404, "Table not found");
+    }
+
+    const latestActiveOrder = await Order.findOne({
+      adminId,
+      tableNumber,
+      isCompleted: false,
+    }).sort({ createdAt: -1 });
+
+    const createOrderItems = async (orderId, newItems) => {
+      await OrderItem.insertMany(
+        newItems.map((item) => ({
+          ...item,
+          orderId,
+          status: ORDER_STATUS.PENDING,
+        })),
+      );
+    };
+
+    let order;
+
+    if (latestActiveOrder) {
+      if (!latestActiveOrder.orderBy.equals(adminId)) {
+        throw new ApiError(
+          403,
+          "This active order was created by customer; admin cannot add items via offline flow",
+        );
+      }
+
+      await createOrderItems(latestActiveOrder._id, finalItems);
+
+      latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
+      latestActiveOrder.gstPercent = gstPercent;
+      latestActiveOrder.gstAmount =
+        (latestActiveOrder.subTotal * gstPercent) / 100;
+      latestActiveOrder.totalAmount = Math.round(
+        latestActiveOrder.subTotal + latestActiveOrder.gstAmount,
+      );
+      order = await latestActiveOrder.save();
+
+      if (!qr.occupied) {
+        qr.occupied = true;
+        await qr.save();
+      }
+    } else {
+      if (qr.occupied) {
+        qr.occupied = false;
+        await qr.save();
+      }
+
+      order = await Order.create({
+        adminId,
+        orderBy: adminId,
+        tableNumber,
+        totalAmount: Math.round(finalTotal),
+        gstPercent,
+        gstAmount,
+        subTotal,
+        orderNumber,
+      });
+      await createOrderItems(order._id, finalItems);
+
+      qr.occupied = true;
+      await qr.save();
+    }
+
+    const io = getIO();
+
+    const populatedOrder = await Order.findById(order._id)
+      .populate("adminId", "name email");
+
+    const [{ orderItems }] = await attachOrderItems([populatedOrder]);
+    const aggregatedItems = buildAggregatedItems(orderItems);
+    const orderWithItems = {
+      ...populatedOrder.toObject(),
+      items: aggregatedItems,
+      orderItems: orderItems.map((i) => i.toObject()),
+    };
+
+    io.to(adminId.toString()).emit("order:new", orderWithItems);
+    const customerIds = await OrderItem.distinct("customerId", {
+      orderId: order._id,
+    });
     for (const custId of customerIds) {
       const id = custId.toString();
       io.to(`customer-${id}`).emit("order:new", orderWithItems);
     }
+
+    await notificationService.createNotification({
+      title: "New order received",
+      message: `A new order has been placed for table ${order.tableNumber}.`,
+      notificationType: NOTIFICATION_TYPES.ORDER_CREATED,
+      recipientType: RECIPIENT_TYPES.ADMIN,
+      userId: adminId,
+      adminId,
+      entityType: ENTITY_TYPES.ORDER,
+      entityId: order._id,
+    });
 
     return orderWithItems;
   },
@@ -181,7 +377,37 @@ export const orderService = {
     }
 
     const { populate: _populate, ...safeOptions } = options ?? {};
-    const result = await Order.paginate({ adminId, ...filter }, safeOptions);
+    const query = { adminId };
+
+    if (filter?.isCompleted !== undefined) {
+      query.isCompleted = filter.isCompleted;
+    }
+
+    if (filter?.tableNumber !== undefined) {
+      query.tableNumber = Number(filter.tableNumber);
+    }
+
+    if (filter?.paymentStatus !== undefined) {
+      query.paymentStatus =
+        typeof filter.paymentStatus === "string"
+          ? filter.paymentStatus.toLowerCase() === "true"
+          : filter.paymentStatus;
+    }
+
+    if (filter?.search) {
+      const searchValue = filter.search.trim();
+
+      const isOrderNumberSearch =
+        searchValue.length > 1 || searchValue.startsWith("0");
+
+      if (isOrderNumberSearch) {
+        query.orderNumber = new RegExp(searchValue, "i");
+      } else {
+        query.tableNumber = Number(searchValue);
+      }
+    }
+
+    const result = await Order.paginate(query, safeOptions);
 
     const ordersWithItems = await attachOrderItems(result.results);
     result.results = ordersWithItems.map(({ order, orderItems }) => ({
@@ -283,6 +509,11 @@ export const orderService = {
 
       try {
         const io = getIO();
+        const customerIds = (
+          await OrderItem.distinct("customerId", {
+            orderId: updatedOrder._id,
+          })
+        );
 
         io.to(adminId.toString()).emit("orderStatusUpdate", {
           orderId: updatedOrder._id,
@@ -290,9 +521,6 @@ export const orderService = {
           order: orderWithItems,
         });
 
-        const customerIds = await OrderItem.distinct("customerId", {
-          orderId: updatedOrder._id,
-        });
         for (const custId of customerIds) {
           const id = custId.toString();
           io.to(`customer-${id}`).emit("orderStatusUpdate", {
@@ -311,6 +539,33 @@ export const orderService = {
         }
       } catch (socketError) {
         console.error("Socket emission error:", socketError);
+      }
+
+      try {
+        const customerIds = (
+          await OrderItem.distinct("customerId", {
+            orderId: updatedOrder._id,
+          })
+        );
+
+        await Promise.all(
+          customerIds.map((custId) =>
+            notificationService.createNotification({
+              title: "Order status updated",
+              message: isCompleted
+                ? `Your order for table ${updatedOrder.tableNumber} is completed.`
+                : `Your order for table ${updatedOrder.tableNumber} was updated.`,
+              notificationType: NOTIFICATION_TYPES.ORDER_STATUS_UPDATED,
+              recipientType: RECIPIENT_TYPES.CUSTOMER,
+              customerId: custId,
+              adminId,
+              entityType: ENTITY_TYPES.ORDER,
+              entityId: updatedOrder._id,
+            })
+          )
+        );
+      } catch (notificationError) {
+        console.error("Order status notification error:", notificationError);
       }
 
       return orderWithItems;
@@ -384,9 +639,7 @@ See you again!
               })
             );
           }
-        } catch (err) {
-          console.error("WhatsApp notification failed:", err.message);
-        }
+        } catch (whatsappError) { }
       }
 
       return order;

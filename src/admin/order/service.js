@@ -14,6 +14,8 @@ import {
 } from "../../../utils/constants.js";
 import { buildAggregatedItems } from "../../../utils/utils.js";
 import { generateOrderNumber } from "../../../utils/utils.js";
+import sendWhatsAppMessage from '../../../utils/whatsapp.js';
+import { notificationService } from '../../notification/notification.service.js';
 
 const attachOrderItems = async (orders) => {
   if (!orders || !orders.length) return [];
@@ -157,6 +159,7 @@ export const orderService = {
         gstPercent,
         gstAmount,
         subTotal,
+        orderNumber,
       });
       await createOrderItems(order._id, finalItems);
 
@@ -321,6 +324,8 @@ export const orderService = {
         qr.occupied = false;
         await qr.save();
       }
+
+      const orderNumber = await generateOrderNumber(adminId);
 
       order = await Order.create({
         adminId,

@@ -1,4 +1,5 @@
 import crypto from "crypto";
+
 import Order from "../model/order.js";
 
 export const generateTicketId = () =>

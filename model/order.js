@@ -8,6 +8,13 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    orderBy: {
+      type: String,
+      enum: ["customer", "admin"],
+      default: "customer",
+      lowercase: true,
+      trim: true,
+    },
     tableNumber: {
       type: Number,
       required: true,

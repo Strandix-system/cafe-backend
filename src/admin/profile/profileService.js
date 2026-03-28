@@ -1,8 +1,9 @@
-import User from '../../../model/user.js';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
+
 import { s3 } from '../../../config/s3.js';
-import { deleteSingleFile } from '../../../utils/s3utils.js';
+import User from '../../../model/user.js';
 import { ApiError } from '../../../utils/apiError.js';
+import { deleteSingleFile } from '../../../utils/s3utils.js';
 
 const profileService = {
   getMyProfile: async (userId) => {

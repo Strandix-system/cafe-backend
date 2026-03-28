@@ -1,8 +1,10 @@
 import crypto from 'crypto';
+
 import jwt from 'jsonwebtoken';
-import User from '../../model/user.js';
+
 import razorpay from '../../config/razorpay.js';
 import { Transaction } from '../../model/transaction.js';
+import User from '../../model/user.js';
 import { ApiError } from '../../utils/apiError.js';
 
 const PLAN_ID = process.env.RAZORPAY_PLAN_ID;
@@ -66,7 +68,7 @@ export const signUpService = {
       if (user.razorpayCustomerId) {
         try {
           customer = await razorpay.customers.fetch(user.razorpayCustomerId);
-        } catch (e) {
+        } catch (_e) {
           customer = null;
           user.razorpayCustomerId = null;
         }
@@ -103,7 +105,7 @@ export const signUpService = {
           } else {
             user.razorpaySubscriptionId = null;
           }
-        } catch (e) {
+        } catch (_e) {
           user.razorpaySubscriptionId = null;
         }
       }
@@ -284,7 +286,7 @@ export const signUpService = {
       razorpaySubscriptionPlanId: { $ne: null },
     }).sort({ createdAt: -1 });
 
-    let planId =
+    const planId =
       latestTransactionWithPlan?.razorpaySubscriptionPlanId ||
       process.env.RAZORPAY_PLAN_ID;
 

@@ -1,5 +1,6 @@
-import visitService from './service.js';
 import { sendSuccessResponse } from '../../../utils/response.js';
+
+import visitService from './service.js';
 
 const visitController = {
   trackVisit: async (req, res) => {

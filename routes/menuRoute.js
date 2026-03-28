@@ -1,9 +1,10 @@
 import express from 'express';
-import { menuController } from '../src/admin/menu/contoller.js';
+
 import { tokenVerification } from '../middleware/auth.js';
 import { allowRoles } from '../middleware/permission.js';
 import { uploadMenu } from '../middleware/upload.js';
 import { validate } from '../middleware/validate.js';
+import { menuController } from '../src/admin/menu/contoller.js';
 import { menuSchema, updateMenuSchema } from '../validations/menuValidation.js';
 
 const router = express.Router();

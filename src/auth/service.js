@@ -1,9 +1,10 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import User from '../../model/user.js';
-import { sendResetEmail } from '../../utils/email.js';
-import { ApiError } from '../../utils/apiError.js';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
+
+import User from '../../model/user.js';
+import { ApiError } from '../../utils/apiError.js';
+import { sendResetEmail } from '../../utils/email.js';
 dotenv.config();
 
 const authService = {
@@ -102,7 +103,7 @@ const authService = {
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
+    } catch (_error) {
       throw new ApiError(400, 'Invalid or expired token');
     }
 

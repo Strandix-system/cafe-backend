@@ -1,7 +1,8 @@
-import mongoose from 'mongoose';
-import { paginate } from '../model/plugin/paginate.plugin.js';
-import indiaStates from '../config/indiaStates.js';
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
+
+import indiaStates from '../config/indiaStates.js';
+import { paginate } from '../model/plugin/paginate.plugin.js';
 const userSchema = new mongoose.Schema(
   {
     firstName: {

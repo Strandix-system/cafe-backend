@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+
 import { paginate } from './plugin/paginate.plugin.js';
 
 const visitSchema = new mongoose.Schema({

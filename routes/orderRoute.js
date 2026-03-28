@@ -1,15 +1,10 @@
 import express from 'express';
-import { orderController } from '../src/admin/order/controller.js';
-import { orderItemController } from '../src/admin/orderItem/orderItem.controller.js';
+
 import { tokenVerification } from '../middleware/auth.js';
 import { allowRoles } from '../middleware/permission.js';
 import { validate } from '../middleware/validate.js';
-import {
-  updateItemStatusSchema,
-  deleteItemSchema,
-  updateQuantitySchema,
-  getItemsSchema,
-} from '../validations/orderItem.Validation.js';
+import { orderController } from '../src/admin/order/controller.js';
+import { orderItemController } from '../src/admin/orderItem/orderItem.controller.js';
 import {
   createOrderSchema,
   createOfflineOrderSchema,
@@ -22,6 +17,12 @@ import {
   deleteOrderSchema,
   changeTableSchema,
 } from '../validations/order.Validation.js';
+import {
+  updateItemStatusSchema,
+  deleteItemSchema,
+  updateQuantitySchema,
+  getItemsSchema,
+} from '../validations/orderItem.Validation.js';
 const router = express.Router();
 
 router.post(

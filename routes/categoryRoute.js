@@ -1,7 +1,8 @@
 import express from 'express';
+
 import { tokenVerification } from '../middleware/auth.js';
-import categoryController from '../src/admin/category/categoryController.js';
 import { allowRoles } from '../middleware/permission.js';
+import categoryController from '../src/admin/category/categoryController.js';
 
 const router = express.Router();
 

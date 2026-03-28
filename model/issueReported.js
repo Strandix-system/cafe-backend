@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+
 import { paginate } from '../model/plugin/paginate.plugin.js';
 import { ISSUE_STATUSES } from '../utils/constants.js';
 

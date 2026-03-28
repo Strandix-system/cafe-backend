@@ -1,11 +1,11 @@
 import DemoRequest from '../../model/demoRequest.js';
-import { notificationService } from '../notification/notification.service.js';
+import { ApiError } from '../../utils/apiError.js';
 import {
   ENTITY_TYPES,
   NOTIFICATION_TYPES,
   RECIPIENT_TYPES,
 } from '../../utils/constants.js';
-import { ApiError } from '../../utils/apiError.js';
+import { notificationService } from '../notification/notification.service.js';
 
 const demoService = {
   createDemoRequest: async (body) => {
@@ -50,9 +50,6 @@ const demoService = {
   },
 
   getAllDemoRequests: async (filter, options) => {
-    if (filter.status) {
-      filter.status = filter.status;
-    }
     if (filter.search) {
       filter.$or = [
         { name: { $regex: filter.search, $options: 'i' } },

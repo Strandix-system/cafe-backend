@@ -1,9 +1,8 @@
-import { OrderItem } from '../../../model/orderItem.js';
 import Order from '../../../model/order.js';
+import { OrderItem } from '../../../model/orderItem.js';
 import Qr from '../../../model/qr.js';
 import { getIO } from '../../../socket.js';
 import { ApiError } from '../../../utils/apiError.js';
-import { notificationService } from '../../notification/notification.service.js';
 import {
   ENTITY_TYPES,
   NOTIFICATION_TYPES,
@@ -11,6 +10,7 @@ import {
   RECIPIENT_TYPES,
 } from '../../../utils/constants.js';
 import { buildAggregatedItems } from '../../../utils/utils.js';
+import { notificationService } from '../../notification/notification.service.js';
 
 const recalculateOrderTotals = async (orderId) => {
   const order = await Order.findById(orderId);

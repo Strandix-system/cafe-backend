@@ -1,4 +1,5 @@
 import Joi from 'joi';
+
 import { ENTITY_TYPES } from '../utils/constants.js';
 
 const objectId = Joi.string().hex().length(24);

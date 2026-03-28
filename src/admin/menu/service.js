@@ -1,7 +1,7 @@
-import Menu from '../../../model/menu.js';
 import { Category } from '../../../model/category.js';
-import { deleteSingleFile } from '../../../utils/s3utils.js';
+import Menu from '../../../model/menu.js';
 import { ApiError } from '../../../utils/apiError.js';
+import { deleteSingleFile } from '../../../utils/s3utils.js';
 
 export const menuService = {
   createMenu: async (adminId, body, file) => {
@@ -80,9 +80,6 @@ export const menuService = {
   },
   getMenusByAdmin: async (adminId, filter, options) => {
     filter.adminId = adminId;
-    if (filter.category) {
-      filter.category = filter.category;
-    }
     if (filter.isActive !== undefined) {
       filter.isActive = filter.isActive === 'true';
     }

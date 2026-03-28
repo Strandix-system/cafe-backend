@@ -1,13 +1,14 @@
-import express from 'express';
 import 'express-async-errors';
-import env from 'dotenv';
-import cors from 'cors';
-import helmet from 'helmet';
 import compression from 'compression';
-import { webhookRoutes } from './routes/webhookRoute.js';
-import { errorHandler, notFoundError } from './middleware/errorHandler.js';
+import cors from 'cors';
+import env from 'dotenv';
+import express from 'express';
+import helmet from 'helmet';
+
 import connectDB from './database/dbConnect.js';
+import { errorHandler, notFoundError } from './middleware/errorHandler.js';
 import routes from './routes/index.js';
+import { webhookRoutes } from './routes/webhookRoute.js';
 
 env.config();
 
@@ -20,7 +21,7 @@ app.use((req, res, next) => {
     req.headers['x-forwarded-proto'] &&
     req.headers['x-forwarded-proto'] !== 'https'
   ) {
-    return res.redirect('https://' + req.headers.host + req.url);
+    return res.redirect(`https://${req.headers.host}${req.url}`);
   }
 
   next();

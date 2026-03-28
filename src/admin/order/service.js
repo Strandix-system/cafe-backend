@@ -1,13 +1,11 @@
-import Order from '../../../model/order.js';
-import Menu from '../../../model/menu.js';
 import Customer from '../../../model/customer.js';
-import User from '../../../model/user.js';
-import Qr from '../../../model/qr.js';
+import Menu from '../../../model/menu.js';
+import Order from '../../../model/order.js';
 import { OrderItem } from '../../../model/orderItem.js';
+import Qr from '../../../model/qr.js';
+import User from '../../../model/user.js';
 import { getIO } from '../../../socket.js';
-import sendWhatsAppMessage from '../../../utils/whatsapp.js';
 import { ApiError } from '../../../utils/apiError.js';
-import { notificationService } from '../../notification/notification.service.js';
 import {
   ENTITY_TYPES,
   NOTIFICATION_TYPES,
@@ -15,6 +13,8 @@ import {
   RECIPIENT_TYPES,
 } from '../../../utils/constants.js';
 import { buildAggregatedItems } from '../../../utils/utils.js';
+import sendWhatsAppMessage from '../../../utils/whatsapp.js';
+import { notificationService } from '../../notification/notification.service.js';
 
 const attachOrderItems = async (orders) => {
   if (!orders || !orders.length) return [];
@@ -411,8 +411,8 @@ export const orderService = {
     if (!orderIds.length) {
       return {
         results: [],
-        page: Number(options?.page) ?? 0,
-        limit: Number(options?.limit) ?? 0,
+        page: Number(options?.page ?? 0),
+        limit: Number(options?.limit ?? 0),
         totalPages: 0,
         totalResults: 0,
       };
@@ -603,7 +603,7 @@ See you again!
               });
             }
           }
-        } catch (whatsappError) {}
+        } catch (_whatsappError) { }
       }
 
       return order;
@@ -613,8 +613,6 @@ See you again!
         `Error updating payment status: ${error.message}`,
       );
     }
-
-    return order;
   },
   deleteOrder: async (orderId, adminId) => {
     const order = await Order.findOne({ _id: orderId, adminId });

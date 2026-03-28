@@ -1,6 +1,9 @@
+import bcrypt from 'bcryptjs';
+
 import User from '../../model/user.js';
-import { deleteSingleFile } from '../../utils/s3utils.js';
 import { ApiError } from '../../utils/apiError.js';
+import { deleteSingleFile } from '../../utils/s3utils.js';
+
 const adminService = {
   createAdmin: async (body, files) => {
     const exists = await User.findOne({ email: body.email });

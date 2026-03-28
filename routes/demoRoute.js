@@ -1,7 +1,8 @@
 import express from 'express';
-import controller from '../src/demoRequest/controller.js';
-import { allowRoles } from '../middleware/permission.js';
+
 import { tokenVerification } from '../middleware/auth.js';
+import { allowRoles } from '../middleware/permission.js';
+import controller from '../src/demoRequest/controller.js';
 
 const router = express.Router();
 

@@ -1,6 +1,7 @@
-import qrService from './service.js';
 import { pick } from '../../../utils/pick.js';
 import { sendSuccessResponse } from '../../../utils/response.js';
+
+import qrService from './service.js';
 
 const qrController = {
   createQr: async (req, res) => {

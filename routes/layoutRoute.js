@@ -1,8 +1,9 @@
 import express from 'express';
-import cafeLayoutController from '../src/admin/layout/controller.js';
+
 import { tokenVerification } from '../middleware/auth.js';
 import { allowRoles } from '../middleware/permission.js';
 import { uploadLayoutImages } from '../middleware/upload.js';
+import cafeLayoutController from '../src/admin/layout/controller.js';
 
 const router = express.Router();
 router.post(

@@ -1,7 +1,8 @@
 import express from 'express';
-import qrController from '../src/admin/qr/controller.js';
+
 import { tokenVerification } from '../middleware/auth.js';
 import { allowRoles } from '../middleware/permission.js';
+import qrController from '../src/admin/qr/controller.js';
 
 const router = express.Router();
 

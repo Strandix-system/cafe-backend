@@ -1,9 +1,9 @@
 import http from 'http';
 
 import app from './app.js';
+import { notificationCleanup } from './notification.cleanup.cron.js';
 import { initSocket } from './socket.js';
 import { subscriptionNotifier } from './subscription.expire.cron.js';
-import { notificationCleanup } from './notification.cleanup.cron.js';
 
 const port = process.env.PORT || 8080;
 

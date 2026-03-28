@@ -1,12 +1,13 @@
-import Customer from '../../../model/customer.js';
 import mongoose from 'mongoose';
-import { notificationService } from '../../notification/notification.service.js';
+
+import Customer from '../../../model/customer.js';
+import { ApiError } from '../../../utils/apiError.js';
 import {
   ENTITY_TYPES,
   NOTIFICATION_TYPES,
   RECIPIENT_TYPES,
 } from '../../../utils/constants.js';
-import { ApiError } from '../../../utils/apiError.js';
+import { notificationService } from '../../notification/notification.service.js';
 
 const customerService = {
   createCustomer: async (body) => {
@@ -16,7 +17,7 @@ const customerService = {
       throw new ApiError(400, 'Invalid adminId');
     }
 
-    let customer = await Customer.findOne({
+    const customer = await Customer.findOne({
       phoneNumber,
       adminId,
     });

@@ -1,9 +1,10 @@
 import express from 'express';
-import { issueController } from '../src/issueReported/controller.js';
+
 import { tokenVerification } from '../middleware/auth.js';
 import { allowRoles } from '../middleware/permission.js';
 import { uploadQueryImage } from '../middleware/upload.js';
 import { validate } from '../middleware/validate.js';
+import { issueController } from '../src/issueReported/controller.js';
 import {
   raiseIssueValidator,
   getIssueTicketsValidator,

@@ -1,7 +1,9 @@
 import jwt from 'jsonwebtoken';
+
 import User from '../model/user.js';
-import { blockExpiredSubscription } from './checkSubscription.js';
 import { ApiError } from '../utils/apiError.js';
+
+import { blockExpiredSubscription } from './checkSubscription.js';
 
 const subscriptionAllowedRoutes = [
   '/me',

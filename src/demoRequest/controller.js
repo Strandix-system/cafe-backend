@@ -1,6 +1,7 @@
-import demoService from './service.js';
 import { pick } from '../../utils/pick.js';
 import { sendSuccessResponse } from '../../utils/response.js';
+
+import demoService from './service.js';
 
 const demoController = {
   createDemoRequest: async (req, res) => {

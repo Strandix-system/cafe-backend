@@ -1,6 +1,5 @@
 import { IssueReported } from '../../model/issueReported.js';
 import User from '../../model/user.js';
-import { generateTicketId } from '../../utils/utils.js';
 import { ApiError } from '../../utils/apiError.js';
 import {
   ENTITY_TYPES,
@@ -8,6 +7,7 @@ import {
   NOTIFICATION_TYPES,
   RECIPIENT_TYPES,
 } from '../../utils/constants.js';
+import { generateTicketId } from '../../utils/utils.js';
 import { notificationService } from '../notification/notification.service.js';
 
 export const issueService = {

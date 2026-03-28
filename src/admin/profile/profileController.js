@@ -1,5 +1,6 @@
-import profileService from './profileService.js';
 import { sendSuccessResponse } from '../../../utils/response.js';
+
+import profileService from './profileService.js';
 
 const profileController = {
   getMyProfile: async (req, res) => {

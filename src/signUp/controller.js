@@ -1,6 +1,7 @@
-import { signUpService } from './service.js';
-import { sendSuccessResponse } from '../../utils/response.js';
 import { pick } from '../../utils/pick.js';
+import { sendSuccessResponse } from '../../utils/response.js';
+
+import { signUpService } from './service.js';
 export const signUpController = {
   createSubscription: async (req, res) => {
     const { planId } = req.body || {};

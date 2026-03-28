@@ -1,4 +1,5 @@
 import { sendSuccessResponse } from '../../../utils/response.js';
+
 import { dashboardService } from './service.js';
 
 export const dashboardController = {

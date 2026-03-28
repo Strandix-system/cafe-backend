@@ -1,6 +1,7 @@
-import Qr from '../../../model/qr.js';
 import QRCode from 'qrcode';
+
 import CafeLayout from '../../../model/layout.js';
+import Qr from '../../../model/qr.js';
 import { ApiError } from '../../../utils/apiError.js';
 
 const qrService = {

@@ -1,6 +1,6 @@
 import { Transaction } from '../model/transaction.js';
-import { ApiError } from '../utils/apiError.js';
 import User from '../model/user.js';
+import { ApiError } from '../utils/apiError.js';
 
 const checkSubscription = async (req, res, next) => {
   try {

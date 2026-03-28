@@ -1,6 +1,6 @@
+import dotenv from 'dotenv';
 import winston from 'winston';
 import { MongoDB } from 'winston-mongodb';
-import dotenv from 'dotenv';
 dotenv.config();
 
 // Custom error format to include stack trace in logs

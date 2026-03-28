@@ -1,6 +1,7 @@
-import { notificationService } from './notification.service.js';
 import { pick } from '../../utils/pick.js';
 import { sendSuccessResponse } from '../../utils/response.js';
+
+import { notificationService } from './notification.service.js';
 
 export const notificationController = {
   getNotifications: async (req, res) => {

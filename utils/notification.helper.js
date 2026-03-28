@@ -1,13 +1,16 @@
 import { isValidObjectId } from 'mongoose';
+
+import Customer from '../model/customer.js';
 import { Notification } from '../model/notification.js';
 import User from '../model/user.js';
-import Customer from '../model/customer.js';
-import { ApiError } from './apiError.js';
-import { RECIPIENT_TYPES } from './constants.js';
 import {
   emitNotificationToCustomer,
   emitNotificationToUser,
 } from '../socket.js';
+
+import { ApiError } from './apiError.js';
+import { RECIPIENT_TYPES } from './constants.js';
+
 
 /**
  * Validates that the provided value is a MongoDB ObjectId for the given field.
@@ -74,7 +77,7 @@ const buildNotificationData = (payload, recipient) => {
   }
 
   const adminId = recipient.adminId ?? payload.adminId;
-  if (adminId != null) {
+  if (adminId !== null) {
     notificationData.adminId = adminId;
   }
 

@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import cron from 'node-cron';
+
 import { notificationService } from './src/notification/notification.service.js';
 
 let notificationCleanupInitialized = false;

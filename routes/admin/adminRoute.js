@@ -1,19 +1,20 @@
 import express from 'express';
-import controller from '../../src/admin/controller.js';
-import { validate } from '../../middleware/validate.js';
+
 import { tokenVerification } from '../../middleware/auth.js';
 import { allowRoles } from '../../middleware/permission.js';
+import { uploadAdminImages } from '../../middleware/upload.js';
+import { validate } from '../../middleware/validate.js';
+import controller from '../../src/admin/controller.js';
+import { dashboardController } from '../../src/admin/Dashboard/controller.js';
+import visitController from '../../src/admin/visit/controller.js';
+import { portfolioController } from '../../src/portfolio/controller.js';
+import { parseJSONFields } from '../../utils/helper.js';
 import {
   createAdminValidator,
   updateAdminValidator,
   deleteAdminValidator,
   updateSuperAdmin,
 } from '../../validations/createValidation.js';
-import { uploadAdminImages } from '../../middleware/upload.js';
-import { parseJSONFields } from '../../utils/helper.js';
-import { dashboardController } from '../../src/admin/Dashboard/controller.js';
-import visitController from '../../src/admin/visit/controller.js';
-import { portfolioController } from '../../src/portfolio/controller.js';
 import {
   dashboardAdminAnalyticsValidator,
   dashboardItemPerformanceValidator,

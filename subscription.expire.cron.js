@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
 import cron from 'node-cron';
-import User from './model/user.js';
+
 import { Notification } from './model/notification.js';
 import { Transaction } from './model/transaction.js';
+import User from './model/user.js';
 import { notificationService } from './src/notification/notification.service.js';
 import {
   ENTITY_TYPES,

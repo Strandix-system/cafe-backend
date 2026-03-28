@@ -50,7 +50,7 @@ const getNotificationPayload = (admin, transaction) => {
   const diffDays = getDiffDays(endDate);
 
   if (diffDays > 7) {
-    return null;
+    return;
   }
 
   const isExpired = diffDays <= 0;

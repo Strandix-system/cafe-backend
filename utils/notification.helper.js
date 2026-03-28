@@ -137,7 +137,7 @@ const resolveRecipients = async (payload) => {
         {
           recipientType: RECIPIENT_TYPES.ADMIN,
           userId: user._id,
-          adminId: payload.adminId ?? null,
+          adminId: payload?.adminId,
         },
       ];
     }
@@ -148,7 +148,7 @@ const resolveRecipients = async (payload) => {
         {
           recipientType: RECIPIENT_TYPES.CUSTOMER,
           customerId: payload.customerId,
-          adminId: payload.adminId ?? null,
+          adminId: payload?.adminId,
         },
       ];
 
@@ -170,7 +170,7 @@ const resolveRecipients = async (payload) => {
       return users.map((user) => ({
         recipientType: RECIPIENT_TYPES.ADMIN,
         userId: user._id,
-        adminId: payload.adminId ?? null,
+        adminId: payload?.adminId,
       }));
     }
 

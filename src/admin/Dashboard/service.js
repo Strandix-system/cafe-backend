@@ -254,9 +254,19 @@ export const dashboardService = {
       OrderItem.aggregate(pipeline(1)),  // lowest revenue
     ]);
 
+    const topItem = topSelling[0] ?? null;
+    const lowItem = lowSelling[0] ?? null;
+
+    if (topItem && lowItem && topItem.name === lowItem.name) {
+      return {
+        topSelling: topItem,
+        lowSelling: null,
+      };
+    }
+
     return {
-      topSelling: topSelling[0] || null,
-      lowSelling: lowSelling[0] || null,
+      topSelling: topItem,
+      lowSelling: lowItem,
     };
   },
   peakTime: async (adminId, startDate, endDate) => {

@@ -12,6 +12,10 @@ const customerService = {
   createCustomer: async (body) => {
     const { name, phoneNumber, adminId } = body;
 
+    if (!mongoose.Types.ObjectId.isValid(adminId)) {
+      throw new ApiError(400, "Invalid adminId");
+    }
+
     let customer = await Customer.findOne({
       phoneNumber,
       adminId,

@@ -404,6 +404,8 @@ export const orderService = {
         await qr.save();
       }
 
+      const orderNumber = await generateOrderNumber(adminId);
+
       order = await Order.create({
         adminId,
         orderBy: adminId,

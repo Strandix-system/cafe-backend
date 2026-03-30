@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { ORDER_TYPES } from "../utils/constants.js";
 
 const objectId = Joi.string().regex(/^[0-9a-fA-F]{24}$/);
 
@@ -22,7 +23,13 @@ const createOrderSchema = {
 
 const createOfflineOrderSchema = {
     body: Joi.object({
-        tableNumber: Joi.number().min(1).required(),
+        orderType: Joi.string().valid(...Object.values(ORDER_TYPES)).default(ORDER_TYPES.DINE_IN),
+        tableNumber: Joi.number().min(1)
+            .when("orderType", {
+                is: ORDER_TYPES.DINE_IN,
+                then: Joi.required(),
+                otherwise: Joi.optional().allow(null,""),
+            }),
         customer: Joi.object({
             name: Joi.string().min(2).max(50).required(),
             phoneNumber: Joi.string().pattern(/^[0-9]{10}$/).required(),
@@ -96,22 +103,23 @@ const getActiveOrderSchema = {
 };
 
 const baseChangeTableSchema = {
-  orderId: objectId.required(),
-  newTableNumber: Joi.number().min(1).required(),
+    orderId: objectId.required(),
+    newTableNumber: Joi.number().min(1).required(),
 };
 
 const changeTableSchema = {
-  body: Joi.object({
-    ...baseChangeTableSchema,
-  }),
+    body: Joi.object({
+        ...baseChangeTableSchema,
+    }),
 };
 
 const changeTablePublicSchema = {
-  body: Joi.object({
-    ...baseChangeTableSchema,
-    qrId: objectId.required(),
-  }),
+    body: Joi.object({
+        ...baseChangeTableSchema,
+        qrId: objectId.required(),
+    }),
 };
 
-export { createOrderSchema, createOfflineOrderSchema, getActiveOrderSchema, getOrdersSchema, updateIsCompletedSchema, getMyOrdersSchema, updatePaymentStatusSchema, getBillSchema, deleteOrderSchema, changeTableSchema, changeTablePublicSchema,
- };   
+export {
+    createOrderSchema, createOfflineOrderSchema, getActiveOrderSchema, getOrdersSchema, updateIsCompletedSchema, getMyOrdersSchema, updatePaymentStatusSchema, getBillSchema, deleteOrderSchema, changeTableSchema, changeTablePublicSchema,
+};   

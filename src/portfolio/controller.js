@@ -4,8 +4,7 @@ import { sendSuccessResponse } from "../../utils/response.js";
 
 export const portfolioController = {
   aboutStats: async (req, res) => {
-    const filter = pick(req.params, ["adminId"]);
-    const data = await portfolioService.aboutStats(filter);
+    const data = await portfolioService.aboutStats(req.params.adminId);
     sendSuccessResponse(res, 200, "About stats fetched", data);
   },
   createCustomerFeedback: async (req, res) => {
@@ -13,8 +12,7 @@ export const portfolioController = {
     sendSuccessResponse(res, 201, "Customer feedback submitted", data);
   },
   getTopCustomerFeedbacks: async (req, res) => {
-    const filter = pick(req.params, ["adminId"]);
-    const data = await portfolioService.getTopCustomerFeedbacks(filter);
+    const data = await portfolioService.getTopCustomerFeedbacks(req.params.adminId);
     sendSuccessResponse(res, 200, "Top customer feedback fetched", data);
   },
   updateFeedback: async (req, res) => {

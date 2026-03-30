@@ -37,6 +37,11 @@ const attachOrderItems = async (orders) => {
   }));
 };
 
+/**
+ * Changes an active order to a new table,
+ * updates QR occupied status,
+ * and emits socket events to admin and customers.
+ */
 const changeTableCore = async ({
   orderId,
   newTableNumber,

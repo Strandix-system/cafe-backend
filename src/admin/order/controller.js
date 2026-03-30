@@ -5,7 +5,7 @@ import { sendSuccessResponse } from "../../../utils/response.js";
 const handleChangeTable = async (req, res, serviceFn) => {
   const { orderId, newTableNumber, qrId } = req.body;
 
-  const result = await serviceFn(orderId, newTableNumber, req.user || qrId);
+  const result = await serviceFn(orderId, newTableNumber, req.user ?? qrId);
 
   sendSuccessResponse(res, 200, "Table changed successfully", result);
 };

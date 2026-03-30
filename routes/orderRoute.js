@@ -5,7 +5,7 @@ import { tokenVerification } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/permission.js";
 import { validate } from "../middleware/validate.js";
 import { updateItemStatusSchema ,deleteItemSchema, updateQuantitySchema, getItemsSchema } from "../validations/orderItem.Validation.js";
-import { createOrderSchema, getActiveOrderSchema, getOrdersSchema, updateIsCompletedSchema, getMyOrdersSchema, updatePaymentStatusSchema, getBillSchema, deleteOrderSchema, changeTableSchema, changeTablePublicSchema } from "../validations/order.Validation.js";
+import { createOrderSchema, createOfflineOrderSchema, getActiveOrderSchema, getOrdersSchema, updateIsCompletedSchema, getMyOrdersSchema, updatePaymentStatusSchema, getBillSchema, deleteOrderSchema, changeTableSchema, changeTablePublicSchema } from "../validations/order.Validation.js";
 const router = express.Router();
 
 router.post(

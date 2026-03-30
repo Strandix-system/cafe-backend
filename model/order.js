@@ -8,6 +8,10 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    orderBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
     tableNumber: {
       type: Number,
       required: true,
@@ -36,9 +40,14 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    orderNumber: {
+      type: String,
+      unique: true,
+      required: true,
+    },
   },
 
-  { timestamps: true }
+  { timestamps: true },
 );
 
 orderSchema.plugin(paginate);

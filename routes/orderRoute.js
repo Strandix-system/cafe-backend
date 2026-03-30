@@ -14,6 +14,14 @@ router.post(
   orderController.createPublicOrder
 );
 
+router.post(
+  "/offline/create",
+  tokenVerification,
+  allowRoles("admin"),
+  validate(createOfflineOrderSchema),
+  orderController.createOfflineOrder
+);
+
 router.get(
   "/active/:qrId",
   validate(getActiveOrderSchema),
@@ -122,6 +130,13 @@ router.delete(
   allowRoles("admin"),
   validate(deleteOrderSchema),
   orderController.deleteOrder
+);
+
+router.get(
+  '/admin/:orderId',
+  tokenVerification,
+  allowRoles('admin'),
+  orderController.getOrderById,
 );
 
 export default router;

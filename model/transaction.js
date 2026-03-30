@@ -32,11 +32,6 @@ const transactionSchema = new mongoose.Schema(
       default: null,
       trim: true,
     },
-    description: {
-      type: String,
-      default: null,
-      trim: true,
-    },
     paidAt: {
       type: Date,
       default: null,
@@ -47,7 +42,7 @@ const transactionSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
-    subscriptionPlanId: {
+    razorpaySubscriptionPlanId: {
       type: String,
       trim: true,
       default: null,

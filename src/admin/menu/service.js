@@ -21,7 +21,7 @@ export const menuService = {
       image: file.location,
       price: Number(body.price),
       discountPrice: body.discountPrice ? Number(body.discountPrice) : undefined,
-      inStock: body.isActive === false ? false : body.inStock,
+      inStock: body.inStock,
     });
     return menu;
   },
@@ -40,9 +40,7 @@ export const menuService = {
       }
       body.image = file.location;
     }
-    if (body.isActive === false) body.inStock = false;
     Object.assign(menu, body);
-    if (!menu.isActive) menu.inStock = false;
 
     await menu.save();
     return menu;

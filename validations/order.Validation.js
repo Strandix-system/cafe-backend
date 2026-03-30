@@ -95,11 +95,23 @@ const getActiveOrderSchema = {
     }),
 };
 
-const changeTableSchema = {
-    body: Joi.object({
-        orderId: objectId.required(),
-        newTableNumber: Joi.number().min(1).required(),
-    }),
+const baseChangeTableSchema = {
+  orderId: objectId.required(),
+  newTableNumber: Joi.number().min(1).required(),
 };
 
-export { createOrderSchema, createOfflineOrderSchema, getActiveOrderSchema, getOrdersSchema, updateIsCompletedSchema, getMyOrdersSchema, updatePaymentStatusSchema, getBillSchema, deleteOrderSchema, changeTableSchema };   
+const changeTableSchema = {
+  body: Joi.object({
+    ...baseChangeTableSchema,
+  }),
+};
+
+const changeTablePublicSchema = {
+  body: Joi.object({
+    ...baseChangeTableSchema,
+    qrId: objectId.required(),
+  }),
+};
+
+export { createOrderSchema, createOfflineOrderSchema, getActiveOrderSchema, getOrdersSchema, updateIsCompletedSchema, getMyOrdersSchema, updatePaymentStatusSchema, getBillSchema, deleteOrderSchema, changeTableSchema, changeTablePublicSchema,
+ };   

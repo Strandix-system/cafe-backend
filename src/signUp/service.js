@@ -196,11 +196,10 @@ export const signUpService = {
     const transactionData = {
       razorpayPaymentId: payment.id,
       razorpaySubscriptionId: razorpay_subscription_id,
-      amount:
-        typeof payment?.amount === "number" ? payment.amount / 100 : payment?.amount,
-      method: payment?.method ,
-      razorpayCustomerId: subscription?.customer_id ,
-      razorpaySubscriptionPlanId: subscription?.plan_id || null,
+      amount: payment.amount / 100,
+      method: payment?.method,
+      razorpayCustomerId: subscription?.customer_id,
+      razorpaySubscriptionPlanId: subscription?.plan_id,
       subscriptionStatus: subscription.status,
       subscriptionStartDate: startDate,
       subscriptionEndDate: endDate,
@@ -281,55 +280,45 @@ export const signUpService = {
       throw new ApiError(404, "User not found");
     }
 
-    let razorpayCustomerId = user.razorpayCustomerId;
-    const latestTransactionWithPlan = await Transaction.findOne({
+    const razorpayCustomerId = user.razorpayCustomerId;
+
+    if (!razorpayCustomerId) {
+      throw new ApiError(400, "Razorpay customer not linked");
+    }
+
+    const lastTxn = await Transaction.findOne({
       user: user._id,
-      razorpaySubscriptionPlanId: { $ne: null },
+      razorpaySubscriptionId: { $ne: null },
     }).sort({ createdAt: -1 });
 
-    let planId =
-      latestTransactionWithPlan?.razorpaySubscriptionPlanId ||
-      process.env.RAZORPAY_PLAN_ID;
-
-    if (!razorpayCustomerId) {
-      const latestTransactionWithCustomer = await Transaction.findOne({
-        user: user._id,
-        razorpayCustomerId: { $ne: null },
-      }).sort({ createdAt: -1 });
-
-      razorpayCustomerId = latestTransactionWithCustomer?.razorpayCustomerId;
+    if (!lastTxn && !process.env.RAZORPAY_PLAN_ID) {
+      throw new ApiError(400, "Plan ID not found");
     }
 
-    if (!razorpayCustomerId) {
-      throw new ApiError(400, "Razorpay customer not linked for this user");
-    }
+    const planId =
+      process.env.RAZORPAY_PLAN_ID ??
+      lastTxn.razorpaySubscriptionPlanId;
+
     if (!planId) {
-      throw new ApiError(400, "Razorpay plan ID is missing");
-    }
-    const existingUser = await User.findOne({ email: user.email.toLowerCase() });
-    if (!existingUser) {
-      throw new ApiError(400, "Email does not exist");
+      throw new ApiError(400, "Plan ID not found");
     }
 
-    const reusableStatuses = ["created", "authenticated", "active"];
-    const existingSubs = await razorpay.subscriptions.all({
-      customer_id: razorpayCustomerId,
-      count: 20,
-    });
+    if (lastTxn) {
+      const reusableStatuses = ["created", "authenticated", "active"];
 
-    const reusableSub = existingSubs?.items?.find(
-      (s) => s?.plan_id === planId && reusableStatuses.includes(s?.status)
-    );
-
-    if (reusableSub) {
-      return reusableSub;
+      if (reusableStatuses.includes(lastTxn.subscriptionStatus)) {
+        return {
+          id: lastTxn.razorpaySubscriptionId,
+          status: lastTxn.subscriptionStatus,
+        };
+      }
     }
 
     const subscription = await razorpay.subscriptions.create({
       plan_id: planId,
-      customer_notify: 1,
-      total_count: 12,
       customer_id: razorpayCustomerId,
+      total_count: 12,
+      customer_notify: 1,
     });
 
     return subscription;
@@ -342,21 +331,18 @@ export const signUpService = {
       razorpay_signature,
     } = data;
 
-    //-1 Verify Signature (Correct Order)
     verifySubscriptionSignature(
       razorpay_payment_id,
       razorpay_subscription_id,
       razorpay_signature
     );
 
-    // 2 Fetch Payment
     const payment = await razorpay.payments.fetch(razorpay_payment_id);
 
     if (!payment) {
-      throw new ApiError(404, "Payment not found");
+      throw new ApiError(400, "Payment not successful");
     }
 
-    // 3 Fetch Subscription
     const subscription = await razorpay.subscriptions.fetch(
       razorpay_subscription_id
     );
@@ -381,14 +367,19 @@ export const signUpService = {
       }
     }
 
-    // 4️ Find Existing User
-    const existingTransaction = await Transaction.findOne({
+    let existingTransaction = await Transaction.findOne({
       razorpayCustomerId: subscription.customer_id,
     }).sort({ createdAt: -1 });
 
-    const user = existingTransaction
+    let user = existingTransaction
       ? await User.findById(existingTransaction.user)
       : null;
+
+    if (!user) {
+      user = await User.findOne({
+        razorpayCustomerId: subscription.customer_id,
+      });
+    }
 
     if (!user) {
       throw new ApiError(404, "User not found");
@@ -401,12 +392,11 @@ export const signUpService = {
     ) {
       throw new ApiError(403, "Unauthorized renewal verification");
     }
-
     user.razorpayCustomerId = subscription?.customer_id || null;
     user.razorpaySubscriptionId = subscription?.id || razorpay_subscription_id;
     await user.save();
 
-    // 6️ Log Transaction 
+    // 6️ Log Transaction
     await Transaction.findOneAndUpdate(
       { razorpayPaymentId: payment.id },
       {
@@ -414,16 +404,14 @@ export const signUpService = {
           user: user._id,
           razorpayPaymentId: payment.id,
           razorpaySubscriptionId: razorpay_subscription_id,
-          amount:
-            typeof payment?.amount === "number" ? payment.amount / 100 : payment?.amount,
+          amount: payment.amount / 100,
           method: payment.method,
           razorpayCustomerId: subscription?.customer_id,
-          razorpaySubscriptionPlanId: subscription?.plan_id || null,
+          razorpaySubscriptionPlanId: subscription?.plan_id,
           subscriptionStatus: subscription.status,
           subscriptionStartDate: startDate,
           subscriptionEndDate: endDate,
-          description: "Subscription renewal payment",
-          paidAt: new Date(payment.created_at * 1000),
+          paidAt: startDate,
           source: "renewal",
           raw: payment,
         },

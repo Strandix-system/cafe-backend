@@ -16,6 +16,7 @@ import {
   getBillSchema,
   deleteOrderSchema,
   changeTableSchema,
+  changeTablePublicSchema,
 } from '../validations/order.Validation.js';
 import {
   updateItemStatusSchema,
@@ -127,6 +128,12 @@ router.patch(
   orderController.changeTable,
 );
 
+router.patch(
+  '/public/change-table',
+  validate(changeTablePublicSchema),
+  orderController.changeTablePublic,
+);
+
 router.get(
   '/bill/:id',
   tokenVerification,
@@ -141,6 +148,13 @@ router.delete(
   allowRoles('admin'),
   validate(deleteOrderSchema),
   orderController.deleteOrder,
+);
+
+router.get(
+  '/admin/:orderId',
+  tokenVerification,
+  allowRoles('admin'),
+  orderController.getOrderById,
 );
 
 export default router;

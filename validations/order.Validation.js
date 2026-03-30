@@ -104,10 +104,21 @@ const getActiveOrderSchema = {
   }),
 };
 
+const baseChangeTableSchema = {
+  orderId: objectId.required(),
+  newTableNumber: Joi.number().min(1).required(),
+};
+
 const changeTableSchema = {
   body: Joi.object({
-    orderId: objectId.required(),
-    newTableNumber: Joi.number().min(1).required(),
+    ...baseChangeTableSchema,
+  }),
+};
+
+const changeTablePublicSchema = {
+  body: Joi.object({
+    ...baseChangeTableSchema,
+    qrId: objectId.required(),
   }),
 };
 
@@ -122,4 +133,5 @@ export {
   getBillSchema,
   deleteOrderSchema,
   changeTableSchema,
+  changeTablePublicSchema,
 };

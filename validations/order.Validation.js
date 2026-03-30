@@ -58,6 +58,7 @@ const getOrdersSchema = {
         limit: Joi.number().optional(),
         sortBy: Joi.string().trim().optional(),
         populate: Joi.any().optional(),
+        orderType: Joi.string().valid(...Object.values(ORDER_TYPES)).optional(),
     }),
 };
 

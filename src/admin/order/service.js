@@ -371,7 +371,7 @@ export const orderService = {
       const order = await Order.create({
         adminId,
         orderBy: adminId,
-        tableNumber: null, 
+        tableNumber: null,
         totalAmount: Math.round(finalTotal),
         gstPercent,
         gstAmount,
@@ -517,6 +517,10 @@ export const orderService = {
         typeof filter.paymentStatus === "string"
           ? filter.paymentStatus.toLowerCase() === "true"
           : filter.paymentStatus;
+    }
+    
+    if (filter?.orderType) {
+      query.orderType = filter.orderType;
     }
 
     if (filter?.search) {

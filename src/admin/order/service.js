@@ -14,8 +14,7 @@ import {
   ORDER_STATUS,
   RECIPIENT_TYPES,
 } from "../../../utils/constants.js";
-import { buildAggregatedItems } from "../../../utils/utils.js";
-import { generateOrderNumber } from "../../../utils/utils.js";
+import { buildAggregatedItems, emitTableStatusOverview, generateOrderNumber } from "../../../utils/utils.js";
 import { ORDER_TYPES } from "../../../utils/constants.js";
 
 const buildTableStatusOverview = async (adminId) => {
@@ -31,8 +30,8 @@ const buildTableStatusOverview = async (adminId) => {
   const orderItems =
     orderIds.length > 0
       ? await OrderItem.find({ orderId: { $in: orderIds } })
-          .populate("menuId")
-          .populate("customerId", "name")
+        .populate("menuId")
+        .populate("customerId", "name")
       : [];
 
   const itemsMap = new Map();
@@ -110,20 +109,7 @@ const buildTableStatusOverview = async (adminId) => {
   });
 };
 
-const emitTableStatusOverview = async (adminId, overview) => {
-  const id = adminId?.toString();
-  if (!id) {
-    return;
-  }
 
-  try {
-    const io = getIO();
-    const payload = overview ?? (await buildTableStatusOverview(adminId));
-    io.to(id).emit("tableStatusOverviewUpdate", payload);
-  } catch (error) {
-    console.error("Table status overview socket emission error:", error);
-  }
-};
 
 const attachOrderItems = async (orders) => {
   if (!orders || !orders.length) return [];

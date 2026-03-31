@@ -23,9 +23,11 @@ const recalculateOrderTotals = async (orderId) => {
 
   const subTotal = orderItems.reduce((sum, item) => {
     const menu = item.menuId;
-    const price = menu?.discountPrice && menu.discountPrice > 0
-      ? menu.discountPrice
-      : menu?.price ?? 0;
+    const price = item.unitPrice ?? (
+      menu?.discountPrice && menu.discountPrice > 0
+        ? menu.discountPrice
+        : menu?.price ?? 0
+    );
     return sum + price * item.quantity;
   }, 0);
 

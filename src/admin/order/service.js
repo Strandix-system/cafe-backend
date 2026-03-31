@@ -135,12 +135,13 @@ export const orderService = {
       throw new ApiError(400, "Customer adminId is missing");
     }
 
-    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst");
+    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst.gstPercentage gst.gstType");
     if (!admin) {
       throw new ApiError(404, "Admin not found");
     }
 
-    const gstPercent = admin.gst;
+    const gstPercent = admin?.gst?.gstPercentage ?? 5;
+    const gstType = admin?.gst?.gstType ?? "exclusive";
     const menuIds = items.map((menu) => menu.menuId);
     const menus = await Menu.find({
       _id: { $in: menuIds },
@@ -166,6 +167,7 @@ export const orderService = {
         customerId: item.customerId ?? customerId,
         menuId: item.menuId,
         quantity: item.quantity,
+        unitPrice: price,
         specialInstruction: item.specialInstruction ?? "",
       };
     });
@@ -174,8 +176,15 @@ export const orderService = {
       throw new ApiError(400, "customerId is required for each item");
     }
 
-    const gstAmount = (subTotal * gstPercent) / 100;
-    const finalTotal = subTotal + gstAmount;
+    let gstAmount = 0;
+    let finalTotal = subTotal;
+    if (gstType === "inclusive") {
+      gstAmount = (subTotal * gstPercent) / (100 + gstPercent);
+      finalTotal = subTotal;
+    } else {
+      gstAmount = (subTotal * gstPercent) / 100;
+      finalTotal = subTotal + gstAmount;
+    }
 
     const qr = await Qr.findOne({ adminId, tableNumber });
     if (!qr) {
@@ -205,22 +214,36 @@ export const orderService = {
 
       latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
-      latestActiveOrder.gstAmount =
-        (latestActiveOrder.subTotal * gstPercent) / 100;
-      latestActiveOrder.totalAmount = Math.round(
-        latestActiveOrder.subTotal + latestActiveOrder.gstAmount,
-      );
+      latestActiveOrder.gstType = gstType;
+      if (gstType === "inclusive") {
+        latestActiveOrder.gstAmount =
+          (latestActiveOrder.subTotal * gstPercent) / (100 + gstPercent);
+        latestActiveOrder.totalAmount = Math.round(latestActiveOrder.subTotal);
+      } else {
+        latestActiveOrder.gstAmount =
+          (latestActiveOrder.subTotal * gstPercent) / 100;
+        latestActiveOrder.totalAmount = Math.round(
+          latestActiveOrder.subTotal + latestActiveOrder.gstAmount,
+        );
+      }
       order = await latestActiveOrder.save();
     } else if (latestActiveOrder) {
       await createOrderItems(latestActiveOrder._id, finalItems);
 
       latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
-      latestActiveOrder.gstAmount =
-        (latestActiveOrder.subTotal * gstPercent) / 100;
-      latestActiveOrder.totalAmount = Math.round(
-        latestActiveOrder.subTotal + latestActiveOrder.gstAmount,
-      );
+      latestActiveOrder.gstType = gstType;
+      if (gstType === "inclusive") {
+        latestActiveOrder.gstAmount =
+          (latestActiveOrder.subTotal * gstPercent) / (100 + gstPercent);
+        latestActiveOrder.totalAmount = Math.round(latestActiveOrder.subTotal);
+      } else {
+        latestActiveOrder.gstAmount =
+          (latestActiveOrder.subTotal * gstPercent) / 100;
+        latestActiveOrder.totalAmount = Math.round(
+          latestActiveOrder.subTotal + latestActiveOrder.gstAmount,
+        );
+      }
       order = await latestActiveOrder.save();
       if (!qr.occupied) {
         qr.occupied = true;
@@ -240,6 +263,7 @@ export const orderService = {
         tableNumber,
         totalAmount: Math.round(finalTotal),
         gstPercent,
+        gstType,
         gstAmount,
         subTotal,
         orderNumber
@@ -298,12 +322,13 @@ export const orderService = {
       throw new ApiError(401, "Unauthorized");
     }
 
-    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst");
+    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst.gstPercentage gst.gstType");
     if (!admin) {
       throw new ApiError(404, "Admin not found");
     }
 
-    const gstPercent = admin.gst;
+    const gstPercent = admin?.gst?.gstPercentage ?? 5;
+    const gstType = admin?.gst?.gstType ?? "exclusive";
 
     const phoneNumber = customer?.phoneNumber ?? "";
     const name = customer?.name ?? "";
@@ -345,12 +370,20 @@ export const orderService = {
         customerId,
         menuId: item.menuId,
         quantity: item.quantity,
+        unitPrice: price,
         specialInstruction: item.specialInstruction ?? "",
       };
     });
 
-    const gstAmount = (subTotal * gstPercent) / 100;
-    const finalTotal = subTotal + gstAmount;
+    let gstAmount = 0;
+    let finalTotal = subTotal;
+    if (gstType === "inclusive") {
+      gstAmount = (subTotal * gstPercent) / (100 + gstPercent);
+      finalTotal = subTotal;
+    } else {
+      gstAmount = (subTotal * gstPercent) / 100;
+      finalTotal = subTotal + gstAmount;
+    }
 
     const qr = await Qr.findOne({ adminId, tableNumber });
     if (!qr) {
@@ -387,11 +420,18 @@ export const orderService = {
 
       latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
-      latestActiveOrder.gstAmount =
-        (latestActiveOrder.subTotal * gstPercent) / 100;
-      latestActiveOrder.totalAmount = Math.round(
-        latestActiveOrder.subTotal + latestActiveOrder.gstAmount,
-      );
+      latestActiveOrder.gstType = gstType;
+      if (gstType === "inclusive") {
+        latestActiveOrder.gstAmount =
+          (latestActiveOrder.subTotal * gstPercent) / (100 + gstPercent);
+        latestActiveOrder.totalAmount = Math.round(latestActiveOrder.subTotal);
+      } else {
+        latestActiveOrder.gstAmount =
+          (latestActiveOrder.subTotal * gstPercent) / 100;
+        latestActiveOrder.totalAmount = Math.round(
+          latestActiveOrder.subTotal + latestActiveOrder.gstAmount,
+        );
+      }
       order = await latestActiveOrder.save();
 
       if (!qr.occupied) {
@@ -412,6 +452,7 @@ export const orderService = {
         tableNumber,
         totalAmount: Math.round(finalTotal),
         gstPercent,
+        gstType,
         gstAmount,
         subTotal,
         orderNumber,
@@ -772,7 +813,7 @@ See you again!
       _id: orderId,
       adminId,
     })
-      .populate("adminId", "cafeName gst address city state pincode phoneNumber");
+      .populate("adminId", "cafeName gst.gstPercentage gst.gstType address phoneNumber");
 
     if (!order) {
       throw new ApiError(404, "Order not found");
@@ -783,15 +824,30 @@ See you again!
 
     const subTotal = orderItems.reduce((sum, item) => {
       const menu = item.menuId;
-      const price = menu?.discountPrice && menu.discountPrice > 0
-        ? menu.discountPrice
-        : menu?.price;
+      const price = item.unitPrice ?? (
+        menu?.discountPrice && menu.discountPrice > 0
+          ? menu.discountPrice
+          : menu?.price
+      );
       return sum + price * item.quantity;
     }, 0);
 
-    const gstPercent = order.adminId.gst;
-    const gstAmount = (subTotal * gstPercent) / 100;
-    const total = Math.round(subTotal + gstAmount);
+    const gstPercent = order.gstPercent ?? order.adminId?.gst?.gstPercentage ?? 5;
+    const gstType = order.gstType ?? order.adminId?.gst?.gstType ?? "exclusive";
+    let gstAmount = 0;
+    let taxableAmount = subTotal;
+    let total = Math.round(subTotal);
+    if (gstType === "inclusive") {
+      gstAmount = (subTotal * gstPercent) / (100 + gstPercent);
+      taxableAmount = subTotal - gstAmount;
+      total = Math.round(subTotal);
+    } else {
+      gstAmount = (subTotal * gstPercent) / 100;
+      taxableAmount = subTotal;
+      total = Math.round(subTotal + gstAmount);
+    }
+    gstAmount = Math.round(gstAmount * 100) / 100;
+    taxableAmount = Math.round(taxableAmount * 100) / 100;
 
     const customerMap = new Map();
     for (const item of orderItems) {
@@ -810,10 +866,11 @@ See you again!
         entry.items.set(menuId, {
           name: item.menuId?.name ?? "Unknown",
           quantity: 0,
-          price:
+          price: item.unitPrice ?? (
             item.menuId?.discountPrice && item.menuId.discountPrice > 0
               ? item.menuId.discountPrice
-              : (item.menuId?.price ?? 0),
+              : (item.menuId?.price ?? 0)
+          ),
           specialInstruction: item.specialInstruction ?? "",
         });
       }
@@ -836,14 +893,23 @@ See you again!
       }));
     }
 
+    const adminAddress = order.adminId?.address ?? {};
+
     return {
       cafeName: order.adminId.cafeName,
-      address: `${order.adminId.address ?? ""}, ${order.adminId.city ?? ""}`,
+      address: {
+        street: adminAddress.street ?? null,
+        city: adminAddress.city ?? null,
+        state: adminAddress.state ?? null,
+        pincode: adminAddress.pincode ?? null,
+      },
       phoneNumber: order.adminId.phoneNumber,
       tableNumber: order.tableNumber,
       customers,
       subTotal,
+      taxableAmount,
       gstPercent,
+      gstType,
       gstAmount,
       orderNumber: order.orderNumber,
       total,

@@ -36,3 +36,7 @@ export const ISSUE_STATUSES = {
     IN_PROCESS: "in_process",
     RESOLVED: "resolved",
 };
+export const GST_TYPES = {
+  INCLUSIVE: "inclusive",
+  EXCLUSIVE: "exclusive",
+};

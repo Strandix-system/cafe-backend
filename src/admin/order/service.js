@@ -292,7 +292,7 @@ export const orderService = {
   },
   // offline order created by admin from admin panel.
   createOfflineOrderByAdmin: async (body, user) => {
-    const { items, tableNumber, customer, orderType = "DINE_IN" } = body;
+    const { items, tableNumber, customer, orderType } = body;
 
     const adminId = user?._id;
     if (!adminId) {
@@ -397,7 +397,7 @@ export const orderService = {
 
       io.to(adminId.toString()).emit("order:new", orderWithItems);
 
-      return orderWithItems; // 🚀 IMPORTANT: exit here
+      return orderWithItems;
     }
     const qr = await Qr.findOne({ adminId, tableNumber });
     if (!qr) {

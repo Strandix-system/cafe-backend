@@ -23,6 +23,7 @@ export const NOTIFICATION_TYPES = {
     TICKET_STATUS_UPDATED: "ticket_status_updated",
     SUBSCRIPTION_EXPIRED: "subscription_expired",
     SUBSCRIPTION_EXPIRING_SOON: "subscription_expiring_soon",
+    TABLE_CHANGED: "table_changed",
 };
 export const ENTITY_TYPES = {
     ORDER: "order",

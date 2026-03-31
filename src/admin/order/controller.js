@@ -21,7 +21,7 @@ export const orderController = {
   },
   getOrders: async (req, res) => {
     const adminId = req.user._id;
-    const filter = pick(req.query, ["isCompleted", "tableNumber", "paymentStatus", "search"]);
+    const filter = pick(req.query, ["isCompleted", "tableNumber", "paymentStatus", "search", "orderType"]);
     const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
     const result = await orderService.getOrders(adminId, filter, options);
     sendSuccessResponse(res, 200, "Orders fetched", result);

@@ -139,4 +139,6 @@ router.get(
   orderController.getOrderById,
 );
 
+router.get("/table-status", tokenVerification, allowRoles("admin"), orderController.getTableStatusOverview);
+
 export default router;

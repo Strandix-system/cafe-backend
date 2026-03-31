@@ -11,6 +11,7 @@ import {
   RECIPIENT_TYPES,
 } from "../../../utils/constants.js";
 import { buildAggregatedItems } from "../../../utils/utils.js";  
+import { emitTableStatusOverview } from "../order/service.js";
 
 const recalculateOrderTotals = async (orderId) => {
   const order = await Order.findById(orderId);
@@ -108,6 +109,8 @@ export const orderItemService = {
     } catch (socketError) {
       console.error("Socket emission error:", socketError);
     }
+
+    await emitTableStatusOverview(adminId);
 
     if (orderItem.customerId) {
       await notificationService.createNotification({
@@ -209,6 +212,8 @@ export const orderItemService = {
       console.error("Socket emission error:", socketError);
     }
 
+    await emitTableStatusOverview(order.adminId);
+
     return updatedItem;
   },
 
@@ -304,6 +309,8 @@ export const orderItemService = {
     } catch (socketError) {
       console.error("Socket emission error:", socketError);
     }
+
+    await emitTableStatusOverview(order.adminId);
 
     return { orderItem, autoDeletedOrder };
   },

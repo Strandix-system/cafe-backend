@@ -18,6 +18,113 @@ import { buildAggregatedItems } from "../../../utils/utils.js";
 import { generateOrderNumber } from "../../../utils/utils.js";
 import { ORDER_TYPES } from "../../../utils/constants.js";
 
+const buildTableStatusOverview = async (adminId) => {
+  const qrs = await Qr.find({ adminId });
+
+  const activeOrders = await Order.find({
+    adminId,
+    isCompleted: false,
+  }).populate("adminId", "name email");
+
+  const orderIds = activeOrders.map((o) => o._id);
+
+  const orderItems =
+    orderIds.length > 0
+      ? await OrderItem.find({ orderId: { $in: orderIds } })
+          .populate("menuId")
+          .populate("customerId", "name")
+      : [];
+
+  const itemsMap = new Map();
+  for (const item of orderItems) {
+    const id = item.orderId.toString();
+    if (!itemsMap.has(id)) itemsMap.set(id, []);
+    itemsMap.get(id).push(item);
+  }
+
+  const orderMap = new Map();
+  for (const order of activeOrders) {
+    orderMap.set(order.tableNumber, order);
+  }
+
+  return qrs.map((qr) => {
+    const order = orderMap.get(qr.tableNumber);
+
+    if (!order) {
+      return {
+        tableNumber: qr.tableNumber,
+        status: "idle",
+        order: null,
+      };
+    }
+
+    const items = itemsMap.get(order._id.toString()) || [];
+
+    const allServed =
+      items.length > 0 &&
+      items.every((item) => item.status === ORDER_STATUS.SERVED);
+    const aggregatedItems = buildAggregatedItems(items);
+
+    const orderWithItems = {
+      ...order.toObject(),
+
+      pricing: {
+        subTotal: order.subTotal,
+        gstPercent: order.gstPercent,
+        gstAmount: order.gstAmount,
+        totalAmount: order.totalAmount,
+      },
+
+      status: {
+        isCompleted: order.isCompleted,
+        paymentStatus: order.paymentStatus,
+      },
+
+      items: aggregatedItems,
+
+      orderItems: items.map((i) => ({
+        _id: i._id,
+        menuId: i.menuId,
+        customerId: i.customerId,
+        quantity: i.quantity,
+        status: i.status,
+        specialInstruction: i.specialInstruction,
+        servedAt: i.servedAt,
+        timestamps: {
+          createdAt: i.createdAt,
+          updatedAt: i.updatedAt,
+        },
+      })),
+
+      timestamps: {
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+      },
+    };
+
+    return {
+      tableNumber: qr.tableNumber,
+      status: allServed ? "billing" : "occupied",
+      order: orderWithItems,
+    };
+  });
+};
+
+const emitTableStatusOverview = async (adminId, overview) => {
+  const id = adminId?.toString();
+  if (!id) {
+    return;
+  }
+
+  try {
+    const io = getIO();
+    const payload = overview ?? (await buildTableStatusOverview(adminId));
+    io.to(id).emit("tableStatusOverviewUpdate", payload);
+  } catch (error) {
+    console.error("Table status overview socket emission error:", error);
+  }
+};
+
 const attachOrderItems = async (orders) => {
   if (!orders || !orders.length) return [];
   const orderIds = orders.map((o) => o._id);
@@ -114,6 +221,8 @@ const changeTableCore = async ({
       qrId: newQrData._id,
     });
   }
+
+  await emitTableStatusOverview(adminId);
 
   await notificationService.createNotification({
     title: "Table changed",
@@ -314,6 +423,7 @@ export const orderService = {
       });
     }
 
+    await emitTableStatusOverview(adminId);
     return orderWithItems;
   },
   // offline order created by admin from admin panel.
@@ -425,6 +535,7 @@ export const orderService = {
 
       io.to(adminId.toString()).emit("order:new", orderWithItems);
 
+      await emitTableStatusOverview(adminId);
       return orderWithItems;
     }
     const qr = await Qr.findOne({ adminId, tableNumber });
@@ -523,6 +634,7 @@ export const orderService = {
       entityId: order._id,
     });
 
+    await emitTableStatusOverview(adminId);
     return orderWithItems;
   },
   getOrders: async (adminId, filter, options) => {
@@ -716,6 +828,8 @@ export const orderService = {
         console.error("Socket emission error:", socketError);
       }
 
+      await emitTableStatusOverview(adminId);
+
       try {
         const customerIds = (
           await OrderItem.distinct("customerId", {
@@ -837,6 +951,8 @@ See you again!
         { occupied: false },
       );
     }
+
+    await emitTableStatusOverview(adminId);
     return order;
   },
   getOrderBillDetails: async (orderId, adminId) => {
@@ -1095,95 +1211,8 @@ See you again!
     });
   },
   getTableStatusOverview: async (adminId) => {
-    const qrs = await Qr.find({ adminId });
-
-    const activeOrders = await Order.find({
-      adminId,
-      isCompleted: false,
-    }).populate("adminId", "name email");
-
-    const orderIds = activeOrders.map((o) => o._id);
-
-    const orderItems = await OrderItem.find({
-      orderId: { $in: orderIds },
-    })
-      .populate("menuId")
-      .populate("customerId", "name");
-
-    const itemsMap = new Map();
-    for (const item of orderItems) {
-      const id = item.orderId.toString();
-      if (!itemsMap.has(id)) itemsMap.set(id, []);
-      itemsMap.get(id).push(item);
-    }
-
-    const orderMap = new Map();
-    for (const order of activeOrders) {
-      orderMap.set(order.tableNumber, order);
-    }
-
-    const tableStatus = qrs.map((qr) => {
-      const order = orderMap.get(qr.tableNumber);
-
-      if (!order) {
-        return {
-          tableNumber: qr.tableNumber,
-          status: "idle",
-          order: null,
-        };
-      }
-
-      const items = itemsMap.get(order._id.toString()) || [];
-
-      const allServed =
-        items.length > 0 &&
-        items.every((item) => item.status === ORDER_STATUS.SERVED);
-      const aggregatedItems = buildAggregatedItems(items);
-
-      const orderWithItems = {
-        ...order.toObject(),
-
-        pricing: {
-          subTotal: order.subTotal,
-          gstPercent: order.gstPercent,
-          gstAmount: order.gstAmount,
-          totalAmount: order.totalAmount,
-        },
-
-        status: {
-          isCompleted: order.isCompleted,
-          paymentStatus: order.paymentStatus,
-        },
-
-        items: aggregatedItems,
-
-        orderItems: items.map((i) => ({
-          _id: i._id,
-          menuId: i.menuId,
-          customerId: i.customerId,
-          quantity: i.quantity,
-          status: i.status,
-          specialInstruction: i.specialInstruction,
-          servedAt: i.servedAt,
-          timestamps: {
-            createdAt: i.createdAt,
-            updatedAt: i.updatedAt,
-          },
-        })),
-
-        timestamps: {
-          createdAt: order.createdAt,
-          updatedAt: order.updatedAt,
-        },
-      };
-
-      return {
-        tableNumber: qr.tableNumber,
-        status: allServed ? "billing" : "occupied",
-        order: orderWithItems,
-      };
-    });
-
-    return tableStatus;
-  }
+    const overview = await buildTableStatusOverview(adminId);
+    await emitTableStatusOverview(adminId, overview);
+    return overview;
+  },
 };

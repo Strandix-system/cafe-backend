@@ -22,9 +22,8 @@ const orderSchema = new mongoose.Schema(
     tableNumber: {
       type: Number,
       required: function () {
-        return this.orderType === "DINE_IN";
+        return this.orderType === ORDER_TYPES.DINE_IN;
       },
-      default: null,
     },
     totalAmount: {
       type: Number,

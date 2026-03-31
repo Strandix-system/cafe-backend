@@ -85,17 +85,3 @@ export const generateOrderNumber = async (adminId) => {
 
     return String(nextSequence).padStart(4, "0");
 };
-export const emitTableStatusOverview = async (adminId, overview) => {
-    const id = adminId?.toString();
-    if (!id) {
-        return;
-    }
-
-    try {
-        const io = getIO();
-        const payload = overview ?? (await buildTableStatusOverview(adminId));
-        io.to(id).emit("tableStatusOverviewUpdate", payload);
-    } catch (error) {
-        console.error("Table status overview socket emission error:", error);
-    }
-};

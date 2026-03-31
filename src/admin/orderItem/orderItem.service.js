@@ -11,7 +11,7 @@ import {
   RECIPIENT_TYPES,
 } from "../../../utils/constants.js";
 import { buildAggregatedItems } from "../../../utils/utils.js";  
-import { emitTableStatusOverview } from "../../../utils/utils.js";
+import { emitTableStatusOverview } from "../order/service.js";
 
 const recalculateOrderTotals = async (orderId) => {
   const order = await Order.findById(orderId);

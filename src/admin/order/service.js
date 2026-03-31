@@ -14,7 +14,8 @@ import {
   ORDER_STATUS,
   RECIPIENT_TYPES,
 } from "../../../utils/constants.js";
-import { buildAggregatedItems, emitTableStatusOverview, generateOrderNumber } from "../../../utils/utils.js";
+import { buildAggregatedItems } from "../../../utils/utils.js";
+import { generateOrderNumber } from "../../../utils/utils.js";
 import { ORDER_TYPES } from "../../../utils/constants.js";
 
 const buildTableStatusOverview = async (adminId) => {
@@ -107,6 +108,21 @@ const buildTableStatusOverview = async (adminId) => {
       order: orderWithItems,
     };
   });
+};
+
+const emitTableStatusOverview = async (adminId, overview) => {
+  const id = adminId?.toString();
+  if (!id) {
+    return;
+  }
+
+  try {
+    const io = getIO();
+    const payload = overview ?? (await buildTableStatusOverview(adminId));
+    io.to(id).emit("tableStatusOverviewUpdate", payload);
+  } catch (error) {
+    console.error("Table status overview socket emission error:", error);
+  }
 };
 
 
@@ -917,6 +933,7 @@ See you again!
         } catch (_whatsappError) { }
       }
 
+      await emitTableStatusOverview(adminId);
       return order;
     } catch (error) {
       throw new ApiError(500, error.message);
@@ -1202,3 +1219,5 @@ See you again!
     return overview;
   },
 };
+
+export { emitTableStatusOverview };

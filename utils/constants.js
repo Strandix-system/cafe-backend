@@ -1,7 +1,7 @@
 export const ORDER_STATUS = Object.freeze({
-  PENDING: "pending",
-  PREPARING: "preparing",
-  SERVED: "served",
+    PENDING: "pending",
+    PREPARING: "preparing",
+    SERVED: "served",
 });
 export const ROLES = {
     ADMIN: "admin",
@@ -23,6 +23,7 @@ export const NOTIFICATION_TYPES = {
     TICKET_STATUS_UPDATED: "ticket_status_updated",
     SUBSCRIPTION_EXPIRED: "subscription_expired",
     SUBSCRIPTION_EXPIRING_SOON: "subscription_expiring_soon",
+    TABLE_CHANGED: "table_changed",
 };
 export const ENTITY_TYPES = {
     ORDER: "order",
@@ -39,4 +40,9 @@ export const ISSUE_STATUSES = {
 export const GST_TYPES = {
   INCLUSIVE: "inclusive",
   EXCLUSIVE: "exclusive",
+};
+
+export const ORDER_TYPES = {
+    DINE_IN: "DINE_IN",
+    PARCEL: "PARCEL",
 };

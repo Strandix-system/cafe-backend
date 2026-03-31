@@ -16,6 +16,7 @@ import {
 } from "../../../utils/constants.js";
 import { buildAggregatedItems } from "../../../utils/utils.js";
 import { generateOrderNumber } from "../../../utils/utils.js";
+import { ORDER_TYPES } from "../../../utils/constants.js";
 
 const attachOrderItems = async (orders) => {
   if (!orders || !orders.length) return [];
@@ -113,6 +114,32 @@ const changeTableCore = async ({
       qrId: newQrData._id,
     });
   }
+
+  await notificationService.createNotification({
+    title: "Table changed",
+    message: `Order table changed from ${oldTableNumber} to ${newTableNumber}.`,
+    notificationType: NOTIFICATION_TYPES.TABLE_CHANGED,
+    recipientType: RECIPIENT_TYPES.ADMIN,
+    userId: adminId,
+    adminId,
+    entityType: ENTITY_TYPES.ORDER,
+    entityId: order._id,
+  });
+
+  await Promise.all(
+    customerIds.map((custId) =>
+      notificationService.createNotification({
+        title: "Table changed",
+        message: `Your table has been changed from ${oldTableNumber} to ${newTableNumber}.`,
+        notificationType: NOTIFICATION_TYPES.TABLE_CHANGED,
+        recipientType: RECIPIENT_TYPES.CUSTOMER,
+        customerId: custId,
+        adminId,
+        entityType: ENTITY_TYPES.ORDER,
+        entityId: order._id,
+      })
+    )
+  );
 
   return {
     message: "Table changed successfully",
@@ -315,7 +342,7 @@ export const orderService = {
   },
   // offline order created by admin from admin panel.
   createOfflineOrderByAdmin: async (body, user) => {
-    const { items, tableNumber, customer } = body;
+    const { items, tableNumber, customer, orderType = ORDER_TYPES.DINE_IN } = body;
 
     const adminId = user?._id;
     if (!adminId) {
@@ -325,6 +352,9 @@ export const orderService = {
     const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst.gstPercentage gst.gstType");
     if (!admin) {
       throw new ApiError(404, "Admin not found");
+    }
+    if (orderType === ORDER_TYPES.DINE_IN && !tableNumber) {
+      throw new ApiError(400, "Table number is required for dine-in orders");
     }
 
     const gstPercent = admin?.gst?.gstPercentage ?? 5;
@@ -384,7 +414,53 @@ export const orderService = {
       gstAmount = (subTotal * gstPercent) / 100;
       finalTotal = subTotal + gstAmount;
     }
+  
+    const createOrderItems = async (orderId, newItems, orderType) => {
+      await OrderItem.insertMany(
+        newItems.map((item) => ({
+          ...item,
+          orderId,
+          status:
+            orderType === ORDER_TYPES.PARCEL
+              ? ORDER_STATUS.PREPARING
+              : ORDER_STATUS.PENDING,
+        })),
+      );
+    };
 
+    if (orderType === ORDER_TYPES.PARCEL) {
+      const orderNumber = await generateOrderNumber(adminId);
+
+      const order = await Order.create({
+        adminId,
+        orderBy: adminId,
+        totalAmount: Math.round(finalTotal),
+        gstPercent,
+        gstAmount,
+        subTotal,
+        orderNumber,
+        orderType,
+      });
+
+      await createOrderItems(order._id, finalItems, orderType);
+
+      const io = getIO();
+
+      const populatedOrder = await Order.findById(order._id)
+        .populate("adminId", "name email");
+
+      const [{ orderItems }] = await attachOrderItems([populatedOrder]);
+
+      const orderWithItems = {
+        ...populatedOrder.toObject(),
+        items: buildAggregatedItems(orderItems),
+        orderItems: orderItems.map((i) => i.toObject()),
+      };
+
+      io.to(adminId.toString()).emit("order:new", orderWithItems);
+
+      return orderWithItems;
+    }
     const qr = await Qr.findOne({ adminId, tableNumber });
     if (!qr) {
       throw new ApiError(404, "Table not found");
@@ -396,16 +472,6 @@ export const orderService = {
       isCompleted: false,
     }).sort({ createdAt: -1 });
 
-    const createOrderItems = async (orderId, newItems) => {
-      await OrderItem.insertMany(
-        newItems.map((item) => ({
-          ...item,
-          orderId,
-          status: ORDER_STATUS.PENDING,
-        })),
-      );
-    };
-
     let order;
 
     if (latestActiveOrder) {
@@ -416,7 +482,7 @@ export const orderService = {
         );
       }
 
-      await createOrderItems(latestActiveOrder._id, finalItems);
+      await createOrderItems(latestActiveOrder._id, finalItems, latestActiveOrder.orderType);
 
       latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
@@ -443,7 +509,6 @@ export const orderService = {
         qr.occupied = false;
         await qr.save();
       }
-
       const orderNumber = await generateOrderNumber(adminId);
 
       order = await Order.create({
@@ -456,8 +521,9 @@ export const orderService = {
         gstAmount,
         subTotal,
         orderNumber,
+        orderType,
       });
-      await createOrderItems(order._id, finalItems);
+      await createOrderItems(order._id, finalItems, orderType);
 
       qr.occupied = true;
       await qr.save();
@@ -487,7 +553,10 @@ export const orderService = {
 
     await notificationService.createNotification({
       title: "New order received",
-      message: `A new order has been placed for table ${order.tableNumber}.`,
+      message:
+        orderType === ORDER_TYPES.PARCEL
+          ? "A new parcel order has been placed."
+          : `A new order has been placed for table ${order.tableNumber}.`,
       notificationType: NOTIFICATION_TYPES.ORDER_CREATED,
       recipientType: RECIPIENT_TYPES.ADMIN,
       userId: adminId,
@@ -501,7 +570,7 @@ export const orderService = {
   getOrders: async (adminId, filter, options) => {
     if (filter?.isCompleted !== undefined) {
       if (typeof filter.isCompleted === "string") {
-        filter.isCompleted = filter.isCompleted.toLowerCase() === "true";
+        filter.isCompleted = filter.isCompleted === "true";
       }
     }
 
@@ -521,6 +590,10 @@ export const orderService = {
         typeof filter.paymentStatus === "string"
           ? filter.paymentStatus.toLowerCase() === "true"
           : filter.paymentStatus;
+    }
+
+    if (filter?.orderType) {
+      query.orderType = filter.orderType;
     }
 
     if (filter?.search) {

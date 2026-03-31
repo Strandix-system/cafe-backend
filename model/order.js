@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { paginate } from "../model/plugin/paginate.plugin.js";
 import { GST_TYPES } from "../utils/constants.js";
+import { ORDER_TYPES } from "../utils/constants.js";
 
 const orderSchema = new mongoose.Schema(
   {
@@ -13,9 +14,17 @@ const orderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       required: true,
     },
+    orderType: {
+      type: String,
+      enum: Object.values(ORDER_TYPES),
+      default: ORDER_TYPES.DINE_IN,
+      required: true,
+    },
     tableNumber: {
       type: Number,
-      required: true,
+      required: function () {
+        return this.orderType === ORDER_TYPES.DINE_IN;
+      },
     },
     totalAmount: {
       type: Number,

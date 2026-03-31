@@ -1,4 +1,5 @@
 import Customer from "../../../model/customer.js";
+import { CustomerFeedback }  from "../../../model/customerFeedback.js";
 import mongoose from "mongoose";
 import { notificationService } from "../../notification/notification.service.js";
 import {
@@ -236,7 +237,15 @@ const customerService = {
     if (!customer) {
       throw new ApiError(404, "Customer not found");
     }
-    return customer;
+
+    const hasGivenFeedback = await CustomerFeedback.exists({
+      customerId: id,
+    });
+
+    return {
+    customer,
+    hasGivenFeedback: !!hasGivenFeedback,
+  };
   },
 
   updateCustomer: async (id, data) => {

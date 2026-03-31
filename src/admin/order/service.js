@@ -115,6 +115,32 @@ const changeTableCore = async ({
     });
   }
 
+  await notificationService.createNotification({
+    title: "Table changed",
+    message: `Order table changed from ${oldTableNumber} to ${newTableNumber}.`,
+    notificationType: NOTIFICATION_TYPES.TABLE_CHANGED,
+    recipientType: RECIPIENT_TYPES.ADMIN,
+    userId: adminId,
+    adminId,
+    entityType: ENTITY_TYPES.ORDER,
+    entityId: order._id,
+  });
+
+  await Promise.all(
+    customerIds.map((custId) =>
+      notificationService.createNotification({
+        title: "Table changed",
+        message: `Your table has been changed from ${oldTableNumber} to ${newTableNumber}.`,
+        notificationType: NOTIFICATION_TYPES.TABLE_CHANGED,
+        recipientType: RECIPIENT_TYPES.CUSTOMER,
+        customerId: custId,
+        adminId,
+        entityType: ENTITY_TYPES.ORDER,
+        entityId: order._id,
+      })
+    )
+  );
+
   return {
     message: "Table changed successfully",
     orderId: order._id,

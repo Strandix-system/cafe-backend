@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { paginate } from "../model/plugin/paginate.plugin.js";
+import { GST_TYPES } from "../utils/constants.js";
 import { ORDER_TYPES } from "../utils/constants.js";
 
 const orderSchema = new mongoose.Schema(
@@ -39,7 +40,7 @@ const orderSchema = new mongoose.Schema(
     },
     gstAmount: {
       type: Number,
-      required: true,
+      required: false,
     },
     subTotal: {
       type: Number,
@@ -47,7 +48,13 @@ const orderSchema = new mongoose.Schema(
     },
     gstPercent: {
       type: Number,
-      required: true,
+      required: false,
+    },
+    gstType: {
+      type: String,
+      enum: [...Object.values(GST_TYPES), null],
+      default: null,
+      required: false,
     },
     orderNumber: {
       type: String,

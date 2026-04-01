@@ -1,6 +1,8 @@
 import User from "../../model/user.js";
 import { deleteSingleFile } from "../../utils/s3utils.js";
 import { ApiError } from "../../utils/apiError.js";
+import bcrypt from "bcryptjs";
+
 const adminService = {
   createAdmin: async (body, files) => {
     const exists = await User.findOne({ email: body.email });
@@ -39,7 +41,7 @@ const adminService = {
     }
 
     // ✅ Merge nested object fields (LIKE hours, socialLinks)
-    const nestedFields = ['hours', 'socialLinks'];
+    const nestedFields = ['hours', 'socialLinks', 'address', 'gst'];
 
     nestedFields.forEach(field => {
       if (body[field]) {
@@ -48,8 +50,28 @@ const adminService = {
             ? JSON.parse(body[field])
             : body[field];
 
+        if (field === "gst") {
+          const hasGstNumberInPayload = Object.prototype.hasOwnProperty.call(parsedData, "gstNumber");
+          const incomingGstNumber = typeof parsedData.gstNumber === "string"
+            ? parsedData.gstNumber.trim()
+            : parsedData.gstNumber;
+
+          if (hasGstNumberInPayload && (incomingGstNumber ?? "") === "") {
+            admin.gst = {
+              ...(admin.gst?.toObject?.() ?? admin.gst ?? {}),
+              ...parsedData,
+              gstNumber: null,
+              gstPercentage: null,
+              gstType: null,
+            };
+
+            delete body[field];
+            return;
+          }
+        }
+
         admin[field] = {
-          ...(admin[field]?.toObject?.() || admin[field] || {}),
+          ...(admin[field]?.toObject?.() ?? admin[field] ?? {}),
           ...parsedData,
         };
 
@@ -111,8 +133,8 @@ const adminService = {
         { lastName: { $regex: filter.search, $options: "i" } },
         { cafeName: { $regex: filter.search, $options: "i" } },
         { email: { $regex: filter.search, $options: "i" } },
-        { state: { $regex: filter.search, $options: "i" } },
-        { city: { $regex: filter.search, $options: "i" } },
+        { "address.state": { $regex: filter.search, $options: "i" } },
+        { "address.city": { $regex: filter.search, $options: "i" } },
       ];
     }
     delete filter.search;

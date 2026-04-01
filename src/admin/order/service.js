@@ -17,6 +17,7 @@ import {
 import { buildAggregatedItems } from "../../../utils/utils.js";
 import { generateOrderNumber } from "../../../utils/utils.js";
 import { ORDER_TYPES } from "../../../utils/constants.js";
+import { resolveAdminGst, calculateTotalsByGst } from "../../../utils/gst.js";
 
 const attachOrderItems = async (orders) => {
   if (!orders || !orders.length) return [];
@@ -162,12 +163,12 @@ export const orderService = {
       throw new ApiError(400, "Customer adminId is missing");
     }
 
-    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst");
+    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst.gstNumber gst.gstPercentage gst.gstType");
     if (!admin) {
       throw new ApiError(404, "Admin not found");
     }
 
-    const gstPercent = admin.gst;
+    const { hasGstNumber, gstPercent, gstType } = resolveAdminGst(admin);
     const menuIds = items.map((menu) => menu.menuId);
     const menus = await Menu.find({
       _id: { $in: menuIds },
@@ -201,8 +202,16 @@ export const orderService = {
       throw new ApiError(400, "customerId is required for each item");
     }
 
-    const gstAmount = (subTotal * gstPercent) / 100;
-    const finalTotal = subTotal + gstAmount;
+    const {
+      gstAmount,
+      finalTotal,
+      taxableAmount,
+    } = calculateTotalsByGst({
+      subTotal,
+      gstPercent,
+      gstType,
+      hasGstNumber,
+    });
 
     const qr = await Qr.findOne({ adminId, tableNumber });
     if (!qr) {
@@ -232,22 +241,30 @@ export const orderService = {
 
       latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
-      latestActiveOrder.gstAmount =
-        (latestActiveOrder.subTotal * gstPercent) / 100;
-      latestActiveOrder.totalAmount = Math.round(
-        latestActiveOrder.subTotal + latestActiveOrder.gstAmount,
-      );
+      latestActiveOrder.gstType = gstType;
+      const updatedTotals = calculateTotalsByGst({
+        subTotal: latestActiveOrder.subTotal ?? 0,
+        gstPercent,
+        gstType,
+        hasGstNumber,
+      });
+      latestActiveOrder.gstAmount = updatedTotals.gstAmount;
+      latestActiveOrder.totalAmount = Math.round(updatedTotals.finalTotal);
       order = await latestActiveOrder.save();
     } else if (latestActiveOrder) {
       await createOrderItems(latestActiveOrder._id, finalItems);
 
       latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
-      latestActiveOrder.gstAmount =
-        (latestActiveOrder.subTotal * gstPercent) / 100;
-      latestActiveOrder.totalAmount = Math.round(
-        latestActiveOrder.subTotal + latestActiveOrder.gstAmount,
-      );
+      latestActiveOrder.gstType = gstType;
+      const updatedTotals = calculateTotalsByGst({
+        subTotal: latestActiveOrder.subTotal ?? 0,
+        gstPercent,
+        gstType,
+        hasGstNumber,
+      });
+      latestActiveOrder.gstAmount = updatedTotals.gstAmount;
+      latestActiveOrder.totalAmount = Math.round(updatedTotals.finalTotal);
       order = await latestActiveOrder.save();
       if (!qr.occupied) {
         qr.occupied = true;
@@ -267,8 +284,10 @@ export const orderService = {
         tableNumber,
         totalAmount: Math.round(finalTotal),
         gstPercent,
+        gstType,
         gstAmount,
         subTotal,
+        taxableAmount: Math.round(taxableAmount),
         orderNumber
       });
       await createOrderItems(order._id, finalItems);
@@ -325,7 +344,7 @@ export const orderService = {
       throw new ApiError(401, "Unauthorized");
     }
 
-    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst");
+    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst.gstNumber gst.gstPercentage gst.gstType");
     if (!admin) {
       throw new ApiError(404, "Admin not found");
     }
@@ -333,7 +352,7 @@ export const orderService = {
       throw new ApiError(400, "Table number is required for dine-in orders");
     }
 
-    const gstPercent = admin.gst;
+    const { hasGstNumber, gstPercent, gstType } = resolveAdminGst(admin);
 
     const phoneNumber = customer?.phoneNumber ?? "";
     const name = customer?.name ?? "";
@@ -379,8 +398,13 @@ export const orderService = {
       };
     });
 
-    const gstAmount = (subTotal * gstPercent) / 100;
-    const finalTotal = subTotal + gstAmount;
+    const { gstAmount, finalTotal } = calculateTotalsByGst({
+      subTotal,
+      gstPercent,
+      gstType,
+      hasGstNumber,
+    });
+
     const createOrderItems = async (orderId, newItems, orderType) => {
       await OrderItem.insertMany(
         newItems.map((item) => ({
@@ -402,6 +426,7 @@ export const orderService = {
         orderBy: adminId,
         totalAmount: Math.round(finalTotal),
         gstPercent,
+        gstType,
         gstAmount,
         subTotal,
         orderNumber,
@@ -452,11 +477,15 @@ export const orderService = {
 
       latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
-      latestActiveOrder.gstAmount =
-        (latestActiveOrder.subTotal * gstPercent) / 100;
-      latestActiveOrder.totalAmount = Math.round(
-        latestActiveOrder.subTotal + latestActiveOrder.gstAmount,
-      );
+      latestActiveOrder.gstType = gstType;
+      const updatedTotals = calculateTotalsByGst({
+        subTotal: latestActiveOrder.subTotal ?? 0,
+        gstPercent,
+        gstType,
+        hasGstNumber,
+      });
+      latestActiveOrder.gstAmount = updatedTotals.gstAmount;
+      latestActiveOrder.totalAmount = Math.round(updatedTotals.finalTotal);
       order = await latestActiveOrder.save();
 
       if (!qr.occupied) {
@@ -476,6 +505,7 @@ export const orderService = {
         tableNumber,
         totalAmount: Math.round(finalTotal),
         gstPercent,
+        gstType,
         gstAmount,
         subTotal,
         orderNumber,
@@ -611,23 +641,44 @@ export const orderService = {
     const result = await Order.paginate(finalFilter, safeOptions);
 
     const ordersWithItems = await attachOrderItems(result.results);
-    result.results = ordersWithItems.map(({ order, orderItems }) => ({
-      ...order.toObject(),
-      items: buildAggregatedItems(orderItems),
-      orderItems: orderItems.map((i) => ({
-        _id: i._id,
-        menuId: i.menuId?._id,
-        customerId: i.customerId?._id,
-        quantity: i.quantity,
-        status: i.status,
-        specialInstruction: i.specialInstruction ?? "",
-        timestamps: {
-          createdAt: i.createdAt,
-          updatedAt: i.updatedAt,
-        },
-      })),
-    }));
+    result.results = ordersWithItems.map(({ order, orderItems }) => {
+      const normalizedGstPercent = order.gstPercent ?? null;
+      const normalizedGstAmount = order.gstAmount ?? null;
+      const normalizedGstType = normalizedGstPercent === null ? null : (order.gstType ?? null);
+      let taxableAmount = null;
 
+      if (normalizedGstPercent !== null) {
+        if (normalizedGstType === "inclusive") {
+          taxableAmount =
+            (order.subTotal ?? 0) - (normalizedGstAmount ?? 0);
+        } else {
+          taxableAmount = order.subTotal ?? 0;
+        }
+
+        taxableAmount = Math.round(taxableAmount * 100) / 100;
+      }
+
+      return {
+        ...order.toObject(),
+        gstPercent: normalizedGstPercent,
+        gstType: normalizedGstType,
+        gstAmount: normalizedGstAmount,
+        taxableAmount,
+        items: buildAggregatedItems(orderItems),
+        orderItems: orderItems.map((i) => ({
+          _id: i._id,
+          menuId: i.menuId?._id,
+          customerId: i.customerId?._id,
+          quantity: i.quantity,
+          status: i.status,
+          specialInstruction: i.specialInstruction ?? "",
+          timestamps: {
+            createdAt: i.createdAt,
+            updatedAt: i.updatedAt,
+          },
+        })),
+      };
+    });
     return result;
   },
   getOrderById: async (orderId, adminId) => {
@@ -844,7 +895,7 @@ See you again!
       _id: orderId,
       adminId,
     })
-      .populate("adminId", "cafeName gst address city state pincode phoneNumber");
+      .populate("adminId", "cafeName gst.gstNumber gst.gstPercentage gst.gstType address phoneNumber");
 
     if (!order) {
       throw new ApiError(404, "Order not found");
@@ -861,9 +912,30 @@ See you again!
       return sum + price * item.quantity;
     }, 0);
 
-    const gstPercent = order.adminId.gst;
-    const gstAmount = (subTotal * gstPercent) / 100;
-    const total = Math.round(subTotal + gstAmount);
+    const hasGstNumber = !!order.adminId?.gst?.gstNumber;
+    let gstPercent = null;
+    let gstType = null;
+    let gstAmount = null;
+    let taxableAmount = null;
+    let total = Math.round(subTotal);
+
+    if (hasGstNumber) {
+      gstPercent = order.gstPercent ?? order.adminId?.gst?.gstPercentage ?? 5;
+      gstType = order.gstType ?? order.adminId?.gst?.gstType ?? "exclusive";
+
+      if (gstType === "inclusive") {
+        gstAmount = (subTotal * gstPercent) / (100 + gstPercent);
+        taxableAmount = subTotal - gstAmount;
+        total = Math.round(subTotal);
+      } else {
+        gstAmount = (subTotal * gstPercent) / 100;
+        taxableAmount = subTotal;
+        total = Math.round(subTotal + gstAmount);
+      }
+
+      gstAmount = Math.round(gstAmount * 100) / 100;
+      taxableAmount = Math.round(taxableAmount * 100) / 100;
+    }
 
     const customerMap = new Map();
     for (const item of orderItems) {
@@ -908,14 +980,23 @@ See you again!
       }));
     }
 
+    const adminAddress = order.adminId?.address ?? {};
+
     return {
       cafeName: order.adminId.cafeName,
-      address: `${order.adminId.address ?? ""}, ${order.adminId.city ?? ""}`,
+      address: {
+        street: adminAddress.street ?? null,
+        city: adminAddress.city ?? null,
+        state: adminAddress.state ?? null,
+        pincode: adminAddress.pincode ?? null,
+      },
       phoneNumber: order.adminId.phoneNumber,
       tableNumber: order.tableNumber,
       customers,
       subTotal,
+      taxableAmount,
       gstPercent,
+      gstType,
       gstAmount,
       orderNumber: order.orderNumber,
       total,
@@ -948,10 +1029,26 @@ See you again!
         if (existingOrder) {
           const [{ orderItems }] = await attachOrderItems([existingOrder]);
 
+          let taxableAmount = null;
+
+          if (existingOrder.gstPercent) {
+            if (existingOrder.gstType === "inclusive") {
+              taxableAmount =
+                (existingOrder.subTotal ?? 0) - (existingOrder.gstAmount ?? 0);
+            } else {
+              taxableAmount = existingOrder.subTotal ?? 0;
+            }
+
+            taxableAmount = Math.round(taxableAmount * 100) / 100;
+          }
+
           const orderWithItems = {
             ...existingOrder.toObject(),
+            taxableAmount,
+
             pricing: {
               subTotal: existingOrder.subTotal,
+              taxableAmount,
               gstPercent: existingOrder.gstPercent,
               gstAmount: existingOrder.gstAmount,
               totalAmount: existingOrder.totalAmount,

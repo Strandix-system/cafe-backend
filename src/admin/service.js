@@ -50,6 +50,26 @@ const adminService = {
             ? JSON.parse(body[field])
             : body[field];
 
+        if (field === "gst") {
+          const hasGstNumberInPayload = Object.prototype.hasOwnProperty.call(parsedData, "gstNumber");
+          const incomingGstNumber = typeof parsedData.gstNumber === "string"
+            ? parsedData.gstNumber.trim()
+            : parsedData.gstNumber;
+
+          if (hasGstNumberInPayload && (incomingGstNumber === "" || incomingGstNumber === null)) {
+            admin.gst = {
+              ...(admin.gst?.toObject?.() || admin.gst || {}),
+              ...parsedData,
+              gstNumber: null,
+              gstPercentage: null,
+              gstType: null,
+            };
+
+            delete body[field];
+            return;
+          }
+        }
+
         admin[field] = {
           ...(admin[field]?.toObject?.() || admin[field] || {}),
           ...parsedData,

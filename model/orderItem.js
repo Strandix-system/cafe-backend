@@ -24,10 +24,6 @@ const orderItemSchema = new mongoose.Schema(
       min: 1,
       required: true,
     },
-    unitPrice: {
-      type: Number,
-      default: null,
-    },
     specialInstruction: {   
       type: String,
       trim: true,

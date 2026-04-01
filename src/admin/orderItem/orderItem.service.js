@@ -10,7 +10,7 @@ import {
   ORDER_STATUS,
   RECIPIENT_TYPES,
 } from "../../../utils/constants.js";
-import { buildAggregatedItems } from "../../../utils/utils.js";  
+import { buildAggregatedItems } from "../../../utils/utils.js";
 
 const recalculateOrderTotals = async (orderId) => {
   const order = await Order.findById(orderId);
@@ -23,20 +23,30 @@ const recalculateOrderTotals = async (orderId) => {
 
   const subTotal = orderItems.reduce((sum, item) => {
     const menu = item.menuId;
-    const price = item.unitPrice ?? (
-      menu?.discountPrice && menu.discountPrice > 0
-        ? menu.discountPrice
-        : menu?.price ?? 0
-    );
+    const price = menu?.discountPrice && menu.discountPrice > 0
+      ? menu.discountPrice
+      : menu?.price ?? 0;
     return sum + price * item.quantity;
   }, 0);
 
-  const gstPercent = order.gstPercent ?? 0;
-  const gstAmount = (subTotal * gstPercent) / 100;
+  const hasGst = order.gstPercent !== null && order.gstPercent !== undefined;
+  const gstPercent = hasGst ? order.gstPercent : null;
+  const gstType = hasGst ? (order.gstType ?? "exclusive") : null;
+
+  let gstAmount = null;
+  let finalTotal = subTotal;
+
+  if (hasGst && gstType === "inclusive") {
+    gstAmount = (subTotal * gstPercent) / (100 + gstPercent);
+    finalTotal = subTotal;
+  } else if (hasGst) {
+    gstAmount = (subTotal * gstPercent) / 100;
+    finalTotal = subTotal + gstAmount;
+  }
 
   order.subTotal = subTotal;
   order.gstAmount = gstAmount;
-  order.totalAmount = Math.round(subTotal + gstAmount);
+  order.totalAmount = Math.round(finalTotal);
   await order.save();
 
   return order;

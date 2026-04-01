@@ -61,9 +61,9 @@ const userSchema = new mongoose.Schema(
       default: null, required: false
     },
     gst: {
-      gstNumber: { type: String, trim: true, unique: true, sparse: true, default: null, },
-      gstPercentage: { type: Number, required: true, default: 5, },
-      gstType: { type: String, enum: Object.values(GST_TYPES), default: GST_TYPES.EXCLUSIVE, },
+      gstNumber: { type: String, trim: true, default: undefined, },
+      gstPercentage: { type: Number, required: false, default: 5, },
+      gstType: { type: String, enum: [...Object.values(GST_TYPES), null], default: GST_TYPES.EXCLUSIVE, },
     },
     role: {
       type: String,
@@ -113,5 +113,14 @@ userSchema.pre("save", async function (next) {
 });
 
 userSchema.plugin(paginate);
+userSchema.index(
+  { "gst.gstNumber": 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      "gst.gstNumber": { $type: "string", $ne: "" },
+    },
+  }
+);
 
 export default mongoose.model("User", userSchema);

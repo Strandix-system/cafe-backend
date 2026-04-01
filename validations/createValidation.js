@@ -47,15 +47,15 @@ const addressUpdateRule = Joi.object({
   pincode: pincodeRule,
 }).min(1);
 const gstCreateRule = Joi.object({
-  gstNumber: Joi.string().trim().allow("", null),
-  gstPercentage: Joi.number().min(5).max(18).required(),
-  gstType: Joi.string().valid("inclusive", "exclusive"),
+  gstNumber: Joi.string().trim().allow(null).empty(""),
+  gstPercentage: Joi.number().min(5).max(18).allow(null).empty(""),
+  gstType: Joi.string().valid("inclusive", "exclusive").allow(null).empty(""),
 });
 const gstUpdateRule = Joi.object({
-  gstNumber: Joi.string().trim().allow("", null),
-  gstPercentage: Joi.number().min(5).max(18),
-  gstType: Joi.string().valid("inclusive", "exclusive"),
-}).min(1);
+  gstNumber: Joi.string().trim().allow(null).empty(""),
+  gstPercentage: Joi.number().min(5).max(18).allow(null).empty(""),
+  gstType: Joi.string().valid("inclusive", "exclusive").allow(null).empty(""),
+});
 
 const createAdminValidator = {
   body: Joi.object({

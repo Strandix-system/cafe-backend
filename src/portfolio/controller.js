@@ -40,4 +40,8 @@ export const portfolioController = {
     );
     sendSuccessResponse(res, 200, "Customer feedback deleted", undefined);
   },
+    calculatePortfolioBill : async ( req, res) => {
+      const result = await portfolioService.calculatePortfolioBill(req.body);
+      sendSuccessResponse(res, 200, "Portfolio bill calculated", result);
+    },
 };

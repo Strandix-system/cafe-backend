@@ -3,6 +3,8 @@ import Customer from "../../model/customer.js";
 import Menu from "../../model/menu.js";
 import { CustomerFeedback } from "../../model/customerFeedback.js";
 import { ApiError } from "../../utils/apiError.js";
+import User from "../../model/user.js";
+import { resolveAdminGst, calculateTotalsByGst } from "../../utils/gst.js";
 
 export const portfolioService = {
   aboutStats: async (filter = {}) => {
@@ -134,4 +136,98 @@ export const portfolioService = {
       throw new ApiError(404, "Customer feedback not found");
     }
   },
+
+ calculatePortfolioBill: async (body) => {
+  const {
+    adminId,
+    items = [],
+  } = body;
+
+  if (!Array.isArray(items) || !items.length) {
+    throw new ApiError(400, "At least one item is required");
+  }
+
+  if (!adminId) {
+    throw new ApiError(400, "adminId is required");
+  }
+
+  const admin = await User.findById(adminId).select(
+    "gst.gstNumber gst.gstPercentage gst.gstType"
+  );
+
+  if (!admin) {
+    throw new ApiError(404, "Admin not found");
+  }
+
+  const menuIds = items.map((item) => item.menuId);
+
+  const menus = await Menu.find({
+    _id: { $in: menuIds },
+  }).select("name price discountPrice");
+
+  const normalizedItems = items.map((item) => {
+    const menu = menus.find(
+      (m) => m._id.toString() === item.menuId.toString()
+    );
+
+    if (!menu) {
+      throw new ApiError(400, `Menu item not found: ${item.menuId}`);
+    }
+
+    const price =
+      menu.discountPrice && menu.discountPrice > 0
+        ? menu.discountPrice
+        : menu.price;
+
+    const quantity = Number(item.quantity ?? 0);
+
+    return {
+      menuId: item.menuId,
+      name: menu.name,
+      price,
+      quantity,
+      amount: Math.round(price * quantity * 100) / 100,
+    };
+  });
+
+  const subTotal = Math.round(
+    normalizedItems.reduce((sum, item) => sum + item.amount, 0) * 100
+  ) / 100;
+
+  const {
+    hasGstNumber,
+    gstPercent,
+    gstType: finalGstType,
+  } = resolveAdminGst(admin);
+
+  const {
+    gstAmount: rawGstAmount,
+    taxableAmount: rawTaxableAmount,
+    finalTotal,
+  } = calculateTotalsByGst({
+    subTotal,
+    gstPercent,
+    gstType: finalGstType,
+    hasGstNumber,
+  });
+
+  const gstAmount = rawGstAmount === null
+    ? null
+    : Math.round(rawGstAmount * 100) / 100;
+  const taxableAmount = !hasGstNumber || rawTaxableAmount === null
+    ? null
+    : Math.round(rawTaxableAmount * 100) / 100;
+  const total = Math.round(finalTotal * 100) / 100;
+
+  return {
+    items: normalizedItems,
+    subTotal,
+    taxableAmount,
+    gstPercent: hasGstNumber ? gstPercent : null,
+    gstType: finalGstType,
+    gstAmount,
+    total,
+  };
+},
+
 };

@@ -40,7 +40,7 @@ const orderSchema = new mongoose.Schema(
     },
     gstAmount: {
       type: Number,
-      required: true,
+      required: false,
     },
     subTotal: {
       type: Number,
@@ -48,13 +48,13 @@ const orderSchema = new mongoose.Schema(
     },
     gstPercent: {
       type: Number,
-      required: true,
+      required: false,
     },
     gstType: {
       type: String,
-      enum: Object.values(GST_TYPES),
-      default: GST_TYPES.EXCLUSIVE,
-      required: true,
+      enum: [...Object.values(GST_TYPES), null],
+      default: null,
+      required: false,
     },
     orderNumber: {
       type: String,

@@ -61,9 +61,9 @@ const userSchema = new mongoose.Schema(
       default: null, required: false
     },
     gst: {
-      gstNumber: { type: String, trim: true, default: undefined, },
-      gstPercentage: { type: Number, required: false, default: 5, },
-      gstType: { type: String, enum: [...Object.values(GST_TYPES), null], default: GST_TYPES.EXCLUSIVE, },
+      gstNumber: { type: String, trim: true, default: null,},
+      gstPercentage: { type: Number, required: false, default: null, },
+      gstType: { type: String, enum: [...Object.values(GST_TYPES), null], default: null, },
     },
     role: {
       type: String,

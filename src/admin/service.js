@@ -56,9 +56,9 @@ const adminService = {
             ? parsedData.gstNumber.trim()
             : parsedData.gstNumber;
 
-          if (hasGstNumberInPayload && (incomingGstNumber === "" || incomingGstNumber === null)) {
+          if (hasGstNumberInPayload && (incomingGstNumber ?? "") === "") {
             admin.gst = {
-              ...(admin.gst?.toObject?.() || admin.gst || {}),
+              ...(admin.gst?.toObject?.() ?? admin.gst ?? {}),
               ...parsedData,
               gstNumber: null,
               gstPercentage: null,
@@ -71,7 +71,7 @@ const adminService = {
         }
 
         admin[field] = {
-          ...(admin[field]?.toObject?.() || admin[field] || {}),
+          ...(admin[field]?.toObject?.() ?? admin[field] ?? {}),
           ...parsedData,
         };
 

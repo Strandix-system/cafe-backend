@@ -69,6 +69,13 @@ export const orderController = {
 
     sendSuccessResponse(res, 200, "Bill details fetched", result);
   },
+  getTableStatusOverview: async (req, res) => {
+    const result = await orderService.getTableStatusOverview(
+      req.user._id
+    );
+
+    sendSuccessResponse(res, 200, "Table status fetched", result);
+  },
   getActiveOrderByQr: async (req, res) => {
     const result = await orderService.getActiveOrderByQr(
       req.params.qrId,
@@ -77,9 +84,11 @@ export const orderController = {
 
     sendSuccessResponse(res, 200, "Active order fetched", result);
   },
+
   changeTable: (req, res) =>
     handleChangeTable(req, res, orderService.changeTable),
 
   changeTablePublic: (req, res) =>
     handleChangeTable(req, res, orderService.changeTablePublic),
+
 };

@@ -1032,6 +1032,7 @@ See you again!
       address: `${order.adminId.address ?? ""}, ${order.adminId.city ?? ""}`,
       phoneNumber: order.adminId.phoneNumber,
       tableNumber: order.tableNumber,
+      orderType: order.orderType,
       customers,
       subTotal,
       gstPercent,

@@ -1,10 +1,8 @@
 export const resolveAdminGst = (admin) => {
-  const hasGstNumber = typeof admin?.gst?.gstNumber === "string"
-    ? admin.gst.gstNumber.trim().length > 0
-    : !!admin?.gst?.gstNumber;
+  const hasGstNumber = !!admin?.gst?.gstNumber;
 
-  const gstPercent = hasGstNumber ? (admin?.gst?.gstPercentage ?? 5) : null;
-  const gstType = hasGstNumber ? (admin?.gst?.gstType ?? "exclusive") : null;
+  const gstPercent = hasGstNumber ? (admin?.gst?.gstPercentage) : null;
+  const gstType = hasGstNumber ? (admin?.gst?.gstType) : null;
 
   return {
     hasGstNumber,

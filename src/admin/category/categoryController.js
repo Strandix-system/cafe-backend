@@ -4,13 +4,16 @@ import { pick } from "../../../utils/pick.js";
 
 export default {
   createCategory: async (req, res) => {
-    const result = await categoryService.createCategory(req.body);
+    const result = await categoryService.createCategory(req.user, req.body);
     sendSuccessResponse(res, 201, "Category created successfully", result);
   },
   getAllCategories: async (req, res) => {
     const filter = pick(req.query, ["search"]);
     const options = pick(req.query, ["page", "limit", "sortBy"]);
-    const categories = await categoryService.getAllCategories(filter, options);
+    const categories = await categoryService.getAllCategories(
+      filter,
+      options
+    );
     sendSuccessResponse(res, 200, "Categories fetched successfully", categories);
   },
   updateCategory: async (req, res) => {

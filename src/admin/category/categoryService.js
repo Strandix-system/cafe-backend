@@ -2,12 +2,16 @@ import { Category } from "../../../model/category.js";
 import Menu from "../../../model/menu.js";
 import { ApiError } from "../../../utils/apiError.js";
 export const categoryService = {
-  createCategory: async (data) => {
+  createCategory: async (user, data) => {
+    if (!user) {
+      throw new ApiError(401, "Unauthorized");
+    }
     const exists = await Category.findOne({ name: data.name });
     if (exists) {
       throw new ApiError(409, "Category already exists");
     }
-    const result = await Category.create(data);
+    const payload = { ...data, adminId: user._id };
+    const result = await Category.create(payload);
     return result;
   },
   getAllCategories: async (filter, options) => {

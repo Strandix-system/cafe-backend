@@ -7,7 +7,13 @@ const categorySchema = new mongoose.Schema(
       required: true,
       trim: true,
       unique: true
-    } 
+    },
+    adminId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      index: true
+    }
 },
   { timestamps: true }
 );

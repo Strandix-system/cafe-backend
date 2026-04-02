@@ -9,7 +9,7 @@ const router = express.Router();
 router.post(
   "/create",
   tokenVerification,
-  allowRoles("superadmin"),
+  allowRoles("superadmin", "admin"),
   categoryController.createCategory
 );
 
@@ -18,7 +18,12 @@ router.get(
   tokenVerification,
   categoryController.getAllCategories
 );
-router.get("/categories", categoryController.getCategoriesForDropdown);
+router.get(
+  "/categories",
+  tokenVerification,
+  allowRoles("superadmin", "admin"),
+  categoryController.getCategoriesForDropdown
+);
 router.patch(
   "/update/:categoryId",
   tokenVerification,

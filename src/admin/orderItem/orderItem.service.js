@@ -29,9 +29,10 @@ const recalculateOrderTotals = async (orderId) => {
     return sum + price * item.quantity;
   }, 0);
 
-  const hasGst = order.gstPercent !== null && order.gstPercent !== undefined;
+  const hasGst = order.gstPercent != null && order.gstType != null;
+
   const gstPercent = hasGst ? order.gstPercent : null;
-  const gstType = hasGst ? (order.gstType ?? "exclusive") : null;
+  const gstType = hasGst ? order.gstType : null;
 
   let gstAmount = null;
   let finalTotal = subTotal;

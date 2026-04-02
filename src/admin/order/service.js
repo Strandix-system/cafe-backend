@@ -920,8 +920,8 @@ See you again!
     let total = Math.round(subTotal);
 
     if (hasGstNumber) {
-      gstPercent = order.gstPercent ?? order.adminId?.gst?.gstPercentage ?? 5;
-      gstType = order.gstType ?? order.adminId?.gst?.gstType ?? "exclusive";
+      gstPercent = order.gstPercent ?? order.adminId?.gst?.gstPercentage;
+      gstType = order.gstType ?? order.adminId?.gst?.gstType;
 
       if (gstType === "inclusive") {
         gstAmount = (subTotal * gstPercent) / (100 + gstPercent);

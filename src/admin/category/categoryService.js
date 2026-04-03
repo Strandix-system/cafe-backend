@@ -1,13 +1,22 @@
 import { Category } from '../../../model/category.js';
 import Menu from '../../../model/menu.js';
 import { ApiError } from '../../../utils/apiError.js';
+import { CATEGORY_TYPES } from '../../../utils/constants.js';
 export const categoryService = {
-  createCategory: async (data) => {
-    const exists = await Category.findOne({ name: data.name });
+  createCategory: async (user, data) => {
+    if (!user) {
+      throw new ApiError(401, 'Unauthorized');
+    }
+    const exists = await Category.findOne({
+      adminId: user._id,
+      type: data.type,
+      name: { $regex: new RegExp(`^${data.name}$`, 'i') },
+    });
     if (exists) {
       throw new ApiError(409, 'Category already exists');
     }
-    const result = await Category.create(data);
+    const payload = { ...data, adminId: user._id };
+    const result = await Category.create(payload);
     return result;
   },
   getAllCategories: async (filter, options) => {
@@ -44,8 +53,13 @@ export const categoryService = {
     }
     return category;
   },
-  getCategoriesForDropdown: async () => {
-    return await Category.find().select('_id name').sort({ name: 1 });
+  getCategoriesForDropdown: async (filter = {}) => {
+    const query = {};
+    if (filter.type) {
+      query.type = filter.type;
+    }
+
+    return await Category.find(query).select('_id name').sort({ name: 1 });
   },
   getUsedCategoriesForDropdown: async (user, requestedAdminId) => {
     const adminId = await categoryService.resolveAdminIdForUsedCategories(
@@ -56,6 +70,7 @@ export const categoryService = {
     const usedCategoryIds = await Menu.distinct('category', { adminId });
 
     const categories = await Category.find({
+      type: CATEGORY_TYPES.MENU,
       name: { $in: usedCategoryIds },
     })
       .select('_id name')

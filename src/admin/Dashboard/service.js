@@ -1,35 +1,42 @@
-import User from "../../../model/user.js";
-import Order from "../../../model/order.js";
-import {OrderItem} from "../../../model/orderItem.js";
-import Customer from "../../../model/customer.js";
-import demoRequest from "../../../model/demoRequest.js";
-import { ApiError } from "../../../utils/apiError.js";
+import User from '../../../model/user.js';
+import Order from '../../../model/order.js';
+import { OrderItem } from '../../../model/orderItem.js';
+import Customer from '../../../model/customer.js';
+import demoRequest from '../../../model/demoRequest.js';
+import { ApiError } from '../../../utils/apiError.js';
 import {
   getCurrentUtcDayRange,
   getCurrentUtcYearRange,
   getUtcDateRange,
-} from "../../../utils/dateRange.js";
+} from '../../../utils/dateRange.js';
 
 export const dashboardService = {
-  resolveDashboardAdminId: async (user, requestedAdminId, { requireForSuperadmin = false } = {}) => {
-    if (user.role === "admin") {
+  resolveDashboardAdminId: async (
+    user,
+    requestedAdminId,
+    { requireForSuperadmin = false } = {},
+  ) => {
+    if (user.role === 'admin') {
       return user._id;
     }
 
-    if (user.role !== "superadmin") {
-      throw new ApiError(403, "Access Denied");
+    if (user.role !== 'superadmin') {
+      throw new ApiError(403, 'Access Denied');
     }
 
     if (!requestedAdminId) {
       if (requireForSuperadmin) {
-        throw new ApiError(400, "adminId query parameter is required");
+        throw new ApiError(400, 'adminId query parameter is required');
       }
       return null;
     }
 
-    const admin = await User.findOne({ _id: requestedAdminId, role: "admin" }).select("_id");
+    const admin = await User.findOne({
+      _id: requestedAdminId,
+      role: 'admin',
+    }).select('_id');
     if (!admin) {
-      throw new ApiError(404, "Admin not found");
+      throw new ApiError(404, 'Admin not found');
     }
 
     return admin._id;
@@ -37,21 +44,21 @@ export const dashboardService = {
   superAdminStats: async () => {
     const [totalCafe, totalActive, totalInActive, totalDemoRequest, incomeAgg] =
       await Promise.all([
-        User.countDocuments({ role: "admin" }),
-        User.countDocuments({ role: "admin", isActive: true }),
-        User.countDocuments({ role: "admin", isActive: false }),
+        User.countDocuments({ role: 'admin' }),
+        User.countDocuments({ role: 'admin', isActive: true }),
+        User.countDocuments({ role: 'admin', isActive: false }),
         demoRequest.countDocuments(),
         Order.aggregate([
           {
-            $match: { isCompleted: true }
+            $match: { isCompleted: true },
           },
           {
             $group: {
               _id: null,
-              total: { $sum: "$totalAmount" }
-            }
-          }
-        ])
+              total: { $sum: '$totalAmount' },
+            },
+          },
+        ]),
       ]);
 
     return {
@@ -74,56 +81,55 @@ export const dashboardService = {
       todayOrder,
       todayIncomeAgg,
     ] = await Promise.all([
-
       Customer.countDocuments({ adminId }),
       Order.countDocuments({
-        adminId, isCompleted: true
+        adminId,
+        isCompleted: true,
       }),
       Order.aggregate([
         { $match: { adminId, isCompleted: true } },
-        { $group: { _id: null, total: { $sum: "$totalAmount" } } }
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } },
       ]),
 
       OrderItem.aggregate([
         {
           $lookup: {
-            from: "orders",
-            localField: "orderId",
-            foreignField: "_id",
-            as: "order",
+            from: 'orders',
+            localField: 'orderId',
+            foreignField: '_id',
+            as: 'order',
           },
         },
-        { $unwind: "$order" },
+        { $unwind: '$order' },
         {
           $match: {
-            "order.adminId": adminId,
-            "order.createdAt": { $gte: start, $lte: end },
+            'order.adminId': adminId,
+            'order.createdAt': { $gte: start, $lte: end },
           },
         },
-        { $group: { _id: "$customerId" } },
+        { $group: { _id: '$customerId' } },
       ]),
       Order.countDocuments({
         adminId,
         isCompleted: true,
-        createdAt: { $gte: start, $lte: end }
+        createdAt: { $gte: start, $lte: end },
       }),
       Order.aggregate([
         {
           $match: {
             adminId,
             isCompleted: true,
-            createdAt: { $gte: start, $lte: end }
-          }
+            createdAt: { $gte: start, $lte: end },
+          },
         },
         {
           $group: {
             _id: null,
-            total: { $sum: "$totalAmount" }
-          }
-        }
+            total: { $sum: '$totalAmount' },
+          },
+        },
       ]),
     ]);
-
 
     return {
       totalCustomer,
@@ -141,32 +147,28 @@ export const dashboardService = {
       ({ start, end } = getCurrentUtcYearRange());
 
       groupId = {
-        year: { $year: "$createdAt" },
-        month: { $month: "$createdAt" },
+        year: { $year: '$createdAt' },
+        month: { $month: '$createdAt' },
       };
 
       labelFormatter = (id) => `${id.month}-${id.year}`;
-    }
-    else {
+    } else {
       ({ start, end } = getUtcDateRange(startDate, endDate));
 
-      const diffDays = Math.ceil(
-        (end - start) / (1000 * 60 * 60 * 24)
-      );
+      const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
 
       if (diffDays <= 45) {
         groupId = {
           date: {
-            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
           },
         };
 
         labelFormatter = (id) => id.date;
-      }
-      else {
+      } else {
         groupId = {
-          year: { $year: "$createdAt" },
-          month: { $month: "$createdAt" },
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
         };
 
         labelFormatter = (id) => `${id.month}-${id.year}`;
@@ -183,10 +185,10 @@ export const dashboardService = {
       {
         $group: {
           _id: groupId,
-          total: { $sum: "$totalAmount" },
+          total: { $sum: '$totalAmount' },
         },
       },
-      { $sort: { "_id.year": 1, "_id.month": 1, "_id.date": 1 } },
+      { $sort: { '_id.year': 1, '_id.month': 1, '_id.date': 1 } },
     ]);
 
     return sales.map((s) => ({
@@ -198,42 +200,42 @@ export const dashboardService = {
     const pipeline = (sortOrder) => [
       {
         $lookup: {
-          from: "orders",
-          localField: "orderId",
-          foreignField: "_id",
-          as: "order",
+          from: 'orders',
+          localField: 'orderId',
+          foreignField: '_id',
+          as: 'order',
         },
       },
-      { $unwind: "$order" },
-      { $match: { "order.adminId": adminId } },
+      { $unwind: '$order' },
+      { $match: { 'order.adminId': adminId } },
       {
         $lookup: {
-          from: "menus",
-          localField: "menuId",
-          foreignField: "_id",
-          as: "menu",
+          from: 'menus',
+          localField: 'menuId',
+          foreignField: '_id',
+          as: 'menu',
         },
       },
-      { $unwind: { path: "$menu", preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$menu', preserveNullAndEmptyArrays: true } },
       {
         $group: {
-          _id: "$menu.name",
-          quantity: { $sum: "$quantity" },
+          _id: '$menu.name',
+          quantity: { $sum: '$quantity' },
           revenue: {
             $sum: {
               $multiply: [
-                "$quantity",
+                '$quantity',
                 {
                   $cond: [
-                    { $gt: ["$menu.discountPrice", 0] },
-                    "$menu.discountPrice",
-                    "$menu.price",
+                    { $gt: ['$menu.discountPrice', 0] },
+                    '$menu.discountPrice',
+                    '$menu.price',
                   ],
                 },
               ],
             },
           },
-          menuImage: { $first: "$menu.image" },
+          menuImage: { $first: '$menu.image' },
         },
       },
       { $sort: { revenue: sortOrder } },
@@ -241,17 +243,17 @@ export const dashboardService = {
       {
         $project: {
           _id: 0,
-          name: "$_id",
+          name: '$_id',
           quantity: 1,
           revenue: 1,
-          image: "$menuImage",
+          image: '$menuImage',
         },
       },
     ];
 
     const [topSelling, lowSelling] = await Promise.all([
       OrderItem.aggregate(pipeline(-1)), // highest revenue
-      OrderItem.aggregate(pipeline(1)),  // lowest revenue
+      OrderItem.aggregate(pipeline(1)), // lowest revenue
     ]);
 
     const topItem = topSelling[0] ?? null;
@@ -290,9 +292,9 @@ export const dashboardService = {
         $group: {
           _id: {
             $hour: {
-              date: "$createdAt",
-              timezone: "Asia/Kolkata"
-            }
+              date: '$createdAt',
+              timezone: 'Asia/Kolkata',
+            },
           },
           orders: { $sum: 1 },
         },
@@ -300,17 +302,13 @@ export const dashboardService = {
     ]);
 
     const hourMap = {};
-    raw.forEach(r => (hourMap[r._id] = r.orders));
+    raw.forEach((r) => (hourMap[r._id] = r.orders));
 
     const result = [];
     for (let hour = 8; hour <= 23; hour++) {
       result.push({
         hour:
-          hour === 12
-            ? "12 PM"
-            : hour < 12
-              ? `${hour} AM`
-              : `${hour - 12} PM`,
+          hour === 12 ? '12 PM' : hour < 12 ? `${hour} AM` : `${hour - 12} PM`,
         orders: hourMap[hour] || 0,
       });
     }
@@ -325,7 +323,7 @@ export const dashboardService = {
       totalAmount: -1,
     };
 
-    if (sortBy === "amount") {
+    if (sortBy === 'amount') {
       sortStage = {
         totalAmount: -1,
         totalOrders: -1,
@@ -335,50 +333,50 @@ export const dashboardService = {
     const customers = await OrderItem.aggregate([
       {
         $lookup: {
-          from: "orders",
-          localField: "orderId",
-          foreignField: "_id",
-          as: "order",
+          from: 'orders',
+          localField: 'orderId',
+          foreignField: '_id',
+          as: 'order',
         },
       },
-      { $unwind: "$order" },
+      { $unwind: '$order' },
       {
         $match: {
-          "order.adminId": adminId,
-          "order.isCompleted": true,
+          'order.adminId': adminId,
+          'order.isCompleted': true,
         },
       },
       {
         $group: {
-          _id: { customerId: "$customerId", orderId: "$orderId" },
-          totalAmount: { $first: "$order.totalAmount" },
+          _id: { customerId: '$customerId', orderId: '$orderId' },
+          totalAmount: { $first: '$order.totalAmount' },
         },
       },
       {
         $group: {
-          _id: "$_id.customerId",
+          _id: '$_id.customerId',
           totalOrders: { $sum: 1 },
-          totalAmount: { $sum: "$totalAmount" },
+          totalAmount: { $sum: '$totalAmount' },
         },
       },
       {
         $lookup: {
-          from: "customers",
-          localField: "_id",
-          foreignField: "_id",
-          as: "customer",
+          from: 'customers',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'customer',
         },
       },
-      { $unwind: "$customer" },
+      { $unwind: '$customer' },
       {
         $addFields: {
           customerStatus: {
             $switch: {
               branches: [
-                { case: { $gt: ["$totalAmount", 5000] }, then: "vip" },
-                { case: { $gt: ["$totalOrders", 1] }, then: "frequent" },
+                { case: { $gt: ['$totalAmount', 5000] }, then: 'vip' },
+                { case: { $gt: ['$totalOrders', 1] }, then: 'frequent' },
               ],
-              default: "new",
+              default: 'new',
             },
           },
         },
@@ -386,9 +384,9 @@ export const dashboardService = {
       {
         $project: {
           _id: 0,
-          customerId: "$_id",
-          name: "$customer.name",
-          phoneNumber: "$customer.phoneNumber",
+          customerId: '$_id',
+          name: '$customer.name',
+          phoneNumber: '$customer.phoneNumber',
           totalOrders: 1,
           totalAmount: 1,
           customerStatus: 1,
@@ -405,30 +403,41 @@ export const dashboardService = {
       { $match: { adminId } },
       {
         $group: {
-          _id: "$tableNumber",
-          totalOrders: { $sum: 1 }
-        }
+          _id: '$tableNumber',
+          totalOrders: { $sum: 1 },
+        },
       },
-      { $sort: { totalOrders: -1 } }
-
+      { $sort: { totalOrders: -1 } },
     ]);
   },
   platformSales: async (startDate, endDate) => {
     let start, end, groupId, labelFormatter;
 
-    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const months = [
+      'JAN',
+      'FEB',
+      'MAR',
+      'APR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AUG',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DEC',
+    ];
     if (!startDate || !endDate) {
       ({ start, end } = getCurrentUtcYearRange());
 
       groupId = {
-        year: { $year: "$createdAt" },
-        month: { $month: "$createdAt" },
+        year: { $year: '$createdAt' },
+        month: { $month: '$createdAt' },
       };
 
-      labelFormatter = (id) => `${months[id.month - 1]}-${String(id.year).slice(-2)}`;
-    }
-
-    else {
+      labelFormatter = (id) =>
+        `${months[id.month - 1]}-${String(id.year).slice(-2)}`;
+    } else {
       ({ start, end } = getUtcDateRange(startDate, endDate));
 
       const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
@@ -437,25 +446,24 @@ export const dashboardService = {
         groupId = {
           date: {
             $dateToString: {
-              format: "%Y-%m-%d",
-              date: "$createdAt",
+              format: '%Y-%m-%d',
+              date: '$createdAt',
             },
           },
         };
 
         labelFormatter = (id) => {
-          const [year, month, day] = id.date.split("-");
+          const [year, month, day] = id.date.split('-');
           return `${day}-${months[Number(month) - 1]}-${year}`;
         };
-      }
-
-      else {
+      } else {
         groupId = {
-          year: { $year: "$createdAt" },
-          month: { $month: "$createdAt" },
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
         };
 
-        labelFormatter = (id) => `${months[id.month - 1]}-${String(id.year).slice(-2)}`;
+        labelFormatter = (id) =>
+          `${months[id.month - 1]}-${String(id.year).slice(-2)}`;
       }
     }
 
@@ -470,10 +478,10 @@ export const dashboardService = {
         $group: {
           _id: groupId,
           orders: { $sum: 1 },
-          revenue: { $sum: "$totalAmount" },
+          revenue: { $sum: '$totalAmount' },
         },
       },
-      { $sort: { "_id.year": 1, "_id.month": 1, "_id.date": 1 } },
+      { $sort: { '_id.year': 1, '_id.month': 1, '_id.date': 1 } },
     ]);
 
     return chartAgg.map((c) => ({
@@ -490,14 +498,14 @@ export const dashboardService = {
       totalAmount: -1,
     };
 
-    if (sortBy === "amount") {
+    if (sortBy === 'amount') {
       sortStage = {
         totalAmount: -1,
         totalOrders: -1,
       };
     }
 
-    if (sortBy === "rating") {
+    if (sortBy === 'rating') {
       sortStage = {
         averageRating: -1,
         totalOrders: -1,
@@ -513,34 +521,34 @@ export const dashboardService = {
       },
       {
         $group: {
-          _id: "$adminId",
+          _id: '$adminId',
           totalOrders: { $sum: 1 },
-          totalAmount: { $sum: "$totalAmount" },
+          totalAmount: { $sum: '$totalAmount' },
         },
       },
       {
         $lookup: {
-          from: "users",
-          localField: "_id",
-          foreignField: "_id",
-          as: "admin",
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'admin',
         },
       },
-      { $unwind: "$admin" },
+      { $unwind: '$admin' },
       {
         $lookup: {
-          from: "customerfeedbacks",
-          localField: "_id",
-          foreignField: "adminId",
-          as: "feedbacks",
+          from: 'customerfeedbacks',
+          localField: '_id',
+          foreignField: 'adminId',
+          as: 'feedbacks',
         },
       },
       {
         $addFields: {
           averageRating: {
             $cond: [
-              { $gt: [{ $size: "$feedbacks" }, 0] },
-              { $avg: "$feedbacks.rate" },
+              { $gt: [{ $size: '$feedbacks' }, 0] },
+              { $avg: '$feedbacks.rate' },
               0,
             ],
           },
@@ -549,11 +557,11 @@ export const dashboardService = {
       {
         $project: {
           _id: 0,
-          cafeId: "$admin._id",
-          cafeName: "$admin.cafeName", // ✅ FIX HERE
+          cafeId: '$admin._id',
+          cafeName: '$admin.cafeName', // ✅ FIX HERE
           totalOrders: 1,
           totalAmount: 1,
-          averageRating: { $round: ["$averageRating", 1] },
+          averageRating: { $round: ['$averageRating', 1] },
         },
       },
       {

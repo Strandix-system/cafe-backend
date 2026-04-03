@@ -1,4 +1,4 @@
-import Joi from "joi";
+import Joi from 'joi';
 
 const objectId = Joi.string().hex().length(24);
 const date = Joi.date().iso();
@@ -40,13 +40,15 @@ const dashboardTablePerformanceValidator = {
 const dashboardTopCustomersValidator = {
   query: Joi.object({
     adminId: objectId.optional(),
-    sortBy: Joi.string().valid("order", "orders", "amount").optional(),
+    sortBy: Joi.string().valid('order', 'orders', 'amount').optional(),
   }),
 };
 
 const dashboardTopCafesValidator = {
   query: Joi.object({
-    sortBy: Joi.string().valid("order", "orders", "amount", "rating").optional(),
+    sortBy: Joi.string()
+      .valid('order', 'orders', 'amount', 'rating')
+      .optional(),
   }),
 };
 
@@ -62,7 +64,7 @@ const dashboardAdminAnalyticsValidator = {
     adminId: objectId.optional(),
     startDate: date.optional(),
     endDate: date.optional(),
-    sortBy: Joi.string().valid("order", "amount").optional(),
+    sortBy: Joi.string().valid('order', 'amount').optional(),
   }),
 };
 

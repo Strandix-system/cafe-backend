@@ -1,6 +1,7 @@
-import {categoryService} from "./categoryService.js";
-import { sendSuccessResponse } from "../../../utils/response.js";
-import { pick } from "../../../utils/pick.js";
+import { pick } from '../../../utils/pick.js';
+import { sendSuccessResponse } from '../../../utils/response.js';
+
+import { categoryService } from './categoryService.js';
 
 export default {
   createCategory: async (req, res) => {
@@ -19,27 +20,32 @@ export default {
   updateCategory: async (req, res) => {
     const category = await categoryService.updateCategoryById(
       req.params.categoryId,
-      req.body
+      req.body,
     );
-    sendSuccessResponse(res, 200, "Category updated successfully", category);
+    sendSuccessResponse(res, 200, 'Category updated successfully', category);
   },
   deleteCategory: async (req, res) => {
     await categoryService.deleteCategoryById(req.params.categoryId);
-    sendSuccessResponse(res, 200, "Category deleted successfully");
+    sendSuccessResponse(res, 200, 'Category deleted successfully');
   },
   getCategoriesForDropdown: async (req, res) => {
     const categories = await categoryService.getCategoriesForDropdown();
-    sendSuccessResponse(res, 200, "Categories fetched successfully", categories);
+    sendSuccessResponse(
+      res,
+      200,
+      'Categories fetched successfully',
+      categories,
+    );
   },
   getCategoryById: async (req, res) => {
     const category = await categoryService.getCategoryById(req.params.id);
-    sendSuccessResponse(res, 200, "Category fetched successfully", category);
+    sendSuccessResponse(res, 200, 'Category fetched successfully', category);
   },
   getUsedCategoriesForDropdown: async (req, res) => {
     const result = await categoryService.getUsedCategoriesForDropdown(
       req.user,
-      req.query.adminId
+      req.query.adminId,
     );
-    sendSuccessResponse(res, 200, "Categories fetched successfully", result);
+    sendSuccessResponse(res, 200, 'Categories fetched successfully', result);
   },
 };

@@ -1,4 +1,4 @@
-import Joi from "joi";
+import Joi from 'joi';
 
 const aboutStatsValidator = {
   params: Joi.object({
@@ -11,7 +11,7 @@ const createCustomerFeedbackValidator = {
     customerId: Joi.required(),
     adminId: Joi.required(),
     rate: Joi.number().min(1).max(5).required(),
-    description: Joi.string().trim().max(1000).allow("").optional().default(""),
+    description: Joi.string().trim().max(1000).allow('').optional().default(''),
   }),
 };
 

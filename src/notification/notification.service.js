@@ -1,5 +1,5 @@
-import { Notification } from "../../model/notification.js";
-import { ApiError } from "../../utils/apiError.js";
+import { Notification } from '../../model/notification.js';
+import { ApiError } from '../../utils/apiError.js';
 import {
   createNotificationDocument,
   getCustomerNotificationFilter,
@@ -7,15 +7,15 @@ import {
   markNotificationsAsRead,
   resolveRecipients,
   validateCustomerNotificationAccess,
-} from "../../utils/notification.helper.js";
+} from '../../utils/notification.helper.js';
 
 export const notificationService = {
   createNotification: async (payload) => {
     const recipients = await resolveRecipients(payload);
     return await Promise.all(
       recipients.map((recipient) =>
-        createNotificationDocument(payload, recipient)
-      )
+        createNotificationDocument(payload, recipient),
+      ),
     );
   },
 
@@ -24,7 +24,7 @@ export const notificationService = {
     const finalOptions = { ...options };
 
     if (!finalOptions.populate) {
-      finalOptions.populate = "adminId,customerId";
+      finalOptions.populate = 'adminId,customerId';
     }
 
     const unreadCountFilter = {
@@ -33,7 +33,7 @@ export const notificationService = {
     };
     const unreadCountQuery = getUserNotificationFilter(
       user._id,
-      unreadCountFilter
+      unreadCountFilter,
     );
     unreadCountQuery.isRead = false;
 
@@ -56,7 +56,7 @@ export const notificationService = {
     });
 
     if (!notification) {
-      throw new ApiError(404, "Notification not found");
+      throw new ApiError(404, 'Notification not found');
     }
 
     if (!notification.isRead) {
@@ -75,7 +75,7 @@ export const notificationService = {
     });
 
     if (!notification) {
-      throw new ApiError(404, "Notification not found");
+      throw new ApiError(404, 'Notification not found');
     }
 
     return notification;
@@ -108,7 +108,7 @@ export const notificationService = {
     const finalOptions = { ...options };
 
     if (!finalOptions.populate) {
-      finalOptions.populate = "adminId";
+      finalOptions.populate = 'adminId';
     }
 
     const unreadCountFilter = {
@@ -117,7 +117,7 @@ export const notificationService = {
     };
     const unreadCountQuery = getCustomerNotificationFilter(
       customerId,
-      unreadCountFilter
+      unreadCountFilter,
     );
     unreadCountQuery.isRead = false;
 

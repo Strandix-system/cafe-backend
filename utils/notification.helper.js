@@ -1,13 +1,15 @@
-import { isValidObjectId } from "mongoose";
-import { Notification } from "../model/notification.js";
-import User from "../model/user.js";
-import Customer from "../model/customer.js";
-import { ApiError } from "./apiError.js";
-import { RECIPIENT_TYPES } from "./constants.js";
+import { isValidObjectId } from 'mongoose';
+
+import Customer from '../model/customer.js';
+import { Notification } from '../model/notification.js';
+import User from '../model/user.js';
 import {
   emitNotificationToCustomer,
   emitNotificationToUser,
-} from "../socket.js";
+} from '../socket.js';
+
+import { ApiError } from './apiError.js';
+import { RECIPIENT_TYPES } from './constants.js';
 
 /**
  * Validates that the provided value is a MongoDB ObjectId for the given field.
@@ -50,7 +52,7 @@ const emitNotification = (notificationDoc) => {
       emitNotificationToUser(notification.userId, notification);
     }
   } catch (error) {
-    console.error("Notification socket error:", error.message);
+    console.error('Notification socket error:', error.message);
   }
 };
 
@@ -74,14 +76,14 @@ const buildNotificationData = (payload, recipient) => {
   }
 
   const adminId = recipient.adminId ?? payload.adminId;
-  if (adminId != null) {
+  if (adminId !== null) {
     notificationData.adminId = adminId;
   }
 
   if (payload.entityType) {
     notificationData.entityType = payload.entityType;
   }
-  
+
   if (payload.entityId !== undefined && payload.entityId !== null) {
     notificationData.entityId = payload.entityId;
   }
@@ -94,7 +96,7 @@ const buildNotificationData = (payload, recipient) => {
  */
 const createNotificationDocument = async (payload, recipient) => {
   const notification = await Notification.create(
-    buildNotificationData(payload, recipient)
+    buildNotificationData(payload, recipient),
   );
 
   emitNotification(notification);
@@ -106,12 +108,12 @@ const createNotificationDocument = async (payload, recipient) => {
  * Confirms that the customer exists before customer notifications are accessed.
  */
 const validateCustomerNotificationAccess = async (customerId) => {
-  validateObjectId(customerId, "customerId");
+  validateObjectId(customerId, 'customerId');
 
-  const customer = await Customer.findById(customerId).select("_id");
+  const customer = await Customer.findById(customerId).select('_id');
 
   if (!customer) {
-    throw new ApiError(404, "Customer not found");
+    throw new ApiError(404, 'Customer not found');
   }
 };
 
@@ -122,15 +124,15 @@ const resolveRecipients = async (payload) => {
   switch (payload.recipientType) {
     case RECIPIENT_TYPES.ADMIN: {
       const targetUserId = getSingleObjectIdValue(
-        payload.userId ?? payload.adminId
+        payload.userId ?? payload.adminId,
       );
 
-      validateObjectId(targetUserId, "userId");
+      validateObjectId(targetUserId, 'userId');
 
-      const user = await User.findById(targetUserId).select("_id role");
+      const user = await User.findById(targetUserId).select('_id role');
 
       if (!user) {
-        throw new ApiError(404, "Recipient admin not found");
+        throw new ApiError(404, 'Recipient admin not found');
       }
 
       return [
@@ -143,7 +145,7 @@ const resolveRecipients = async (payload) => {
     }
 
     case RECIPIENT_TYPES.CUSTOMER:
-      validateObjectId(payload.customerId, "customerId");
+      validateObjectId(payload.customerId, 'customerId');
       return [
         {
           recipientType: RECIPIENT_TYPES.CUSTOMER,
@@ -155,16 +157,16 @@ const resolveRecipients = async (payload) => {
     case RECIPIENT_TYPES.ROLE: {
       if (
         !payload.recipientRole ||
-        !["admin", "superadmin"].includes(payload.recipientRole)
+        !['admin', 'superadmin'].includes(payload.recipientRole)
       ) {
         throw new ApiError(
           400,
-          "Valid recipientRole is required for role notifications"
+          'Valid recipientRole is required for role notifications',
         );
       }
 
       const users = await User.find({ role: payload.recipientRole }).select(
-        "_id role"
+        '_id role',
       );
 
       return users.map((user) => ({
@@ -175,7 +177,7 @@ const resolveRecipients = async (payload) => {
     }
 
     default:
-      throw new ApiError(400, "Invalid recipientType");
+      throw new ApiError(400, 'Invalid recipientType');
   }
 };
 
@@ -193,7 +195,7 @@ const applyNotificationFilter = (query, filter = {}) => {
     finalQuery.entityType = filter.entityType;
   }
 
-  if (typeof filter.isRead === "boolean") {
+  if (typeof filter.isRead === 'boolean') {
     finalQuery.isRead = filter.isRead;
   }
 

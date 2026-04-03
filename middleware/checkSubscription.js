@@ -1,10 +1,10 @@
-import { Transaction } from "../model/transaction.js";
-import { ApiError } from "../utils/apiError.js";
-import User from "../model/user.js";
+import { Transaction } from '../model/transaction.js';
+import User from '../model/user.js';
+import { ApiError } from '../utils/apiError.js';
 
 const checkSubscription = async (req, res, next) => {
   try {
-    if (req.user.role !== "admin") {
+    if (req.user.role !== 'admin') {
       return next();
     }
 
@@ -30,16 +30,16 @@ const checkSubscription = async (req, res, next) => {
 
       if (diffDays <= 0) {
         setAlerts({
-          type: "expired",
+          type: 'expired',
           message:
-            "Your subscription has expired. Please renew to continue using the service.",
+            'Your subscription has expired. Please renew to continue using the service.',
           endDate,
           modalClosable: false,
         });
 
-        if (latestTransaction.subscriptionStatus !== "expired") {
+        if (latestTransaction.subscriptionStatus !== 'expired') {
           await Transaction.findByIdAndUpdate(latestTransaction._id, {
-            subscriptionStatus: "expired",
+            subscriptionStatus: 'expired',
           });
         }
         return next();
@@ -47,7 +47,7 @@ const checkSubscription = async (req, res, next) => {
 
       if (diffDays <= 7) {
         setAlerts({
-          type: "expiringSoon",
+          type: 'expiringSoon',
           message: `Your subscription will expire in ${diffDays} day(s). Please renew soon.`,
           endDate,
           modalClosable: true,
@@ -57,9 +57,9 @@ const checkSubscription = async (req, res, next) => {
       return next();
     }
 
-    const user = await User.findById(userId).select("createdAt");
+    const user = await User.findById(userId).select('createdAt');
     if (!user) {
-      return next(new ApiError(404, "User not found"));
+      return next(new ApiError(404, 'User not found'));
     }
 
     const createdAt = new Date(user.createdAt);
@@ -71,7 +71,7 @@ const checkSubscription = async (req, res, next) => {
 
     if (trialDiffDays > 0) {
       setAlerts({
-        type: "trial",
+        type: 'trial',
         message: `Free trial active. Ends in ${trialDiffDays} day(s).`,
         trialEnd,
         modalClosable: true,
@@ -80,9 +80,9 @@ const checkSubscription = async (req, res, next) => {
     }
 
     setAlerts({
-      type: "trialExpired",
+      type: 'trialExpired',
       message:
-        "Your 14-day free trial has expired. Please subscribe to continue.",
+        'Your 14-day free trial has expired. Please subscribe to continue.',
       trialEnd,
       modalClosable: false,
     });
@@ -94,7 +94,7 @@ const checkSubscription = async (req, res, next) => {
 
 const blockExpiredSubscription = async (req, res, next) => {
   try {
-    if (req.user.role !== "admin") {
+    if (req.user.role !== 'admin') {
       return next();
     }
 
@@ -111,14 +111,14 @@ const blockExpiredSubscription = async (req, res, next) => {
 
       if (
         today >= endDate ||
-        latestTransaction.subscriptionStatus === "expired"
+        latestTransaction.subscriptionStatus === 'expired'
       ) {
         await Transaction.findByIdAndUpdate(latestTransaction._id, {
-          subscriptionStatus: "expired",
+          subscriptionStatus: 'expired',
         });
 
         return next(
-          new ApiError(403, "Subscription expired. Please renew to continue.")
+          new ApiError(403, 'Subscription expired. Please renew to continue.'),
         );
       }
 
@@ -140,7 +140,11 @@ const blockExpiredSubscription = async (req, res, next) => {
     }
 
     return next(
-      new ApiError(403, "Your 14-day free trial has expired. Please subscribe to continue."));
+      new ApiError(
+        403,
+        'Your 14-day free trial has expired. Please subscribe to continue.',
+      ),
+    );
   } catch (error) {
     next(error);
   }

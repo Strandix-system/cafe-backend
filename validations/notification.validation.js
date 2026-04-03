@@ -1,5 +1,6 @@
-import Joi from "joi";
-import { ENTITY_TYPES } from "../utils/constants.js";
+import Joi from 'joi';
+
+import { ENTITY_TYPES } from '../utils/constants.js';
 
 const objectId = Joi.string().hex().length(24);
 const entityType = Joi.string()

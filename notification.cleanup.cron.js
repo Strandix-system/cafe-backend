@@ -1,11 +1,12 @@
-import mongoose from "mongoose";
-import cron from "node-cron";
-import { notificationService } from "./src/notification/notification.service.js";
+import mongoose from 'mongoose';
+import cron from 'node-cron';
+
+import { notificationService } from './src/notification/notification.service.js';
 
 let notificationCleanupInitialized = false;
 
 const logNotificationCleanupError = (error) => {
-  console.error("Notification cleanup failed:", error.message);
+  console.error('Notification cleanup failed:', error.message);
 };
 
 const runNotificationCleanup = async () => {
@@ -24,11 +25,15 @@ const initNotificationCleanupScheduler = () => {
   notificationCleanupInitialized = true;
 
   const startCleanupScheduler = () => {
-    cron.schedule("0 0 1 * *", () => {
-      runNotificationCleanup().catch(logNotificationCleanupError);
-    }, {
-      timezone: "Asia/Kolkata",
-    });
+    cron.schedule(
+      '0 0 1 * *',
+      () => {
+        runNotificationCleanup().catch(logNotificationCleanupError);
+      },
+      {
+        timezone: 'Asia/Kolkata',
+      },
+    );
 
     runNotificationCleanup().catch(logNotificationCleanupError);
   };
@@ -38,7 +43,7 @@ const initNotificationCleanupScheduler = () => {
     return;
   }
 
-  mongoose.connection.once("connected", startCleanupScheduler);
+  mongoose.connection.once('connected', startCleanupScheduler);
 };
 
 export const notificationCleanup = {

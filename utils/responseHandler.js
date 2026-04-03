@@ -6,7 +6,12 @@
  * @param {string} message
  * @param {any} data
  */
-function sendSuccessResponse(res, status = 200, message = "Success", data = null) {
+function sendSuccessResponse(
+  res,
+  status = 200,
+  message = 'Success',
+  data = null,
+) {
   return res.status(status).json({
     success: true,
     message,
@@ -21,7 +26,12 @@ function sendSuccessResponse(res, status = 200, message = "Success", data = null
  * @param {string} message
  * @param {any} error
  */
-export function sendErrorResponse(res, status = 500, message = "Error", error = null) {
+export function sendErrorResponse(
+  res,
+  status = 500,
+  message = 'Error',
+  error = null,
+) {
   return res.status(status).json({
     success: false,
     message,

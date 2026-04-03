@@ -4,8 +4,10 @@ import cors from 'cors';
 import env from 'dotenv';
 import express from 'express';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
 
 import connectDB from './database/dbConnect.js';
+import swaggerSpec from './docs/swagger.js';
 import { errorHandler, notFoundError } from './middleware/errorHandler.js';
 import routes from './routes/index.js';
 import { webhookRoutes } from './routes/webhookRoute.js';
@@ -55,6 +57,18 @@ app.use(
   }),
 );
 app.use(compression());
+
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    explorer: true,
+    customSiteTitle: "Aeternis API's Docs",
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  }),
+);
 
 app.get('/', (req, res) => {
   res.status(200).send('OK');

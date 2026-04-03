@@ -6,7 +6,28 @@ import categoryController from '../src/admin/category/categoryController.js';
 
 const router = express.Router();
 
-// Only admin / superadmin
+/**
+ * @openapi
+ * /category/create:
+ *   post:
+ *     summary: Create category
+ *     tags: [Category]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateCategoryRequest'
+ *     responses:
+ *       201:
+ *         description: Category created successfully
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ */
 router.post(
   '/create',
   tokenVerification,

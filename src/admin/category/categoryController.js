@@ -6,16 +6,18 @@ import { categoryService } from './categoryService.js';
 export default {
   createCategory: async (req, res) => {
     const result = await categoryService.createCategory(req.user, req.body);
-    sendSuccessResponse(res, 201, "Category created successfully", result);
+    sendSuccessResponse(res, 201, 'Category created successfully', result);
   },
   getAllCategories: async (req, res) => {
-    const filter = pick(req.query, ["search", "type"]);
-    const options = pick(req.query, ["page", "limit", "sortBy"]);
-    const categories = await categoryService.getAllCategories(
-      filter,
-      options
+    const filter = pick(req.query, ['search', 'type']);
+    const options = pick(req.query, ['page', 'limit', 'sortBy']);
+    const categories = await categoryService.getAllCategories(filter, options);
+    sendSuccessResponse(
+      res,
+      200,
+      'Categories fetched successfully',
+      categories,
     );
-    sendSuccessResponse(res, 200, "Categories fetched successfully", categories);
   },
   updateCategory: async (req, res) => {
     const category = await categoryService.updateCategoryById(
@@ -29,9 +31,14 @@ export default {
     sendSuccessResponse(res, 200, 'Category deleted successfully');
   },
   getCategoriesForDropdown: async (req, res) => {
-    const filter = pick(req.query, ["type"]);
+    const filter = pick(req.query, ['type']);
     const categories = await categoryService.getCategoriesForDropdown(filter);
-    sendSuccessResponse(res, 200, "Categories fetched successfully", categories);
+    sendSuccessResponse(
+      res,
+      200,
+      'Categories fetched successfully',
+      categories,
+    );
   },
   getCategoryById: async (req, res) => {
     const category = await categoryService.getCategoryById(req.params.id);

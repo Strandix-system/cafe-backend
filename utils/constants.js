@@ -38,8 +38,8 @@ export const ISSUE_STATUSES = {
   RESOLVED: 'resolved',
 };
 export const GST_TYPES = {
-    INCLUSIVE: "inclusive",
-    EXCLUSIVE: "exclusive",
+  INCLUSIVE: 'inclusive',
+  EXCLUSIVE: 'exclusive',
 };
 
 export const ORDER_TYPES = {
@@ -48,6 +48,6 @@ export const ORDER_TYPES = {
 };
 
 export const CATEGORY_TYPES = {
-    MENU: "menu",
-    INVENTORY: "inventory",
+  MENU: 'menu',
+  INVENTORY: 'inventory',
 };

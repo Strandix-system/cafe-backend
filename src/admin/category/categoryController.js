@@ -9,7 +9,7 @@ export default {
     sendSuccessResponse(res, 201, "Category created successfully", result);
   },
   getAllCategories: async (req, res) => {
-    const filter = pick(req.query, ["search"]);
+    const filter = pick(req.query, ["search", "type"]);
     const options = pick(req.query, ["page", "limit", "sortBy"]);
     const categories = await categoryService.getAllCategories(
       filter,
@@ -29,13 +29,9 @@ export default {
     sendSuccessResponse(res, 200, 'Category deleted successfully');
   },
   getCategoriesForDropdown: async (req, res) => {
-    const categories = await categoryService.getCategoriesForDropdown();
-    sendSuccessResponse(
-      res,
-      200,
-      'Categories fetched successfully',
-      categories,
-    );
+    const filter = pick(req.query, ["type"]);
+    const categories = await categoryService.getCategoriesForDropdown(filter);
+    sendSuccessResponse(res, 200, "Categories fetched successfully", categories);
   },
   getCategoryById: async (req, res) => {
     const category = await categoryService.getCategoryById(req.params.id);

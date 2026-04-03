@@ -1,8 +1,12 @@
-import express from 'express';
-
-import { tokenVerification } from '../middleware/auth.js';
-import { allowRoles } from '../middleware/permission.js';
-import categoryController from '../src/admin/category/categoryController.js';
+import express from "express";
+import { tokenVerification } from "../middleware/auth.js";
+import categoryController  from "../src/admin/category/categoryController.js";
+import { allowRoles } from "../middleware/permission.js";
+import { validate } from "../middleware/validate.js";
+import {
+  createCategorySchema,
+  updateCategorySchema,
+} from "../validations/categoryValidation.js";
 
 const router = express.Router();
 
@@ -11,6 +15,7 @@ router.post(
   '/create',
   tokenVerification,
   allowRoles("superadmin", "admin"),
+  validate(createCategorySchema),
   categoryController.createCategory
 );
 
@@ -28,8 +33,9 @@ router.get(
 router.patch(
   '/update/:categoryId',
   tokenVerification,
-  allowRoles('superadmin'),
-  categoryController.updateCategory,
+  allowRoles("superadmin"),
+  validate(updateCategorySchema),
+  categoryController.updateCategory
 );
 router.delete(
   '/delete/:categoryId',

@@ -1,7 +1,8 @@
-import { Category } from '../../../model/category.js';
-import Menu from '../../../model/menu.js';
-import { ApiError } from '../../../utils/apiError.js';
-import { deleteSingleFile } from '../../../utils/s3utils.js';
+import Menu from "../../../model/menu.js";
+import { Category } from "../../../model/category.js";
+import { deleteSingleFile } from "../../../utils/s3utils.js";
+import { ApiError } from "../../../utils/apiError.js";
+import { CATEGORY_TYPES } from "../../../utils/constants.js";
 
 export const menuService = {
   createMenu: async (adminId, body, file) => {
@@ -9,7 +10,8 @@ export const menuService = {
       throw new ApiError(400, 'Image is required');
     }
     const categoryExists = await Category.findOne({
-      name: { $regex: new RegExp(`^${body.category}$`, 'i') },
+      type: CATEGORY_TYPES.MENU,
+      name: { $regex: new RegExp(`^${body.category}$`, "i") },
     });
     if (!categoryExists) {
       throw new ApiError(404, `Category '${body.category}' does not exist`);

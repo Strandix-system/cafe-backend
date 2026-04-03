@@ -58,7 +58,7 @@ export const tokenVerification = async (req, res, next, isPublic = false) => {
     }
 
     return next();
-  } catch (error) {
+  } catch (_error) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 };

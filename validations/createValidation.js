@@ -42,7 +42,10 @@ const socialLinksSchema = Joi.object({
 }).optional();
 
 const phoneRule = Joi.number().integer().min(6000000000).max(9999999999);
-const passwordRule = Joi.string().min(8).max(32).pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/);
+const passwordRule = Joi.string()
+  .min(8)
+  .max(32)
+  .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/);
 const streetRule = Joi.string().trim().min(2).max(200);
 const pincodeRule = Joi.number().integer().min(100000).max(999999);
 const addressCreateRule = Joi.object({
@@ -58,14 +61,14 @@ const addressUpdateRule = Joi.object({
   pincode: pincodeRule,
 }).min(1);
 const gstCreateRule = Joi.object({
-  gstNumber: Joi.string().trim().allow(null).empty(""),
-  gstPercentage: Joi.number().min(5).max(18).allow(null).empty(""),
-  gstType: Joi.string().valid("inclusive", "exclusive").allow(null).empty(""),
+  gstNumber: Joi.string().trim().allow(null).empty(''),
+  gstPercentage: Joi.number().min(5).max(18).allow(null).empty(''),
+  gstType: Joi.string().valid('inclusive', 'exclusive').allow(null).empty(''),
 });
 const gstUpdateRule = Joi.object({
-  gstNumber: Joi.string().trim().allow(null).empty(""),
-  gstPercentage: Joi.number().min(5).max(18).allow(null).empty(""),
-  gstType: Joi.string().valid("inclusive", "exclusive").allow(null).empty(""),
+  gstNumber: Joi.string().trim().allow(null).empty(''),
+  gstPercentage: Joi.number().min(5).max(18).allow(null).empty(''),
+  gstType: Joi.string().valid('inclusive', 'exclusive').allow(null).empty(''),
 });
 
 const createAdminValidator = {

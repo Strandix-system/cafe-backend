@@ -1,8 +1,8 @@
 export const resolveAdminGst = (admin) => {
   const hasGstNumber = !!admin?.gst?.gstNumber;
 
-  const gstPercent = hasGstNumber ? (admin?.gst?.gstPercentage) : null;
-  const gstType = hasGstNumber ? (admin?.gst?.gstType) : null;
+  const gstPercent = hasGstNumber ? admin?.gst?.gstPercentage : null;
+  const gstType = hasGstNumber ? admin?.gst?.gstType : null;
 
   return {
     hasGstNumber,
@@ -21,7 +21,7 @@ export const calculateTotalsByGst = ({
   let finalTotal = subTotal;
   let taxableAmount = subTotal;
 
-  if (hasGstNumber && gstType === "inclusive") {
+  if (hasGstNumber && gstType === 'inclusive') {
     gstAmount = (subTotal * gstPercent) / (100 + gstPercent);
     finalTotal = subTotal;
     taxableAmount = subTotal - gstAmount;

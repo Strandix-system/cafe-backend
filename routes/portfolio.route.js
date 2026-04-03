@@ -31,6 +31,6 @@ portfolioRoute.get(
 );
 
 portfolioRoute.post(
-  "/calculate-bill",
-   portfolioController.calculatePortfolioBill
-)
+  '/calculate-bill',
+  portfolioController.calculatePortfolioBill,
+);

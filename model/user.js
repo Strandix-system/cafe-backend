@@ -1,8 +1,9 @@
-import mongoose from "mongoose";
-import { paginate } from "../model/plugin/paginate.plugin.js"
-import indiaStates from "../config/indiaStates.js";
-import bcrypt from "bcryptjs";
-import { GST_TYPES } from "../utils/constants.js";
+import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
+
+import indiaStates from '../config/indiaStates.js';
+import { paginate } from '../model/plugin/paginate.plugin.js';
+import { GST_TYPES } from '../utils/constants.js';
 
 const userSchema = new mongoose.Schema(
   {
@@ -40,10 +41,10 @@ const userSchema = new mongoose.Schema(
     },
 
     address: {
-      street: { type: String, trim: true, default: null, },
-      city: { type: String, trim: true, default: null, },
-      state: { type: String, trim: true, enum: indiaStates, default: null, },
-      pincode: { type: Number, trim: true, default: null, },
+      street: { type: String, trim: true, default: null },
+      city: { type: String, trim: true, default: null },
+      state: { type: String, trim: true, enum: indiaStates, default: null },
+      pincode: { type: Number, trim: true, default: null },
     },
 
     isActive: {
@@ -62,9 +63,13 @@ const userSchema = new mongoose.Schema(
       required: false,
     },
     gst: {
-      gstNumber: { type: String, trim: true, default: null,},
-      gstPercentage: { type: Number, required: false, default: null, },
-      gstType: { type: String, enum: [...Object.values(GST_TYPES), null], default: null, },
+      gstNumber: { type: String, trim: true, default: null },
+      gstPercentage: { type: Number, required: false, default: null },
+      gstType: {
+        type: String,
+        enum: [...Object.values(GST_TYPES), null],
+        default: null,
+      },
     },
     role: {
       type: String,
@@ -99,11 +104,11 @@ const userSchema = new mongoose.Schema(
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
     id: false,
-  }
+  },
 );
 
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
 
   try {
     this.password = await bcrypt.hash(this.password, 10);
@@ -115,13 +120,13 @@ userSchema.pre("save", async function (next) {
 
 userSchema.plugin(paginate);
 userSchema.index(
-  { "gst.gstNumber": 1 },
+  { 'gst.gstNumber': 1 },
   {
     unique: true,
     partialFilterExpression: {
-      "gst.gstNumber": { $type: "string", $ne: "" },
+      'gst.gstNumber': { $type: 'string', $ne: '' },
     },
-  }
+  },
 );
 
-export default mongoose.model("User", userSchema);
+export default mongoose.model('User', userSchema);

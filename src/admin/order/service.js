@@ -11,11 +11,13 @@ import {
   NOTIFICATION_TYPES,
   ORDER_STATUS,
   RECIPIENT_TYPES,
-} from "../../../utils/constants.js";
-import { buildAggregatedItems } from "../../../utils/utils.js";
-import { generateOrderNumber } from "../../../utils/utils.js";
-import { ORDER_TYPES } from "../../../utils/constants.js";
-import { resolveAdminGst, calculateTotalsByGst } from "../../../utils/gst.js";
+} from '../../../utils/constants.js';
+import { ORDER_TYPES } from '../../../utils/constants.js';
+import { resolveAdminGst, calculateTotalsByGst } from '../../../utils/gst.js';
+import { buildAggregatedItems } from '../../../utils/utils.js';
+import { generateOrderNumber } from '../../../utils/utils.js';
+import { sendWhatsAppMessage } from '../../../utils/whatsapp.js';
+import { notificationService } from '../../notification/notification.service.js';
 
 const buildTableStatusOverview = async (adminId) => {
   const qrs = await Qr.find({ adminId });
@@ -23,15 +25,15 @@ const buildTableStatusOverview = async (adminId) => {
   const activeOrders = await Order.find({
     adminId,
     isCompleted: false,
-  }).populate("adminId", "name email");
+  }).populate('adminId', 'name email');
 
   const orderIds = activeOrders.map((o) => o._id);
 
   const orderItems =
     orderIds.length > 0
       ? await OrderItem.find({ orderId: { $in: orderIds } })
-        .populate("menuId")
-        .populate("customerId", "name")
+          .populate('menuId')
+          .populate('customerId', 'name')
       : [];
 
   const itemsMap = new Map();
@@ -52,7 +54,7 @@ const buildTableStatusOverview = async (adminId) => {
     if (!order) {
       return {
         tableNumber: qr.tableNumber,
-        status: "idle",
+        status: 'idle',
         order: null,
       };
     }
@@ -103,7 +105,7 @@ const buildTableStatusOverview = async (adminId) => {
 
     return {
       tableNumber: qr.tableNumber,
-      status: allServed ? "billing" : "occupied",
+      status: allServed ? 'billing' : 'occupied',
       order: orderWithItems,
     };
   });
@@ -118,13 +120,11 @@ const emitTableStatusOverview = async (adminId, overview) => {
   try {
     const io = getIO();
     const payload = overview ?? (await buildTableStatusOverview(adminId));
-    io.to(id).emit("tableStatusOverviewUpdate", payload);
+    io.to(id).emit('tableStatusOverviewUpdate', payload);
   } catch (error) {
-    console.error("Table status overview socket emission error:", error);
+    console.error('Table status overview socket emission error:', error);
   }
 };
-
-
 
 const attachOrderItems = async (orders) => {
   if (!orders || !orders.length) return [];
@@ -226,7 +226,7 @@ const changeTableCore = async ({
   await emitTableStatusOverview(adminId);
 
   await notificationService.createNotification({
-    title: "Table changed",
+    title: 'Table changed',
     message: `Order table changed from ${oldTableNumber} to ${newTableNumber}.`,
     notificationType: NOTIFICATION_TYPES.TABLE_CHANGED,
     recipientType: RECIPIENT_TYPES.ADMIN,
@@ -239,7 +239,7 @@ const changeTableCore = async ({
   await Promise.all(
     customerIds.map((custId) =>
       notificationService.createNotification({
-        title: "Table changed",
+        title: 'Table changed',
         message: `Your table has been changed from ${oldTableNumber} to ${newTableNumber}.`,
         notificationType: NOTIFICATION_TYPES.TABLE_CHANGED,
         recipientType: RECIPIENT_TYPES.CUSTOMER,
@@ -247,8 +247,8 @@ const changeTableCore = async ({
         adminId,
         entityType: ENTITY_TYPES.ORDER,
         entityId: order._id,
-      })
-    )
+      }),
+    ),
   );
 
   return {
@@ -272,7 +272,9 @@ export const orderService = {
       throw new ApiError(400, 'Customer adminId is missing');
     }
 
-    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst.gstNumber gst.gstPercentage gst.gstType");
+    const admin = await User.findOne({ _id: adminId, role: 'admin' }).select(
+      'gst.gstNumber gst.gstPercentage gst.gstType',
+    );
     if (!admin) {
       throw new ApiError(404, 'Admin not found');
     }
@@ -311,11 +313,7 @@ export const orderService = {
       throw new ApiError(400, 'customerId is required for each item');
     }
 
-    const {
-      gstAmount,
-      finalTotal,
-      taxableAmount,
-    } = calculateTotalsByGst({
+    const { gstAmount, finalTotal, taxableAmount } = calculateTotalsByGst({
       subTotal,
       gstPercent,
       gstType,
@@ -397,7 +395,7 @@ export const orderService = {
         gstAmount,
         subTotal,
         taxableAmount: Math.round(taxableAmount),
-        orderNumber
+        orderNumber,
       });
       await createOrderItems(order._id, finalItems);
 
@@ -449,19 +447,26 @@ export const orderService = {
   },
   // offline order created by admin from admin panel.
   createOfflineOrderByAdmin: async (body, user) => {
-    const { items, tableNumber, customer, orderType = ORDER_TYPES.DINE_IN } = body;
+    const {
+      items,
+      tableNumber,
+      customer,
+      orderType = ORDER_TYPES.DINE_IN,
+    } = body;
 
     const adminId = user?._id;
     if (!adminId) {
       throw new ApiError(401, 'Unauthorized');
     }
 
-    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst.gstNumber gst.gstPercentage gst.gstType");
+    const admin = await User.findOne({ _id: adminId, role: 'admin' }).select(
+      'gst.gstNumber gst.gstPercentage gst.gstType',
+    );
     if (!admin) {
       throw new ApiError(404, 'Admin not found');
     }
     if (orderType === ORDER_TYPES.DINE_IN && !tableNumber) {
-      throw new ApiError(400, "Table number is required for dine-in orders");
+      throw new ApiError(400, 'Table number is required for dine-in orders');
     }
 
     const { hasGstNumber, gstPercent, gstType } = resolveAdminGst(admin);
@@ -549,8 +554,10 @@ export const orderService = {
 
       const io = getIO();
 
-      const populatedOrder = await Order.findById(order._id)
-        .populate("adminId", "name email");
+      const populatedOrder = await Order.findById(order._id).populate(
+        'adminId',
+        'name email',
+      );
 
       const [{ orderItems }] = await attachOrderItems([populatedOrder]);
 
@@ -560,7 +567,7 @@ export const orderService = {
         orderItems: orderItems.map((i) => i.toObject()),
       };
 
-      io.to(adminId.toString()).emit("order:new", orderWithItems);
+      io.to(adminId.toString()).emit('order:new', orderWithItems);
 
       await emitTableStatusOverview(adminId);
       return orderWithItems;
@@ -586,7 +593,11 @@ export const orderService = {
         );
       }
 
-      await createOrderItems(latestActiveOrder._id, finalItems, latestActiveOrder.orderType);
+      await createOrderItems(
+        latestActiveOrder._id,
+        finalItems,
+        latestActiveOrder.orderType,
+      );
 
       latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
@@ -655,10 +666,10 @@ export const orderService = {
     }
 
     await notificationService.createNotification({
-      title: "New order received",
+      title: 'New order received',
       message:
         orderType === ORDER_TYPES.PARCEL
-          ? "A new parcel order has been placed."
+          ? 'A new parcel order has been placed.'
           : `A new order has been placed for table ${order.tableNumber}.`,
       notificationType: NOTIFICATION_TYPES.ORDER_CREATED,
       recipientType: RECIPIENT_TYPES.ADMIN,
@@ -673,8 +684,8 @@ export const orderService = {
   },
   getOrders: async (adminId, filter, options) => {
     if (filter?.isCompleted !== undefined) {
-      if (typeof filter.isCompleted === "string") {
-        filter.isCompleted = filter.isCompleted === "true";
+      if (typeof filter.isCompleted === 'string') {
+        filter.isCompleted = filter.isCompleted === 'true';
       }
     }
 
@@ -760,13 +771,13 @@ export const orderService = {
     result.results = ordersWithItems.map(({ order, orderItems }) => {
       const normalizedGstPercent = order.gstPercent ?? null;
       const normalizedGstAmount = order.gstAmount ?? null;
-      const normalizedGstType = normalizedGstPercent === null ? null : (order.gstType ?? null);
+      const normalizedGstType =
+        normalizedGstPercent === null ? null : (order.gstType ?? null);
       let taxableAmount = null;
 
       if (normalizedGstPercent !== null) {
-        if (normalizedGstType === "inclusive") {
-          taxableAmount =
-            (order.subTotal ?? 0) - (normalizedGstAmount ?? 0);
+        if (normalizedGstType === 'inclusive') {
+          taxableAmount = (order.subTotal ?? 0) - (normalizedGstAmount ?? 0);
         } else {
           taxableAmount = order.subTotal ?? 0;
         }
@@ -787,7 +798,7 @@ export const orderService = {
           customerId: i.customerId?._id,
           quantity: i.quantity,
           status: i.status,
-          specialInstruction: i.specialInstruction ?? "",
+          specialInstruction: i.specialInstruction ?? '',
           timestamps: {
             createdAt: i.createdAt,
             updatedAt: i.updatedAt,
@@ -1010,8 +1021,10 @@ See you again!
     const order = await Order.findOne({
       _id: orderId,
       adminId,
-    })
-      .populate("adminId", "cafeName gst.gstNumber gst.gstPercentage gst.gstType address phoneNumber");
+    }).populate(
+      'adminId',
+      'cafeName gst.gstNumber gst.gstPercentage gst.gstType address phoneNumber',
+    );
 
     if (!order) {
       throw new ApiError(404, 'Order not found');
@@ -1040,7 +1053,7 @@ See you again!
       gstPercent = order.gstPercent ?? order.adminId?.gst?.gstPercentage;
       gstType = order.gstType ?? order.adminId?.gst?.gstType;
 
-      if (gstType === "inclusive") {
+      if (gstType === 'inclusive') {
         gstAmount = (subTotal * gstPercent) / (100 + gstPercent);
         taxableAmount = subTotal - gstAmount;
         total = Math.round(subTotal);
@@ -1150,7 +1163,7 @@ See you again!
           let taxableAmount = null;
 
           if (existingOrder.gstPercent) {
-            if (existingOrder.gstType === "inclusive") {
+            if (existingOrder.gstType === 'inclusive') {
               taxableAmount =
                 (existingOrder.subTotal ?? 0) - (existingOrder.gstAmount ?? 0);
             } else {

@@ -1,7 +1,8 @@
-import Customer from "../../../model/customer.js";
-import { CustomerFeedback }  from "../../../model/customerFeedback.js";
-import mongoose from "mongoose";
-import { notificationService } from "../../notification/notification.service.js";
+import mongoose from 'mongoose';
+
+import Customer from '../../../model/customer.js';
+import { CustomerFeedback } from '../../../model/customerFeedback.js';
+import { ApiError } from '../../../utils/apiError.js';
 import {
   ENTITY_TYPES,
   NOTIFICATION_TYPES,
@@ -247,9 +248,9 @@ const customerService = {
     });
 
     return {
-    customer,
-    hasGivenFeedback: !!hasGivenFeedback,
-  };
+      customer,
+      hasGivenFeedback: !!hasGivenFeedback,
+    };
   },
 
   updateCustomer: async (id, data) => {

@@ -1,7 +1,8 @@
-import mongoose from "mongoose";
-import { paginate } from "../model/plugin/paginate.plugin.js";
-import { GST_TYPES } from "../utils/constants.js";
-import { ORDER_TYPES } from "../utils/constants.js";
+import mongoose from 'mongoose';
+
+import { paginate } from '../model/plugin/paginate.plugin.js';
+import { GST_TYPES } from '../utils/constants.js';
+import { ORDER_TYPES } from '../utils/constants.js';
 
 const orderSchema = new mongoose.Schema(
   {

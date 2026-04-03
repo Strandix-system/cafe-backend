@@ -1,7 +1,8 @@
-import User from "../../model/user.js";
-import { deleteSingleFile } from "../../utils/s3utils.js";
-import { ApiError } from "../../utils/apiError.js";
-import bcrypt from "bcryptjs";
+import bcrypt from 'bcryptjs';
+
+import User from '../../model/user.js';
+import { ApiError } from '../../utils/apiError.js';
+import { deleteSingleFile } from '../../utils/s3utils.js';
 
 const adminService = {
   createAdmin: async (body, files) => {
@@ -48,13 +49,17 @@ const adminService = {
             ? JSON.parse(body[field])
             : body[field];
 
-        if (field === "gst") {
-          const hasGstNumberInPayload = Object.prototype.hasOwnProperty.call(parsedData, "gstNumber");
-          const incomingGstNumber = typeof parsedData.gstNumber === "string"
-            ? parsedData.gstNumber.trim()
-            : parsedData.gstNumber;
+        if (field === 'gst') {
+          const hasGstNumberInPayload = Object.prototype.hasOwnProperty.call(
+            parsedData,
+            'gstNumber',
+          );
+          const incomingGstNumber =
+            typeof parsedData.gstNumber === 'string'
+              ? parsedData.gstNumber.trim()
+              : parsedData.gstNumber;
 
-          if (hasGstNumberInPayload && (incomingGstNumber ?? "") === "") {
+          if (hasGstNumberInPayload && (incomingGstNumber ?? '') === '') {
             admin.gst = {
               ...(admin.gst?.toObject?.() ?? admin.gst ?? {}),
               ...parsedData,
@@ -127,12 +132,12 @@ const adminService = {
     }
     if (filter.search) {
       query.$or = [
-        { firstName: { $regex: filter.search, $options: "i" } },
-        { lastName: { $regex: filter.search, $options: "i" } },
-        { cafeName: { $regex: filter.search, $options: "i" } },
-        { email: { $regex: filter.search, $options: "i" } },
-        { "address.state": { $regex: filter.search, $options: "i" } },
-        { "address.city": { $regex: filter.search, $options: "i" } },
+        { firstName: { $regex: filter.search, $options: 'i' } },
+        { lastName: { $regex: filter.search, $options: 'i' } },
+        { cafeName: { $regex: filter.search, $options: 'i' } },
+        { email: { $regex: filter.search, $options: 'i' } },
+        { 'address.state': { $regex: filter.search, $options: 'i' } },
+        { 'address.city': { $regex: filter.search, $options: 'i' } },
       ];
     }
     delete filter.search;

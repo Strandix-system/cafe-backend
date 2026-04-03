@@ -38,7 +38,7 @@ router.post(
     { name: 'logo', maxCount: 1 },
     { name: 'profileImage', maxCount: 1 },
   ]),
-  parseJSONFields(["socialLinks", "hours", "address", "gst"]),
+  parseJSONFields(['socialLinks', 'hours', 'address', 'gst']),
   validate(createAdminValidator),
   controller.createAdmin,
 );
@@ -51,7 +51,7 @@ router.patch(
     { name: 'logo', maxCount: 1 },
     { name: 'profileImage', maxCount: 1 },
   ]),
-  parseJSONFields(["socialLinks", "hours", "address", "gst"]),
+  parseJSONFields(['socialLinks', 'hours', 'address', 'gst']),
   validate(updateAdminValidator),
   controller.updateAdmin,
 );

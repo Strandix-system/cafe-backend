@@ -8,9 +8,10 @@ import {
   NOTIFICATION_TYPES,
   ORDER_STATUS,
   RECIPIENT_TYPES,
-} from "../../../utils/constants.js";
-import { buildAggregatedItems } from "../../../utils/utils.js";  
-import { emitTableStatusOverview } from "../order/service.js";
+} from '../../../utils/constants.js';
+import { buildAggregatedItems } from '../../../utils/utils.js';
+import { notificationService } from '../../notification/notification.service.js';
+import { emitTableStatusOverview } from '../order/service.js';
 
 const recalculateOrderTotals = async (orderId) => {
   const order = await Order.findById(orderId);
@@ -32,7 +33,7 @@ const recalculateOrderTotals = async (orderId) => {
     return sum + price * item.quantity;
   }, 0);
 
-  const hasGst = order.gstPercent != null && order.gstType != null;
+  const hasGst = order.gstPercent !== null && order.gstType !== null;
 
   const gstPercent = hasGst ? order.gstPercent : null;
   const gstType = hasGst ? order.gstType : null;
@@ -40,7 +41,7 @@ const recalculateOrderTotals = async (orderId) => {
   let gstAmount = null;
   let finalTotal = subTotal;
 
-  if (hasGst && gstType === "inclusive") {
+  if (hasGst && gstType === 'inclusive') {
     gstAmount = (subTotal * gstPercent) / (100 + gstPercent);
     finalTotal = subTotal;
   } else if (hasGst) {

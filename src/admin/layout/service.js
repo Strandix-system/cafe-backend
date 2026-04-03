@@ -1,8 +1,8 @@
-import CafeLayout from "../../../model/layout.js";
-import { deleteUploadedFiles } from "../../../utils/s3utils.js";
-import { deleteSingleFile } from "../../../utils/s3utils.js";
-import Qr from "../../../model/qr.js"
-import { ApiError } from "../../../utils/apiError.js";
+import CafeLayout from '../../../model/layout.js';
+import Qr from '../../../model/qr.js';
+import { ApiError } from '../../../utils/apiError.js';
+import { deleteUploadedFiles } from '../../../utils/s3utils.js';
+import { deleteSingleFile } from '../../../utils/s3utils.js';
 
 const layoutService = {
   createCafeLayout: async (adminId, body, files, role) => {
@@ -10,10 +10,10 @@ const layoutService = {
     const aboutImage = files?.aboutImage?.[0]?.location;
 
     if (!homeImage || !aboutImage) {
-      throw new ApiError(400, "Both Home image and About image are required");
+      throw new ApiError(400, 'Both Home image and About image are required');
     }
 
-    const defaultLayout = role === "superadmin";
+    const defaultLayout = role === 'superadmin';
     const haveLayout = await CafeLayout.findOne({ adminId });
 
     const layout = await CafeLayout.create({
@@ -30,19 +30,23 @@ const layoutService = {
   updateCafeLayout: async (id, body, files) => {
     const layout = await CafeLayout.findById(id);
     if (!layout) {
-      throw new ApiError(404, "Cafe layout not found");
+      throw new ApiError(404, 'Cafe layout not found');
     }
 
     if (files?.homeImage?.[0]?.location) {
       if (layout.homeImage) {
-        await deleteSingleFile(layout.homeImage).catch((err) => console.error("S3 Error:", err));
+        await deleteSingleFile(layout.homeImage).catch((err) =>
+          console.error('S3 Error:', err),
+        );
       }
       layout.homeImage = files.homeImage[0].location;
     }
 
     if (files?.aboutImage?.[0]?.location) {
       if (layout.aboutImage) {
-        await deleteSingleFile(layout.aboutImage).catch((err) => console.error("S3 Error:", err));
+        await deleteSingleFile(layout.aboutImage).catch((err) =>
+          console.error('S3 Error:', err),
+        );
       }
       layout.aboutImage = files.aboutImage[0].location;
     }
@@ -56,11 +60,11 @@ const layoutService = {
     const { layoutId, active } = body;
     const layout = await CafeLayout.findById(layoutId);
     if (!layout) {
-      throw new ApiError(404, "Cafe layout not found");
+      throw new ApiError(404, 'Cafe layout not found');
     }
 
-    if (active === undefined || typeof active !== "boolean") {
-      throw new ApiError(400, "Active status is required");
+    if (active === undefined || typeof active !== 'boolean') {
+      throw new ApiError(400, 'Active status is required');
     }
 
     if (active === true) {
@@ -69,7 +73,7 @@ const layoutService = {
           adminId: layout.adminId,
           _id: { $ne: layout._id },
         },
-        { $set: { active: false } }
+        { $set: { active: false } },
       );
 
       layout.active = true;
@@ -84,10 +88,10 @@ const layoutService = {
   deleteCafeLayout: async (id) => {
     const layout = await CafeLayout.findById(id);
     if (!layout) {
-      throw new ApiError(404, "Cafe layout not found");
+      throw new ApiError(404, 'Cafe layout not found');
     }
     if (layout.active) {
-      throw new ApiError(400, "Active cafe layout cannot be deleted");
+      throw new ApiError(400, 'Active cafe layout cannot be deleted');
     }
 
     const imagesToDelete = [];
@@ -112,12 +116,13 @@ const layoutService = {
     return result;
   },
   getLayoutById: async (id) => {
-    const layout = await CafeLayout.findById(id).populate("adminId");
+    const layout = await CafeLayout.findById(id).populate('adminId');
     return layout;
   },
   getActiveLayout: async (adminid) => {
     const result = await CafeLayout.findOne({ adminId: adminid, active: true })
-      .populate("adminId").populate({path: "menus", match: { isActive: true }});
+      .populate('adminId')
+      .populate({ path: 'menus', match: { isActive: true } });
     return result;
   },
 };

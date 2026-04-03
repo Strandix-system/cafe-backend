@@ -1,43 +1,41 @@
-import Qr from "../../../model/qr.js";
-import QRCode from "qrcode";
-import CafeLayout from "../../../model/layout.js";
-import { ApiError } from "../../../utils/apiError.js";
+import QRCode from 'qrcode';
 
+import CafeLayout from '../../../model/layout.js';
+import Qr from '../../../model/qr.js';
+import { ApiError } from '../../../utils/apiError.js';
 
 const qrService = {
   createQr: async (adminId, totalTables) => {
-
     const layoutExists = await CafeLayout.exists({ adminId });
     if (!layoutExists) {
-      throw new ApiError(400, "Please create cafe layout before generating Qr");
+      throw new ApiError(400, 'Please create cafe layout before generating Qr');
     }
     if (!totalTables || totalTables < 1) {
-      throw new ApiError(400, "Invalid totalTables");
+      throw new ApiError(400, 'Invalid totalTables');
     }
 
     if (!process.env.PORTFOLIO_URL) {
-      throw new ApiError(500, "PORTFOLIO_URL not set");
+      throw new ApiError(500, 'PORTFOLIO_URL not set');
     }
 
     const lastQr = await Qr.findOne({ adminId })
       .sort({ tableNumber: -1 })
-      .select("tableNumber");
+      .select('tableNumber');
 
     const lastTable = lastQr ? lastQr.tableNumber : 0;
 
     if (lastTable >= totalTables) {
       return {
-        message: "QRs already generated",
+        message: 'QRs already generated',
         total: lastTable,
       };
     }
     const qrList = [];
     for (let i = lastTable + 1; i <= totalTables; i++) {
-
       qrList.push({
         adminId,
         tableNumber: i,
-        qrCodeUrl: "",
+        qrCodeUrl: '',
       });
     }
     const createdQrs = await Qr.insertMany(qrList);
@@ -50,14 +48,17 @@ const qrService = {
     return createdQrs;
   },
   scanQr: async (qrId) => {
-    const qr = await Qr.findById(qrId).populate("adminId");
+    const qr = await Qr.findById(qrId).populate('adminId');
 
     if (!qr) {
-      throw new ApiError(404, "Invalid QR");
+      throw new ApiError(404, 'Invalid QR');
     }
 
     if (!qr.adminId || !qr.adminId.isActive) {
-      throw new ApiError(403, "This QR is disabled because the account is inactive");
+      throw new ApiError(
+        403,
+        'This QR is disabled because the account is inactive',
+      );
     }
 
     return qr;

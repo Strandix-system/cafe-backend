@@ -1,6 +1,7 @@
-import multer from "multer";
-import multerS3 from "multer-s3-v3";
-import { s3 } from "../config/s3.js";
+import multer from 'multer';
+import multerS3 from 'multer-s3-v3';
+
+import { s3 } from '../config/s3.js';
 
 const commonOptions = {
   s3,
@@ -8,7 +9,7 @@ const commonOptions = {
   contentType: multerS3.AUTO_CONTENT_TYPE, // ✅ auto image/jpeg, png, etc
   metadata: (req, file, cb) => {
     cb(null, {
-      "Content-Disposition": "inline", // ✅ force open in browser
+      'Content-Disposition': 'inline', // ✅ force open in browser
     });
   },
 };
@@ -19,36 +20,39 @@ const uploadMenu = multer({
     key: (req, file, cb) => {
       cb(null, `menu/${Date.now()}-${file.originalname}`);
     },
-  }), limits: { fileSize: 10 * 1024 * 1024 },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 const uploadAdminImages = multer({
   storage: multerS3({
     ...commonOptions,
     key: (req, file, cb) => {
-      let folder = "misc";
+      let folder = 'misc';
 
-      if (file.fieldname === "logo") folder = "logo";
-      if (file.fieldname === "profileImage") folder = "profile";
+      if (file.fieldname === 'logo') folder = 'logo';
+      if (file.fieldname === 'profileImage') folder = 'profile';
 
       cb(null, `${folder}/${Date.now()}-${file.originalname}`);
     },
-  }), limits: { fileSize: 10 * 1024 * 1024 },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 const uploadLayoutImages = multer({
   storage: multerS3({
     ...commonOptions,
     key: (req, file, cb) => {
-      let folder = "cafe-layout";
+      let folder = 'cafe-layout';
 
-      if (file.fieldname === "homeImage") folder = "cafe-layout/home";
-      if (file.fieldname === "aboutImage") folder = "cafe-layout/about";
+      if (file.fieldname === 'homeImage') folder = 'cafe-layout/home';
+      if (file.fieldname === 'aboutImage') folder = 'cafe-layout/about';
 
       cb(null, `${folder}/${Date.now()}-${file.originalname}`);
     },
-  }), limits: { fileSize: 10 * 1024 * 1024 },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
 }).fields([
-  { name: "homeImage", maxCount: 1 },
-  { name: "aboutImage", maxCount: 1 },
+  { name: 'homeImage', maxCount: 1 },
+  { name: 'aboutImage', maxCount: 1 },
 ]);
 
 const uploadQueryImage = multer({
@@ -61,9 +65,4 @@ const uploadQueryImage = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 });
 
-export {
-  uploadMenu,
-  uploadAdminImages,
-  uploadLayoutImages,
-  uploadQueryImage,
-};
+export { uploadMenu, uploadAdminImages, uploadLayoutImages, uploadQueryImage };

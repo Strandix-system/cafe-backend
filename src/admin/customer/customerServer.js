@@ -1,23 +1,24 @@
-import Customer from "../../../model/customer.js";
-import { CustomerFeedback }  from "../../../model/customerFeedback.js";
-import mongoose from "mongoose";
-import { notificationService } from "../../notification/notification.service.js";
+import mongoose from 'mongoose';
+
+import Customer from '../../../model/customer.js';
+import { CustomerFeedback } from '../../../model/customerFeedback.js';
+import { ApiError } from '../../../utils/apiError.js';
 import {
   ENTITY_TYPES,
   NOTIFICATION_TYPES,
   RECIPIENT_TYPES,
-} from "../../../utils/constants.js";
-import { ApiError } from "../../../utils/apiError.js";
+} from '../../../utils/constants.js';
+import { notificationService } from '../../notification/notification.service.js';
 
 const customerService = {
   createCustomer: async (body) => {
     const { name, phoneNumber, adminId } = body;
 
     if (!mongoose.Types.ObjectId.isValid(adminId)) {
-      throw new ApiError(400, "Invalid adminId");
+      throw new ApiError(400, 'Invalid adminId');
     }
 
-    let customer = await Customer.findOne({
+    const customer = await Customer.findOne({
       phoneNumber,
       adminId,
     });
@@ -36,7 +37,7 @@ const customerService = {
 
     if (adminId) {
       await notificationService.createNotification({
-        title: "New customer joined",
+        title: 'New customer joined',
         message: `${name} has been added as a new customer.`,
         notificationType: NOTIFICATION_TYPES.CUSTOMER_CREATED,
         recipientType: RECIPIENT_TYPES.ADMIN,
@@ -50,14 +51,14 @@ const customerService = {
     return newCustomer.toObject();
   },
   getCustomers: async (filter, options, user) => {
-    let adminId = user.role === "admin" ? user._id : filter.adminId;
+    let adminId = user.role === 'admin' ? user._id : filter.adminId;
 
-    if (user.role === "superadmin" && !filter.adminId) {
-      throw new ApiError(400, "adminId is required to view customers");
+    if (user.role === 'superadmin' && !filter.adminId) {
+      throw new ApiError(400, 'adminId is required to view customers');
     }
 
     if (!mongoose.Types.ObjectId.isValid(adminId)) {
-      throw new ApiError(400, "Invalid adminId");
+      throw new ApiError(400, 'Invalid adminId');
     }
 
     adminId = new mongoose.Types.ObjectId(adminId);
@@ -70,68 +71,68 @@ const customerService = {
 
     if (filter.search) {
       matchStage.$or = [
-        { name: { $regex: filter.search, $options: "i" } },
-        { phoneNumber: { $regex: filter.search, $options: "i" } },
+        { name: { $regex: filter.search, $options: 'i' } },
+        { phoneNumber: { $regex: filter.search, $options: 'i' } },
       ];
     }
 
-    const statusFilter = String(filter.status || "").toLowerCase();
-    const allowedStatuses = ["new", "frequent", "vip"];
+    const statusFilter = String(filter.status || '').toLowerCase();
+    const allowedStatuses = ['new', 'frequent', 'vip'];
 
     if (statusFilter && !allowedStatuses.includes(statusFilter)) {
-      throw new ApiError(400, "Invalid status. Allowed: new, frequent, vip");
+      throw new ApiError(400, 'Invalid status. Allowed: new, frequent, vip');
     }
 
     const pipeline = [
       { $match: matchStage },
       {
         $lookup: {
-          from: "orderitems",
-          let: { customerId: "$_id", adminId },
+          from: 'orderitems',
+          let: { customerId: '$_id', adminId },
           pipeline: [
             {
               $match: {
-                $expr: { $eq: ["$customerId", "$$customerId"] },
+                $expr: { $eq: ['$customerId', '$$customerId'] },
               },
             },
             {
               $lookup: {
-                from: "orders",
-                localField: "orderId",
-                foreignField: "_id",
-                as: "order",
+                from: 'orders',
+                localField: 'orderId',
+                foreignField: '_id',
+                as: 'order',
               },
             },
-            { $unwind: "$order" },
+            { $unwind: '$order' },
             {
               $match: {
                 $expr: {
                   $and: [
-                    { $eq: ["$order.adminId", "$$adminId"] },
-                    { $eq: ["$order.isCompleted", true] },
+                    { $eq: ['$order.adminId', '$$adminId'] },
+                    { $eq: ['$order.isCompleted', true] },
                   ],
                 },
               },
             },
             {
               $group: {
-                _id: "$orderId",
-                totalAmount: { $first: "$order.totalAmount" },
+                _id: '$orderId',
+                totalAmount: { $first: '$order.totalAmount' },
                 visitDate: {
-                  $first: { $ifNull: ["$order.updatedAt", "$order.createdAt"] },
+                  $first: { $ifNull: ['$order.updatedAt', '$order.createdAt'] },
                 },
               },
             },
           ],
-          as: "orderStats",
+          as: 'orderStats',
         },
       },
       {
         $addFields: {
-          totalOrder: { $size: "$orderStats" },
-          totalSpent: { $sum: "$orderStats.totalAmount" },
+          totalOrder: { $size: '$orderStats' },
+          totalSpent: { $sum: '$orderStats.totalAmount' },
           lastVisitDate: {
-            $ifNull: [{ $max: "$orderStats.visitDate" }, "$createdAt"],
+            $ifNull: [{ $max: '$orderStats.visitDate' }, '$createdAt'],
           },
         },
       },
@@ -140,67 +141,67 @@ const customerService = {
           customerStatus: {
             $switch: {
               branches: [
-                { case: { $gt: ["$totalSpent", 5000] }, then: "vip" },
-                { case: { $gt: ["$totalOrder", 1] }, then: "frequent" },
+                { case: { $gt: ['$totalSpent', 5000] }, then: 'vip' },
+                { case: { $gt: ['$totalOrder', 1] }, then: 'frequent' },
               ],
-              default: "new",
+              default: 'new',
             },
           },
         },
       },
       {
         $lookup: {
-          from: "orderitems",
-          let: { customerId: "$_id", adminId },
+          from: 'orderitems',
+          let: { customerId: '$_id', adminId },
           pipeline: [
             {
               $match: {
-                $expr: { $eq: ["$customerId", "$$customerId"] },
+                $expr: { $eq: ['$customerId', '$$customerId'] },
               },
             },
             {
               $lookup: {
-                from: "orders",
-                localField: "orderId",
-                foreignField: "_id",
-                as: "order",
+                from: 'orders',
+                localField: 'orderId',
+                foreignField: '_id',
+                as: 'order',
               },
             },
-            { $unwind: "$order" },
+            { $unwind: '$order' },
             {
               $match: {
                 $expr: {
                   $and: [
-                    { $eq: ["$order.adminId", "$$adminId"] },
-                    { $eq: ["$order.isCompleted", true] },
+                    { $eq: ['$order.adminId', '$$adminId'] },
+                    { $eq: ['$order.isCompleted', true] },
                   ],
                 },
               },
             },
             {
               $lookup: {
-                from: "menus",
-                localField: "menuId",
-                foreignField: "_id",
-                as: "menu",
+                from: 'menus',
+                localField: 'menuId',
+                foreignField: '_id',
+                as: 'menu',
               },
             },
-            { $unwind: { path: "$menu", preserveNullAndEmptyArrays: true } },
+            { $unwind: { path: '$menu', preserveNullAndEmptyArrays: true } },
             {
               $group: {
-                _id: "$menu.name",
+                _id: '$menu.name',
                 count: { $sum: 1 },
               },
             },
             { $sort: { count: -1 } },
             { $limit: 1 },
           ],
-          as: "favoriteItemAgg",
+          as: 'favoriteItemAgg',
         },
       },
       {
         $addFields: {
-          favoriteItem: { $arrayElemAt: ["$favoriteItemAgg._id", 0] },
+          favoriteItem: { $arrayElemAt: ['$favoriteItemAgg._id', 0] },
         },
       },
     ];
@@ -213,10 +214,14 @@ const customerService = {
       { $project: { orderStats: 0, favoriteItemAgg: 0 } },
       {
         $facet: {
-          metadata: [{ $count: "totalResults" }],
-          data: [{ $sort: { createdAt: -1 } }, { $skip: skip }, { $limit: limit }],
+          metadata: [{ $count: 'totalResults' }],
+          data: [
+            { $sort: { createdAt: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+          ],
         },
-      }
+      },
     );
 
     const result = await Customer.aggregate(pipeline);
@@ -235,7 +240,7 @@ const customerService = {
   getCustomerById: async (id) => {
     const customer = await Customer.findById(id);
     if (!customer) {
-      throw new ApiError(404, "Customer not found");
+      throw new ApiError(404, 'Customer not found');
     }
 
     const hasGivenFeedback = await CustomerFeedback.exists({
@@ -243,15 +248,15 @@ const customerService = {
     });
 
     return {
-    customer,
-    hasGivenFeedback: !!hasGivenFeedback,
-  };
+      customer,
+      hasGivenFeedback: !!hasGivenFeedback,
+    };
   },
 
   updateCustomer: async (id, data) => {
     const customer = await Customer.findById(id);
     if (!customer) {
-      throw new ApiError(404, "Customer not found");
+      throw new ApiError(404, 'Customer not found');
     }
 
     Object.assign(customer, data);
@@ -262,7 +267,7 @@ const customerService = {
   deleteCustomer: async (id) => {
     const customer = await Customer.findById(id);
     if (!customer) {
-      throw new ApiError(404, "Customer not found");
+      throw new ApiError(404, 'Customer not found');
     }
 
     await customer.deleteOne();

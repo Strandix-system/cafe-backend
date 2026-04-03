@@ -1,19 +1,20 @@
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { s3 } from "../config/s3.js";
+import { DeleteObjectCommand } from '@aws-sdk/client-s3';
+
+import { s3 } from '../config/s3.js';
 
 export const getS3Key = (url) => {
   if (!url) return null;
-  
+
   try {
     const u = new URL(url);
     const bucketName = process.env.S3_BUCKET_NAME;
-    
+
     // Handle different S3 URL formats:
     // Format 1: https://bucket-name.s3.region.amazonaws.com/folder/file.jpg
     if (u.hostname.startsWith(`${bucketName}.s3`)) {
       return u.pathname.substring(1); // Remove leading '/'
     }
-    
+
     if (u.hostname.includes('s3') && u.pathname.includes(bucketName)) {
       const pathParts = u.pathname.split('/').filter(Boolean);
       const bucketIndex = pathParts.indexOf(bucketName);
@@ -21,7 +22,7 @@ export const getS3Key = (url) => {
         return pathParts.slice(bucketIndex + 1).join('/');
       }
     }
-    
+
     // Fallback: assume everything after first '/' is the key
     return u.pathname.substring(1);
   } catch (error) {
@@ -41,16 +42,22 @@ export const deleteUploadedFiles = async (files) => {
         return Promise.resolve(); // Return resolved promise instead of undefined
       }
 
-      return s3.send(
-        new DeleteObjectCommand({
-          Bucket: process.env.S3_BUCKET_NAME,
-          Key: key,
-        })
-      ).catch(error => {
-        console.error('❌ Failed to delete file from S3:', key, error.message);
-        // Don't throw - continue with other deletions
-      });
-    })
+      return s3
+        .send(
+          new DeleteObjectCommand({
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: key,
+          }),
+        )
+        .catch((error) => {
+          console.error(
+            '❌ Failed to delete file from S3:',
+            key,
+            error.message,
+          );
+          // Don't throw - continue with other deletions
+        });
+    }),
   );
 };
 export const deleteSingleFile = async (fileUrl) => {
@@ -67,7 +74,7 @@ export const deleteSingleFile = async (fileUrl) => {
       new DeleteObjectCommand({
         Bucket: process.env.S3_BUCKET_NAME,
         Key: key,
-      })
+      }),
     );
     console.log(`✅ Successfully deleted: ${key}`);
   } catch (error) {

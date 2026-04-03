@@ -29,3 +29,8 @@ portfolioRoute.get(
   validate(topCustomerFeedbackValidator),
   portfolioController.getTopCustomerFeedbacks,
 );
+
+portfolioRoute.post(
+  "/calculate-bill",
+   portfolioController.calculatePortfolioBill
+)

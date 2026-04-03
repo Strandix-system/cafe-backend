@@ -11,11 +11,120 @@ import {
   NOTIFICATION_TYPES,
   ORDER_STATUS,
   RECIPIENT_TYPES,
-} from '../../../utils/constants.js';
-import { buildAggregatedItems } from '../../../utils/utils.js';
-import { generateOrderNumber } from '../../../utils/utils.js';
-import sendWhatsAppMessage from '../../../utils/whatsapp.js';
-import { notificationService } from '../../notification/notification.service.js';
+} from "../../../utils/constants.js";
+import { buildAggregatedItems } from "../../../utils/utils.js";
+import { generateOrderNumber } from "../../../utils/utils.js";
+import { ORDER_TYPES } from "../../../utils/constants.js";
+import { resolveAdminGst, calculateTotalsByGst } from "../../../utils/gst.js";
+
+const buildTableStatusOverview = async (adminId) => {
+  const qrs = await Qr.find({ adminId });
+
+  const activeOrders = await Order.find({
+    adminId,
+    isCompleted: false,
+  }).populate("adminId", "name email");
+
+  const orderIds = activeOrders.map((o) => o._id);
+
+  const orderItems =
+    orderIds.length > 0
+      ? await OrderItem.find({ orderId: { $in: orderIds } })
+        .populate("menuId")
+        .populate("customerId", "name")
+      : [];
+
+  const itemsMap = new Map();
+  for (const item of orderItems) {
+    const id = item.orderId.toString();
+    if (!itemsMap.has(id)) itemsMap.set(id, []);
+    itemsMap.get(id).push(item);
+  }
+
+  const orderMap = new Map();
+  for (const order of activeOrders) {
+    orderMap.set(order.tableNumber, order);
+  }
+
+  return qrs.map((qr) => {
+    const order = orderMap.get(qr.tableNumber);
+
+    if (!order) {
+      return {
+        tableNumber: qr.tableNumber,
+        status: "idle",
+        order: null,
+      };
+    }
+
+    const items = itemsMap.get(order._id.toString()) || [];
+
+    const allServed =
+      items.length > 0 &&
+      items.every((item) => item.status === ORDER_STATUS.SERVED);
+    const aggregatedItems = buildAggregatedItems(items);
+
+    const orderWithItems = {
+      ...order.toObject(),
+
+      pricing: {
+        subTotal: order.subTotal,
+        gstPercent: order.gstPercent,
+        gstAmount: order.gstAmount,
+        totalAmount: order.totalAmount,
+      },
+
+      status: {
+        isCompleted: order.isCompleted,
+        paymentStatus: order.paymentStatus,
+      },
+
+      items: aggregatedItems,
+
+      orderItems: items.map((i) => ({
+        _id: i._id,
+        menuId: i.menuId,
+        customerId: i.customerId,
+        quantity: i.quantity,
+        status: i.status,
+        specialInstruction: i.specialInstruction,
+        servedAt: i.servedAt,
+        timestamps: {
+          createdAt: i.createdAt,
+          updatedAt: i.updatedAt,
+        },
+      })),
+
+      timestamps: {
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+      },
+    };
+
+    return {
+      tableNumber: qr.tableNumber,
+      status: allServed ? "billing" : "occupied",
+      order: orderWithItems,
+    };
+  });
+};
+
+const emitTableStatusOverview = async (adminId, overview) => {
+  const id = adminId?.toString();
+  if (!id) {
+    return;
+  }
+
+  try {
+    const io = getIO();
+    const payload = overview ?? (await buildTableStatusOverview(adminId));
+    io.to(id).emit("tableStatusOverviewUpdate", payload);
+  } catch (error) {
+    console.error("Table status overview socket emission error:", error);
+  }
+};
+
+
 
 const attachOrderItems = async (orders) => {
   if (!orders || !orders.length) return [];
@@ -114,6 +223,34 @@ const changeTableCore = async ({
     });
   }
 
+  await emitTableStatusOverview(adminId);
+
+  await notificationService.createNotification({
+    title: "Table changed",
+    message: `Order table changed from ${oldTableNumber} to ${newTableNumber}.`,
+    notificationType: NOTIFICATION_TYPES.TABLE_CHANGED,
+    recipientType: RECIPIENT_TYPES.ADMIN,
+    userId: adminId,
+    adminId,
+    entityType: ENTITY_TYPES.ORDER,
+    entityId: order._id,
+  });
+
+  await Promise.all(
+    customerIds.map((custId) =>
+      notificationService.createNotification({
+        title: "Table changed",
+        message: `Your table has been changed from ${oldTableNumber} to ${newTableNumber}.`,
+        notificationType: NOTIFICATION_TYPES.TABLE_CHANGED,
+        recipientType: RECIPIENT_TYPES.CUSTOMER,
+        customerId: custId,
+        adminId,
+        entityType: ENTITY_TYPES.ORDER,
+        entityId: order._id,
+      })
+    )
+  );
+
   return {
     message: 'Table changed successfully',
     orderId: order._id,
@@ -135,14 +272,12 @@ export const orderService = {
       throw new ApiError(400, 'Customer adminId is missing');
     }
 
-    const admin = await User.findOne({ _id: adminId, role: 'admin' }).select(
-      'gst',
-    );
+    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst.gstNumber gst.gstPercentage gst.gstType");
     if (!admin) {
       throw new ApiError(404, 'Admin not found');
     }
 
-    const gstPercent = admin.gst;
+    const { hasGstNumber, gstPercent, gstType } = resolveAdminGst(admin);
     const menuIds = items.map((menu) => menu.menuId);
     const menus = await Menu.find({
       _id: { $in: menuIds },
@@ -176,8 +311,16 @@ export const orderService = {
       throw new ApiError(400, 'customerId is required for each item');
     }
 
-    const gstAmount = (subTotal * gstPercent) / 100;
-    const finalTotal = subTotal + gstAmount;
+    const {
+      gstAmount,
+      finalTotal,
+      taxableAmount,
+    } = calculateTotalsByGst({
+      subTotal,
+      gstPercent,
+      gstType,
+      hasGstNumber,
+    });
 
     const qr = await Qr.findOne({ adminId, tableNumber });
     if (!qr) {
@@ -207,22 +350,30 @@ export const orderService = {
 
       latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
-      latestActiveOrder.gstAmount =
-        (latestActiveOrder.subTotal * gstPercent) / 100;
-      latestActiveOrder.totalAmount = Math.round(
-        latestActiveOrder.subTotal + latestActiveOrder.gstAmount,
-      );
+      latestActiveOrder.gstType = gstType;
+      const updatedTotals = calculateTotalsByGst({
+        subTotal: latestActiveOrder.subTotal ?? 0,
+        gstPercent,
+        gstType,
+        hasGstNumber,
+      });
+      latestActiveOrder.gstAmount = updatedTotals.gstAmount;
+      latestActiveOrder.totalAmount = Math.round(updatedTotals.finalTotal);
       order = await latestActiveOrder.save();
     } else if (latestActiveOrder) {
       await createOrderItems(latestActiveOrder._id, finalItems);
 
       latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
-      latestActiveOrder.gstAmount =
-        (latestActiveOrder.subTotal * gstPercent) / 100;
-      latestActiveOrder.totalAmount = Math.round(
-        latestActiveOrder.subTotal + latestActiveOrder.gstAmount,
-      );
+      latestActiveOrder.gstType = gstType;
+      const updatedTotals = calculateTotalsByGst({
+        subTotal: latestActiveOrder.subTotal ?? 0,
+        gstPercent,
+        gstType,
+        hasGstNumber,
+      });
+      latestActiveOrder.gstAmount = updatedTotals.gstAmount;
+      latestActiveOrder.totalAmount = Math.round(updatedTotals.finalTotal);
       order = await latestActiveOrder.save();
       if (!qr.occupied) {
         qr.occupied = true;
@@ -242,9 +393,11 @@ export const orderService = {
         tableNumber,
         totalAmount: Math.round(finalTotal),
         gstPercent,
+        gstType,
         gstAmount,
         subTotal,
-        orderNumber,
+        taxableAmount: Math.round(taxableAmount),
+        orderNumber
       });
       await createOrderItems(order._id, finalItems);
 
@@ -291,25 +444,27 @@ export const orderService = {
       });
     }
 
+    await emitTableStatusOverview(adminId);
     return orderWithItems;
   },
   // offline order created by admin from admin panel.
   createOfflineOrderByAdmin: async (body, user) => {
-    const { items, tableNumber, customer } = body;
+    const { items, tableNumber, customer, orderType = ORDER_TYPES.DINE_IN } = body;
 
     const adminId = user?._id;
     if (!adminId) {
       throw new ApiError(401, 'Unauthorized');
     }
 
-    const admin = await User.findOne({ _id: adminId, role: 'admin' }).select(
-      'gst',
-    );
+    const admin = await User.findOne({ _id: adminId, role: "admin" }).select("gst.gstNumber gst.gstPercentage gst.gstType");
     if (!admin) {
       throw new ApiError(404, 'Admin not found');
     }
+    if (orderType === ORDER_TYPES.DINE_IN && !tableNumber) {
+      throw new ApiError(400, "Table number is required for dine-in orders");
+    }
 
-    const gstPercent = admin.gst;
+    const { hasGstNumber, gstPercent, gstType } = resolveAdminGst(admin);
 
     const phoneNumber = customer?.phoneNumber ?? '';
     const name = customer?.name ?? '';
@@ -355,9 +510,61 @@ export const orderService = {
       };
     });
 
-    const gstAmount = (subTotal * gstPercent) / 100;
-    const finalTotal = subTotal + gstAmount;
+    const { gstAmount, finalTotal } = calculateTotalsByGst({
+      subTotal,
+      gstPercent,
+      gstType,
+      hasGstNumber,
+    });
 
+    const createOrderItems = async (orderId, newItems, orderType) => {
+      await OrderItem.insertMany(
+        newItems.map((item) => ({
+          ...item,
+          orderId,
+          status:
+            orderType === ORDER_TYPES.PARCEL
+              ? ORDER_STATUS.PREPARING
+              : ORDER_STATUS.PENDING,
+        })),
+      );
+    };
+
+    if (orderType === ORDER_TYPES.PARCEL) {
+      const orderNumber = await generateOrderNumber(adminId);
+
+      const order = await Order.create({
+        adminId,
+        orderBy: adminId,
+        totalAmount: Math.round(finalTotal),
+        gstPercent,
+        gstType,
+        gstAmount,
+        subTotal,
+        orderNumber,
+        orderType,
+      });
+
+      await createOrderItems(order._id, finalItems, orderType);
+
+      const io = getIO();
+
+      const populatedOrder = await Order.findById(order._id)
+        .populate("adminId", "name email");
+
+      const [{ orderItems }] = await attachOrderItems([populatedOrder]);
+
+      const orderWithItems = {
+        ...populatedOrder.toObject(),
+        items: buildAggregatedItems(orderItems),
+        orderItems: orderItems.map((i) => i.toObject()),
+      };
+
+      io.to(adminId.toString()).emit("order:new", orderWithItems);
+
+      await emitTableStatusOverview(adminId);
+      return orderWithItems;
+    }
     const qr = await Qr.findOne({ adminId, tableNumber });
     if (!qr) {
       throw new ApiError(404, 'Table not found');
@@ -369,16 +576,6 @@ export const orderService = {
       isCompleted: false,
     }).sort({ createdAt: -1 });
 
-    const createOrderItems = async (orderId, newItems) => {
-      await OrderItem.insertMany(
-        newItems.map((item) => ({
-          ...item,
-          orderId,
-          status: ORDER_STATUS.PENDING,
-        })),
-      );
-    };
-
     let order;
 
     if (latestActiveOrder) {
@@ -389,15 +586,19 @@ export const orderService = {
         );
       }
 
-      await createOrderItems(latestActiveOrder._id, finalItems);
+      await createOrderItems(latestActiveOrder._id, finalItems, latestActiveOrder.orderType);
 
       latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
       latestActiveOrder.gstPercent = gstPercent;
-      latestActiveOrder.gstAmount =
-        (latestActiveOrder.subTotal * gstPercent) / 100;
-      latestActiveOrder.totalAmount = Math.round(
-        latestActiveOrder.subTotal + latestActiveOrder.gstAmount,
-      );
+      latestActiveOrder.gstType = gstType;
+      const updatedTotals = calculateTotalsByGst({
+        subTotal: latestActiveOrder.subTotal ?? 0,
+        gstPercent,
+        gstType,
+        hasGstNumber,
+      });
+      latestActiveOrder.gstAmount = updatedTotals.gstAmount;
+      latestActiveOrder.totalAmount = Math.round(updatedTotals.finalTotal);
       order = await latestActiveOrder.save();
 
       if (!qr.occupied) {
@@ -409,7 +610,6 @@ export const orderService = {
         qr.occupied = false;
         await qr.save();
       }
-
       const orderNumber = await generateOrderNumber(adminId);
 
       order = await Order.create({
@@ -418,11 +618,13 @@ export const orderService = {
         tableNumber,
         totalAmount: Math.round(finalTotal),
         gstPercent,
+        gstType,
         gstAmount,
         subTotal,
         orderNumber,
+        orderType,
       });
-      await createOrderItems(order._id, finalItems);
+      await createOrderItems(order._id, finalItems, orderType);
 
       qr.occupied = true;
       await qr.save();
@@ -453,8 +655,11 @@ export const orderService = {
     }
 
     await notificationService.createNotification({
-      title: 'New order received',
-      message: `A new order has been placed for table ${order.tableNumber}.`,
+      title: "New order received",
+      message:
+        orderType === ORDER_TYPES.PARCEL
+          ? "A new parcel order has been placed."
+          : `A new order has been placed for table ${order.tableNumber}.`,
       notificationType: NOTIFICATION_TYPES.ORDER_CREATED,
       recipientType: RECIPIENT_TYPES.ADMIN,
       userId: adminId,
@@ -463,12 +668,13 @@ export const orderService = {
       entityId: order._id,
     });
 
+    await emitTableStatusOverview(adminId);
     return orderWithItems;
   },
   getOrders: async (adminId, filter, options) => {
     if (filter?.isCompleted !== undefined) {
-      if (typeof filter.isCompleted === 'string') {
-        filter.isCompleted = filter.isCompleted.toLowerCase() === 'true';
+      if (typeof filter.isCompleted === "string") {
+        filter.isCompleted = filter.isCompleted === "true";
       }
     }
 
@@ -488,6 +694,10 @@ export const orderService = {
         typeof filter.paymentStatus === 'string'
           ? filter.paymentStatus.toLowerCase() === 'true'
           : filter.paymentStatus;
+    }
+
+    if (filter?.orderType) {
+      query.orderType = filter.orderType;
     }
 
     if (filter?.search) {
@@ -547,23 +757,44 @@ export const orderService = {
     const result = await Order.paginate(finalFilter, safeOptions);
 
     const ordersWithItems = await attachOrderItems(result.results);
-    result.results = ordersWithItems.map(({ order, orderItems }) => ({
-      ...order.toObject(),
-      items: buildAggregatedItems(orderItems),
-      orderItems: orderItems.map((i) => ({
-        _id: i._id,
-        menuId: i.menuId?._id,
-        customerId: i.customerId?._id,
-        quantity: i.quantity,
-        status: i.status,
-        specialInstruction: i.specialInstruction ?? '',
-        timestamps: {
-          createdAt: i.createdAt,
-          updatedAt: i.updatedAt,
-        },
-      })),
-    }));
+    result.results = ordersWithItems.map(({ order, orderItems }) => {
+      const normalizedGstPercent = order.gstPercent ?? null;
+      const normalizedGstAmount = order.gstAmount ?? null;
+      const normalizedGstType = normalizedGstPercent === null ? null : (order.gstType ?? null);
+      let taxableAmount = null;
 
+      if (normalizedGstPercent !== null) {
+        if (normalizedGstType === "inclusive") {
+          taxableAmount =
+            (order.subTotal ?? 0) - (normalizedGstAmount ?? 0);
+        } else {
+          taxableAmount = order.subTotal ?? 0;
+        }
+
+        taxableAmount = Math.round(taxableAmount * 100) / 100;
+      }
+
+      return {
+        ...order.toObject(),
+        gstPercent: normalizedGstPercent,
+        gstType: normalizedGstType,
+        gstAmount: normalizedGstAmount,
+        taxableAmount,
+        items: buildAggregatedItems(orderItems),
+        orderItems: orderItems.map((i) => ({
+          _id: i._id,
+          menuId: i.menuId?._id,
+          customerId: i.customerId?._id,
+          quantity: i.quantity,
+          status: i.status,
+          specialInstruction: i.specialInstruction ?? "",
+          timestamps: {
+            createdAt: i.createdAt,
+            updatedAt: i.updatedAt,
+          },
+        })),
+      };
+    });
     return result;
   },
   getOrderById: async (orderId, adminId) => {
@@ -648,6 +879,8 @@ export const orderService = {
       } catch (socketError) {
         console.error('Socket emission error:', socketError);
       }
+
+      await emitTableStatusOverview(adminId);
 
       try {
         const customerIds = await OrderItem.distinct('customerId', {
@@ -748,6 +981,7 @@ See you again!
         } catch (_whatsappError) {}
       }
 
+      await emitTableStatusOverview(adminId);
       return order;
     } catch (error) {
       throw new ApiError(500, error.message);
@@ -768,16 +1002,16 @@ See you again!
         { occupied: false },
       );
     }
+
+    await emitTableStatusOverview(adminId);
     return order;
   },
   getOrderBillDetails: async (orderId, adminId) => {
     const order = await Order.findOne({
       _id: orderId,
       adminId,
-    }).populate(
-      'adminId',
-      'cafeName gst address city state pincode phoneNumber',
-    );
+    })
+      .populate("adminId", "cafeName gst.gstNumber gst.gstPercentage gst.gstType address phoneNumber");
 
     if (!order) {
       throw new ApiError(404, 'Order not found');
@@ -795,9 +1029,30 @@ See you again!
       return sum + price * item.quantity;
     }, 0);
 
-    const gstPercent = order.adminId.gst;
-    const gstAmount = (subTotal * gstPercent) / 100;
-    const total = Math.round(subTotal + gstAmount);
+    const hasGstNumber = !!order.adminId?.gst?.gstNumber;
+    let gstPercent = null;
+    let gstType = null;
+    let gstAmount = null;
+    let taxableAmount = null;
+    let total = Math.round(subTotal);
+
+    if (hasGstNumber) {
+      gstPercent = order.gstPercent ?? order.adminId?.gst?.gstPercentage;
+      gstType = order.gstType ?? order.adminId?.gst?.gstType;
+
+      if (gstType === "inclusive") {
+        gstAmount = (subTotal * gstPercent) / (100 + gstPercent);
+        taxableAmount = subTotal - gstAmount;
+        total = Math.round(subTotal);
+      } else {
+        gstAmount = (subTotal * gstPercent) / 100;
+        taxableAmount = subTotal;
+        total = Math.round(subTotal + gstAmount);
+      }
+
+      gstAmount = Math.round(gstAmount * 100) / 100;
+      taxableAmount = Math.round(taxableAmount * 100) / 100;
+    }
 
     const customerMap = new Map();
     for (const item of orderItems) {
@@ -842,14 +1097,24 @@ See you again!
       }));
     }
 
+    const adminAddress = order.adminId?.address ?? {};
+
     return {
       cafeName: order.adminId.cafeName,
-      address: `${order.adminId.address ?? ''}, ${order.adminId.city ?? ''}`,
+      address: {
+        street: adminAddress.street ?? null,
+        city: adminAddress.city ?? null,
+        state: adminAddress.state ?? null,
+        pincode: adminAddress.pincode ?? null,
+      },
       phoneNumber: order.adminId.phoneNumber,
       tableNumber: order.tableNumber,
+      orderType: order.orderType,
       customers,
       subTotal,
+      taxableAmount,
       gstPercent,
+      gstType,
       gstAmount,
       orderNumber: order.orderNumber,
       total,
@@ -882,10 +1147,26 @@ See you again!
         if (existingOrder) {
           const [{ orderItems }] = await attachOrderItems([existingOrder]);
 
+          let taxableAmount = null;
+
+          if (existingOrder.gstPercent) {
+            if (existingOrder.gstType === "inclusive") {
+              taxableAmount =
+                (existingOrder.subTotal ?? 0) - (existingOrder.gstAmount ?? 0);
+            } else {
+              taxableAmount = existingOrder.subTotal ?? 0;
+            }
+
+            taxableAmount = Math.round(taxableAmount * 100) / 100;
+          }
+
           const orderWithItems = {
             ...existingOrder.toObject(),
+            taxableAmount,
+
             pricing: {
               subTotal: existingOrder.subTotal,
+              taxableAmount,
               gstPercent: existingOrder.gstPercent,
               gstAmount: existingOrder.gstAmount,
               totalAmount: existingOrder.totalAmount,
@@ -1028,4 +1309,11 @@ See you again!
       changedBy: 'customer',
     });
   },
+  getTableStatusOverview: async (adminId) => {
+    const overview = await buildTableStatusOverview(adminId);
+    await emitTableStatusOverview(adminId, overview);
+    return overview;
+  },
 };
+
+export { emitTableStatusOverview };

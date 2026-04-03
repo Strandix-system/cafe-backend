@@ -25,13 +25,8 @@ export const orderController = {
   },
   getOrders: async (req, res) => {
     const adminId = req.user._id;
-    const filter = pick(req.query, [
-      'isCompleted',
-      'tableNumber',
-      'paymentStatus',
-      'search',
-    ]);
-    const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
+    const filter = pick(req.query, ["isCompleted", "tableNumber", "paymentStatus", "search", "orderType"]);
+    const options = pick(req.query, ["page", "limit", "sortBy", "populate"]);
     const result = await orderService.getOrders(adminId, filter, options);
     sendSuccessResponse(res, 200, 'Orders fetched', result);
   },
@@ -78,6 +73,13 @@ export const orderController = {
 
     sendSuccessResponse(res, 200, 'Bill details fetched', result);
   },
+  getTableStatusOverview: async (req, res) => {
+    const result = await orderService.getTableStatusOverview(
+      req.user._id
+    );
+
+    sendSuccessResponse(res, 200, "Table status fetched", result);
+  },
   getActiveOrderByQr: async (req, res) => {
     const result = await orderService.getActiveOrderByQr(
       req.params.qrId,
@@ -86,9 +88,11 @@ export const orderController = {
 
     sendSuccessResponse(res, 200, 'Active order fetched', result);
   },
+
   changeTable: (req, res) =>
     handleChangeTable(req, res, orderService.changeTable),
 
   changeTablePublic: (req, res) =>
     handleChangeTable(req, res, orderService.changeTablePublic),
+
 };

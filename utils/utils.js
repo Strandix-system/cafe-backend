@@ -53,37 +53,37 @@ export const buildAggregatedItems = (orderItems = []) => {
 };
 
 export const generateOrderNumber = async (adminId) => {
-  const currentDate = new Date();
+    const currentDate = new Date();
 
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth() + 1;
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
 
-  let startYear;
-  let endYear;
+    let startYear;
+    let endYear;
 
-  if (month >= 4) {
-    startYear = year;
-    endYear = year + 1;
-  } else {
-    startYear = year - 1;
-    endYear = year;
-  }
+    if (month >= 4) {
+        startYear = year;
+        endYear = year + 1;
+    } else {
+        startYear = year - 1;
+        endYear = year;
+    }
 
-  const lastOrder = await Order.findOne({
-    adminId,
-    createdAt: {
-      $gte: new Date(`${startYear}-04-01`),
-      $lt: new Date(`${endYear}-04-01`),
-    },
-  })
-    .sort({ createdAt: -1 })
-    .select('orderNumber');
+    const lastOrder = await Order.findOne({
+        adminId,
+        createdAt: {
+            $gte: new Date(`${startYear}-04-01`),
+            $lt: new Date(`${endYear}-04-01`),
+        },
+    })
+        .sort({ createdAt: -1 })
+        .select("orderNumber");
 
-  let nextSequence = 1;
+    let nextSequence = 1;
 
-  if (lastOrder?.orderNumber) {
-    nextSequence = parseInt(lastOrder.orderNumber, 10) + 1;
-  }
+    if (lastOrder?.orderNumber) {
+        nextSequence = parseInt(lastOrder.orderNumber, 10) + 1;
+    }
 
-  return String(nextSequence).padStart(4, '0');
+    return String(nextSequence).padStart(4, "0");
 };

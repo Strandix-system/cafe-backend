@@ -8,9 +8,9 @@ import {
   NOTIFICATION_TYPES,
   ORDER_STATUS,
   RECIPIENT_TYPES,
-} from '../../../utils/constants.js';
-import { buildAggregatedItems } from '../../../utils/utils.js';
-import { notificationService } from '../../notification/notification.service.js';
+} from "../../../utils/constants.js";
+import { buildAggregatedItems } from "../../../utils/utils.js";  
+import { emitTableStatusOverview } from "../order/service.js";
 
 const recalculateOrderTotals = async (orderId) => {
   const order = await Order.findById(orderId);
@@ -32,12 +32,25 @@ const recalculateOrderTotals = async (orderId) => {
     return sum + price * item.quantity;
   }, 0);
 
-  const gstPercent = order.gstPercent ?? 0;
-  const gstAmount = (subTotal * gstPercent) / 100;
+  const hasGst = order.gstPercent != null && order.gstType != null;
+
+  const gstPercent = hasGst ? order.gstPercent : null;
+  const gstType = hasGst ? order.gstType : null;
+
+  let gstAmount = null;
+  let finalTotal = subTotal;
+
+  if (hasGst && gstType === "inclusive") {
+    gstAmount = (subTotal * gstPercent) / (100 + gstPercent);
+    finalTotal = subTotal;
+  } else if (hasGst) {
+    gstAmount = (subTotal * gstPercent) / 100;
+    finalTotal = subTotal + gstAmount;
+  }
 
   order.subTotal = subTotal;
   order.gstAmount = gstAmount;
-  order.totalAmount = Math.round(subTotal + gstAmount);
+  order.totalAmount = Math.round(finalTotal);
   await order.save();
 
   return order;
@@ -111,6 +124,8 @@ export const orderItemService = {
     } catch (socketError) {
       console.error('Socket emission error:', socketError);
     }
+
+    await emitTableStatusOverview(adminId);
 
     if (orderItem.customerId) {
       await notificationService.createNotification({
@@ -216,6 +231,8 @@ export const orderItemService = {
       console.error('Socket emission error:', socketError);
     }
 
+    await emitTableStatusOverview(order.adminId);
+
     return updatedItem;
   },
 
@@ -316,6 +333,8 @@ export const orderItemService = {
     } catch (socketError) {
       console.error('Socket emission error:', socketError);
     }
+
+    await emitTableStatusOverview(order.adminId);
 
     return { orderItem, autoDeletedOrder };
   },

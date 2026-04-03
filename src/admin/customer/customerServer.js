@@ -1,7 +1,7 @@
-import mongoose from 'mongoose';
-
-import Customer from '../../../model/customer.js';
-import { ApiError } from '../../../utils/apiError.js';
+import Customer from "../../../model/customer.js";
+import { CustomerFeedback }  from "../../../model/customerFeedback.js";
+import mongoose from "mongoose";
+import { notificationService } from "../../notification/notification.service.js";
 import {
   ENTITY_TYPES,
   NOTIFICATION_TYPES,
@@ -241,7 +241,15 @@ const customerService = {
     if (!customer) {
       throw new ApiError(404, 'Customer not found');
     }
-    return customer;
+
+    const hasGivenFeedback = await CustomerFeedback.exists({
+      customerId: id,
+    });
+
+    return {
+    customer,
+    hasGivenFeedback: !!hasGivenFeedback,
+  };
   },
 
   updateCustomer: async (id, data) => {

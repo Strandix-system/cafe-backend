@@ -42,12 +42,31 @@ const socialLinksSchema = Joi.object({
 }).optional();
 
 const phoneRule = Joi.number().integer().min(6000000000).max(9999999999);
-const passwordRule = Joi.string()
-  .min(8)
-  .max(32)
-  .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/);
-const addressRule = Joi.string().trim().min(5).max(200);
+const passwordRule = Joi.string().min(8).max(32).pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/);
+const streetRule = Joi.string().trim().min(2).max(200);
 const pincodeRule = Joi.number().integer().min(100000).max(999999);
+const addressCreateRule = Joi.object({
+  street: streetRule.required(),
+  city: Joi.string().trim().min(2).max(50).required(),
+  state: Joi.string().trim().min(2).max(50).required(),
+  pincode: pincodeRule.required(),
+});
+const addressUpdateRule = Joi.object({
+  street: streetRule,
+  city: Joi.string().trim().min(2).max(50),
+  state: Joi.string().trim().min(2).max(50),
+  pincode: pincodeRule,
+}).min(1);
+const gstCreateRule = Joi.object({
+  gstNumber: Joi.string().trim().allow(null).empty(""),
+  gstPercentage: Joi.number().min(5).max(18).allow(null).empty(""),
+  gstType: Joi.string().valid("inclusive", "exclusive").allow(null).empty(""),
+});
+const gstUpdateRule = Joi.object({
+  gstNumber: Joi.string().trim().allow(null).empty(""),
+  gstPercentage: Joi.number().min(5).max(18).allow(null).empty(""),
+  gstType: Joi.string().valid("inclusive", "exclusive").allow(null).empty(""),
+});
 
 const createAdminValidator = {
   body: Joi.object({
@@ -57,13 +76,10 @@ const createAdminValidator = {
     email: emailRule.required(),
     phoneNumber: phoneRule.required(),
     password: passwordRule.required(),
-    address: addressRule.required(),
-    state: Joi.string().trim().min(2).max(50).required(),
-    city: Joi.string().trim().min(2).max(50).required(),
-    pincode: pincodeRule.required(),
+    address: addressCreateRule.required(),
     hours: Joi.any().required(),
     socialLinks: socialLinksSchema.optional(),
-    gst: Joi.number().min(4).max(18),
+    gst: gstCreateRule,
   }),
 };
 
@@ -79,13 +95,10 @@ const updateAdminValidator = {
     password: Joi.string().min(6),
     cafeName: Joi.string().trim().min(2).max(100),
     phoneNumber: phoneRule,
-    address: addressRule,
-    state: Joi.string().trim().min(2).max(50),
-    city: Joi.string().trim().min(2).max(50),
-    pincode: pincodeRule,
+    address: addressUpdateRule,
     logo: Joi.any(),
     profileImage: Joi.any(),
-    gst: Joi.number().min(5).max(18),
+    gst: gstUpdateRule,
     isActive: Joi.boolean(),
     hours: Joi.any().optional(),
     socialLinks: socialLinksSchema.optional(),

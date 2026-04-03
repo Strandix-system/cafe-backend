@@ -13,6 +13,7 @@ import demoRoute from "./demoRoute.js";
 import { issueReportedRoute } from "./issueReported.route.js";
 import { portfolioRoute } from "./portfolio.route.js";
 import notificationRoute from "./notification.route.js";
+import { inventoryRouter } from "./inventory.route.js";
 
 import { signUpRoutes } from "./signUp.js";
 const router = express.Router();
@@ -77,6 +78,11 @@ const defaultRoutes = [
     path: "/notification",
     route: notificationRoute,
   },
+  {
+    path: "/inventory",
+    route: inventoryRouter,
+  },
+  
 ];
 
 defaultRoutes.forEach((route) => {

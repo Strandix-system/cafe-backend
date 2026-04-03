@@ -12,7 +12,7 @@ const profileService = {
     if (!user) {
       throw new ApiError(404, "User not found");
     }
-    return user;
+    return user; 
   },
   updateMyProfile: async (userId, body, file) => {
     const user = await User.findById(userId);

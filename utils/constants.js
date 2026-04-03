@@ -46,3 +46,8 @@ export const ORDER_TYPES = {
     DINE_IN: "DINE_IN",
     PARCEL: "PARCEL",
 };
+
+export const CATEGORY_TYPES = {
+    MENU: "menu",
+    INVENTORY: "inventory",
+};

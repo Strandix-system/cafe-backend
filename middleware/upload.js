@@ -61,9 +61,20 @@ const uploadQueryImage = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 });
 
+const uploadInventoryImages = multer({
+  storage: multerS3({
+    ...commonOptions,
+    key: (req, file, cb) => {
+      cb(null, `inventory/${Date.now()}-${file.originalname}`);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
+
 export {
   uploadMenu,
   uploadAdminImages,
   uploadLayoutImages,
   uploadQueryImage,
+  uploadInventoryImages,
 };

@@ -1,14 +1,15 @@
-import mongoose from "mongoose";
-import cron from "node-cron";
-import User from "./model/user.js";
-import { Notification } from "./model/notification.js";
-import { Transaction } from "./model/transaction.js";
-import { notificationService } from "./src/notification/notification.service.js";
+import mongoose from 'mongoose';
+import cron from 'node-cron';
+
+import { Notification } from './model/notification.js';
+import { Transaction } from './model/transaction.js';
+import User from './model/user.js';
+import { notificationService } from './src/notification/notification.service.js';
 import {
   ENTITY_TYPES,
   NOTIFICATION_TYPES,
   RECIPIENT_TYPES,
-} from "./utils/constants.js";
+} from './utils/constants.js';
 
 let schedulerInitialized = false;
 let isRunning = false;
@@ -22,8 +23,8 @@ const SUBSCRIPTION_ENTITY_TYPE = ENTITY_TYPES.SUBSCRIPTION;
  */
 const getAdminLabel = (admin) =>
   admin.cafeName ||
-  `${admin.firstName || ""} ${admin.lastName || ""}`.trim() ||
-  "Admin";
+  `${admin.firstName || ''} ${admin.lastName || ''}`.trim() ||
+  'Admin';
 
 /**
  * Calculates how many whole days remain until the subscription end date.
@@ -40,7 +41,7 @@ const getLatestTransaction = async (adminId) =>
     subscriptionEndDate: { $ne: null },
   })
     .sort({ subscriptionEndDate: -1 })
-    .select("_id subscriptionEndDate subscriptionStatus");
+    .select('_id subscriptionEndDate subscriptionStatus');
 
 /**
  * Builds the base subscription notification content for the admin.
@@ -55,15 +56,17 @@ const getNotificationPayload = (admin, transaction) => {
 
   const isExpired = diffDays <= 0;
   const adminLabel = getAdminLabel(admin);
-  const formattedDate = endDate.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
+  const formattedDate = endDate.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   });
   const notificationType = isExpired
     ? NOTIFICATION_TYPES.SUBSCRIPTION_EXPIRED
     : NOTIFICATION_TYPES.SUBSCRIPTION_EXPIRING_SOON;
-  const title = isExpired ? "Subscription expired" : "Subscription expiring soon";
+  const title = isExpired
+    ? 'Subscription expired'
+    : 'Subscription expiring soon';
   const message = isExpired
     ? `Your subscription expired on ${formattedDate}. Please renew to continue using the service.`
     : `Your subscription will expire in ${diffDays} day(s) on ${formattedDate}.`;
@@ -87,8 +90,8 @@ const getSuperadminNotificationContent = (payload) => {
 
   return {
     title: isExpired
-      ? "Admin subscription expired"
-      : "Admin subscription expiring soon",
+      ? 'Admin subscription expired'
+      : 'Admin subscription expiring soon',
     message: isExpired
       ? `${payload.adminLabel}'s subscription expired.`
       : `${payload.adminLabel}'s subscription will expire in ${payload.diffDays} day(s).`,
@@ -144,7 +147,7 @@ const getSubscriptionNotificationState = async (
   admin,
   payload,
   superadminIds,
-  superadminContent
+  superadminContent,
 ) => {
   const [adminNotificationExists, existingSuperadminNotifications] =
     await Promise.all([
@@ -156,19 +159,19 @@ const getSubscriptionNotificationState = async (
           userId: admin._id,
           adminId: admin._id,
           entityId: payload.entityId,
-        })
+        }),
       ),
       superadminIds.length
         ? Notification.find({
-          ...buildSubscriptionNotificationQuery({
-            title: superadminContent.title,
-            message: superadminContent.message,
-            notificationType: payload.notificationType,
-            adminId: admin._id,
-            entityId: payload.entityId,
-          }),
-          userId: { $in: superadminIds },
-        }).select("userId")
+            ...buildSubscriptionNotificationQuery({
+              title: superadminContent.title,
+              message: superadminContent.message,
+              notificationType: payload.notificationType,
+              adminId: admin._id,
+              entityId: payload.entityId,
+            }),
+            userId: { $in: superadminIds },
+          }).select('userId')
         : [],
     ]);
 
@@ -176,8 +179,8 @@ const getSubscriptionNotificationState = async (
     adminNotificationExists,
     existingSuperadminUserIds: new Set(
       existingSuperadminNotifications.map((notification) =>
-        notification.userId?.toString()
-      )
+        notification.userId?.toString(),
+      ),
     ),
   };
 };
@@ -205,8 +208,8 @@ const createMissingSubscriptionNotifications = ({
           userId: admin._id,
           adminId: admin._id,
           entityId: payload.entityId,
-        })
-      )
+        }),
+      ),
     );
   }
 
@@ -224,8 +227,8 @@ const createMissingSubscriptionNotifications = ({
           userId: superadmin._id,
           adminId: admin._id,
           entityId: payload.entityId,
-        })
-      )
+        }),
+      ),
     );
   }
 
@@ -243,7 +246,7 @@ export const createSubscriptionNotifications = async (admin, transaction) => {
   }
 
   const superadminContent = getSuperadminNotificationContent(payload);
-  const superadmins = await User.find({ role: "superadmin" }).select("_id");
+  const superadmins = await User.find({ role: 'superadmin' }).select('_id');
   const superadminIds = superadmins.map((superadmin) => superadmin._id);
 
   const { adminNotificationExists, existingSuperadminUserIds } =
@@ -251,7 +254,7 @@ export const createSubscriptionNotifications = async (admin, transaction) => {
       admin,
       payload,
       superadminIds,
-      superadminContent
+      superadminContent,
     );
 
   const notificationPromises = createMissingSubscriptionNotifications({
@@ -277,8 +280,8 @@ const runSubscriptionNotificationScan = async () => {
   isRunning = true;
 
   try {
-    const admins = await User.find({ role: "admin" }).select(
-      "_id firstName lastName cafeName"
+    const admins = await User.find({ role: 'admin' }).select(
+      '_id firstName lastName cafeName',
     );
 
     for (const admin of admins) {
@@ -291,7 +294,7 @@ const runSubscriptionNotificationScan = async () => {
       await createSubscriptionNotifications(admin, latestTransaction);
     }
   } catch (error) {
-    console.error("Subscription notification scan failed:", error.message);
+    console.error('Subscription notification scan failed:', error.message);
   } finally {
     isRunning = false;
   }
@@ -311,8 +314,8 @@ const initSubscriptionNotificationScheduler = () => {
    * Registers the hourly cron job and triggers the first scan immediately.
    */
   const startScheduler = () => {
-    cron.schedule("0 * * * *", runSubscriptionNotificationScan, {
-      timezone: "Asia/Kolkata",
+    cron.schedule('0 * * * *', runSubscriptionNotificationScan, {
+      timezone: 'Asia/Kolkata',
     });
 
     runSubscriptionNotificationScan();
@@ -323,7 +326,7 @@ const initSubscriptionNotificationScheduler = () => {
     return;
   }
 
-  mongoose.connection.once("connected", startScheduler);
+  mongoose.connection.once('connected', startScheduler);
 };
 
 export const subscriptionNotifier = {

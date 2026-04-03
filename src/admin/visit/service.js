@@ -1,10 +1,10 @@
-import Visit from "../../../model/visit.js";
+import Visit from '../../../model/visit.js';
 
 const visitService = {
   trackVisit: async (req) => {
     const visit = await Visit.create({
       ip: req.ip,
-      userAgent: req.headers["user-agent"],
+      userAgent: req.headers['user-agent'],
     });
 
     return visit;

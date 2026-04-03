@@ -1,4 +1,5 @@
 import Joi from 'joi';
+
 import { ISSUE_STATUSES } from '../utils/constants.js';
 
 const raiseIssueValidator = {

@@ -1,26 +1,27 @@
-import { Inventory } from "../../model/inventory.model.js";
-import { ApiError } from "../../utils/apiError.js";
-import { Category } from "../../model/category.js";
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
+
+import { Category } from '../../model/category.js';
+import { Inventory } from '../../model/inventory.model.js';
+import { ApiError } from '../../utils/apiError.js';
 
 const createInventory = async (body = {}) => {
   const { adminId, name, image, category, unit, currentStock, minStockLevel } =
     body;
 
   if (!adminId) {
-    throw new ApiError(400, "adminId is required");
+    throw new ApiError(400, 'adminId is required');
   }
 
   if (!mongoose.Types.ObjectId.isValid(adminId)) {
-    throw new ApiError(400, "Invalid adminId");
+    throw new ApiError(400, 'Invalid adminId');
   }
 
   if (!name?.trim()) {
-    throw new ApiError(400, "Item name is required");
+    throw new ApiError(400, 'Item name is required');
   }
 
   if (!mongoose.Types.ObjectId.isValid(category)) {
-    throw new ApiError(400, "Invalid categoryId");
+    throw new ApiError(400, 'Invalid categoryId');
   }
 
   const categoryDoc = await Category.findOne({
@@ -29,7 +30,7 @@ const createInventory = async (body = {}) => {
   });
 
   if (!categoryDoc) {
-    throw new ApiError(400, "Invalid category");
+    throw new ApiError(400, 'Invalid category');
   }
 
   const existingItem = await Inventory.findOne({
@@ -39,7 +40,7 @@ const createInventory = async (body = {}) => {
   });
 
   if (existingItem) {
-    throw new ApiError(400, "Inventory item already exists");
+    throw new ApiError(400, 'Inventory item already exists');
   }
 
   const inventory = await Inventory.create({
@@ -115,7 +116,7 @@ const createInventory = async (body = {}) => {
 const getInventoryList = async (query = {}) => {
   const {
     adminId,
-    search = "",
+    search = '',
     category,
     lowStock,
     isActive,
@@ -124,11 +125,11 @@ const getInventoryList = async (query = {}) => {
   } = query;
 
   if (!adminId) {
-    throw new ApiError(400, "adminId is required");
+    throw new ApiError(400, 'adminId is required');
   }
 
   if (!mongoose.Types.ObjectId.isValid(adminId)) {
-    throw new ApiError(400, "Invalid adminId");
+    throw new ApiError(400, 'Invalid adminId');
   }
 
   const filter = {
@@ -136,7 +137,7 @@ const getInventoryList = async (query = {}) => {
   };
 
   if (isActive !== undefined) {
-    filter.isActive = isActive === "true";
+    filter.isActive = isActive === 'true';
   } else {
     filter.isActive = true;
   }
@@ -144,13 +145,13 @@ const getInventoryList = async (query = {}) => {
   if (search) {
     filter.name = {
       $regex: search,
-      $options: "i",
+      $options: 'i',
     };
   }
 
   if (category) {
     if (!mongoose.Types.ObjectId.isValid(category)) {
-      throw new ApiError(400, "Invalid categoryId");
+      throw new ApiError(400, 'Invalid categoryId');
     }
 
     filter.category = category;
@@ -161,14 +162,14 @@ const getInventoryList = async (query = {}) => {
     limit: Number(limit),
     sort: { createdAt: -1 },
     lean: true,
-    populate: "category",
+    populate: 'category',
   };
 
-  let inventoryList = await Inventory.paginate(filter, options);
+  const inventoryList = await Inventory.paginate(filter, options);
 
-  if (lowStock === "true") {
+  if (lowStock === 'true') {
     inventoryList.results = inventoryList.results.filter(
-      (item) => item.currentStock <= item.minStockLevel
+      (item) => item.currentStock <= item.minStockLevel,
     );
   }
 
@@ -176,15 +177,15 @@ const getInventoryList = async (query = {}) => {
 };
 const getInventoryById = async ({ inventoryId, adminId }) => {
   if (!inventoryId) {
-    throw new ApiError(400, "inventoryId is required");
+    throw new ApiError(400, 'inventoryId is required');
   }
 
   if (!mongoose.Types.ObjectId.isValid(inventoryId)) {
-    throw new ApiError(400, "Invalid inventoryId");
+    throw new ApiError(400, 'Invalid inventoryId');
   }
 
   if (!mongoose.Types.ObjectId.isValid(adminId)) {
-    throw new ApiError(400, "Invalid adminId");
+    throw new ApiError(400, 'Invalid adminId');
   }
 
   const inventory = await Inventory.findOne({
@@ -194,7 +195,7 @@ const getInventoryById = async ({ inventoryId, adminId }) => {
   });
 
   if (!inventory) {
-    throw new ApiError(404, "Inventory item not found");
+    throw new ApiError(404, 'Inventory item not found');
   }
 
   return inventory;
@@ -205,24 +206,23 @@ const updateInventory = async ({ inventoryId, adminId, body }) => {
     body;
 
   if (!mongoose.Types.ObjectId.isValid(inventoryId)) {
-    throw new ApiError(400, "Invalid inventoryId");
+    throw new ApiError(400, 'Invalid inventoryId');
   }
 
   if (!mongoose.Types.ObjectId.isValid(adminId)) {
-    throw new ApiError(400, "Invalid adminId");
+    throw new ApiError(400, 'Invalid adminId');
   }
 
-  
   const inventory = await Inventory.findOne({
     _id: inventoryId,
     adminId,
     isActive: true,
   });
-  
+
   if (!inventory) {
-    throw new ApiError(404, "Inventory item not found");
+    throw new ApiError(404, 'Inventory item not found');
   }
-  
+
   if (image !== undefined) {
     inventory.image = image;
   }
@@ -236,7 +236,7 @@ const updateInventory = async ({ inventoryId, adminId, body }) => {
     });
 
     if (existingItem) {
-      throw new ApiError(400, "Inventory item name already exists");
+      throw new ApiError(400, 'Inventory item name already exists');
     }
 
     inventory.name = name.trim();
@@ -244,7 +244,7 @@ const updateInventory = async ({ inventoryId, adminId, body }) => {
 
   if (category) {
     if (!mongoose.Types.ObjectId.isValid(category)) {
-      throw new ApiError(400, "Invalid categoryId");
+      throw new ApiError(400, 'Invalid categoryId');
     }
 
     const categoryDoc = await Category.findOne({
@@ -253,7 +253,7 @@ const updateInventory = async ({ inventoryId, adminId, body }) => {
     });
 
     if (!categoryDoc) {
-      throw new ApiError(400, "Invalid category");
+      throw new ApiError(400, 'Invalid category');
     }
 
     inventory.category = category;
@@ -264,7 +264,7 @@ const updateInventory = async ({ inventoryId, adminId, body }) => {
   }
 
   if (currentStock !== undefined) {
-    throw new ApiError(400, "Direct stock update not allowed. Use stock API");
+    throw new ApiError(400, 'Direct stock update not allowed. Use stock API');
   }
 
   if (minStockLevel !== undefined) {

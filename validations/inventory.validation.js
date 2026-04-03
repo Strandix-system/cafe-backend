@@ -1,9 +1,9 @@
-import Joi from "joi";
-import mongoose from "mongoose";
+import Joi from 'joi';
+import mongoose from 'mongoose';
 
 const objectId = (value, helpers) => {
   if (!mongoose.Types.ObjectId.isValid(value)) {
-    return helpers.message("Invalid ObjectId");
+    return helpers.message('Invalid ObjectId');
   }
   return value;
 };
@@ -15,7 +15,7 @@ const createInventoryValidation = {
     category: Joi.string().custom(objectId).required(),
 
     unit: Joi.string()
-      .valid("kg", "gram", "liter", "ml", "pcs", "packet")
+      .valid('kg', 'gram', 'liter', 'ml', 'pcs', 'packet')
       .required(),
 
     currentStock: Joi.number().min(0).optional(),
@@ -30,19 +30,19 @@ const updateInventoryValidation = {
   }),
 
   body: Joi.object({
-  name: Joi.string().trim().optional(),
-  image: Joi.array().items(Joi.string().trim()).optional(),
+    name: Joi.string().trim().optional(),
+    image: Joi.array().items(Joi.string().trim()).optional(),
 
-  category: Joi.string().custom(objectId).optional(),
+    category: Joi.string().custom(objectId).optional(),
 
-  unit: Joi.string()
-    .valid("kg", "gram", "liter", "ml", "pcs", "packet")
-    .optional(),
+    unit: Joi.string()
+      .valid('kg', 'gram', 'liter', 'ml', 'pcs', 'packet')
+      .optional(),
 
-  minStockLevel: Joi.number().min(0).optional(),
+    minStockLevel: Joi.number().min(0).optional(),
 
-  isActive: Joi.boolean().optional(),
-}).min(1),
+    isActive: Joi.boolean().optional(),
+  }).min(1),
 };
 
 const getInventoryByIdValidation = {

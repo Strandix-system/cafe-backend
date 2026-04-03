@@ -1,26 +1,27 @@
-import mongoose from "mongoose";
-import { paginate } from "../model/plugin/paginate.plugin.js";
+import mongoose from 'mongoose';
+
+import { paginate } from '../model/plugin/paginate.plugin.js';
 
 const customerFeedbackSchema = new mongoose.Schema(
   {
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Customer",
-      required: true
+      ref: 'Customer',
+      required: true,
     },
     adminId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true
+      ref: 'User',
+      required: true,
     },
     rate: {
       type: Number,
       default: null,
-      required: true
+      required: true,
     },
     description: {
       type: String,
-      default: "",
+      default: '',
       required: true,
     },
     isPortfolioFeatured: {
@@ -28,9 +29,12 @@ const customerFeedbackSchema = new mongoose.Schema(
       default: false,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 customerFeedbackSchema.plugin(paginate);
 customerFeedbackSchema.index({ adminId: 1, isPortfolioFeatured: 1 });
 
-export const CustomerFeedback = mongoose.model("CustomerFeedback", customerFeedbackSchema);
+export const CustomerFeedback = mongoose.model(
+  'CustomerFeedback',
+  customerFeedbackSchema,
+);

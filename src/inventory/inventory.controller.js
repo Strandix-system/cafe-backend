@@ -1,10 +1,11 @@
+import { sendSuccessResponse } from '../../utils/response.js';
+
 import {
   createInventory,
   getInventoryList,
   getInventoryById,
   updateInventory,
-} from "./inventory.service.js";
-import { sendSuccessResponse } from "../../utils/response.js";
+} from './inventory.service.js';
 
 const createInventoryController = async (req, res) => {
   const inventory = await createInventory({
@@ -16,8 +17,8 @@ const createInventoryController = async (req, res) => {
   sendSuccessResponse(
     res,
     201,
-    "Inventory item created successfully",
-    inventory
+    'Inventory item created successfully',
+    inventory,
   );
 };
 
@@ -27,7 +28,7 @@ const getInventoryListController = async (req, res) => {
     adminId: req.user.adminId || req.user._id,
   });
 
-  sendSuccessResponse(res, 200, "Inventory list fetched successfully", {
+  sendSuccessResponse(res, 200, 'Inventory list fetched successfully', {
     totalDocs: inventoryList.totalResults,
     totalPages: inventoryList.totalPages,
     currentPage: inventoryList.page,
@@ -45,8 +46,8 @@ const getInventoryByIdController = async (req, res) => {
   sendSuccessResponse(
     res,
     200,
-    "Inventory item fetched successfully",
-    inventory
+    'Inventory item fetched successfully',
+    inventory,
   );
 };
 
@@ -54,7 +55,7 @@ const updateInventoryController = async (req, res) => {
   const inventory = await updateInventory({
     inventoryId: req.params.id,
     adminId: req.user.adminId || req.user._id,
-     body: {
+    body: {
       ...req.body,
       image: req.file ? [req.file.location] : undefined,
     },
@@ -63,8 +64,8 @@ const updateInventoryController = async (req, res) => {
   sendSuccessResponse(
     res,
     200,
-    "Inventory item updated successfully",
-    inventory
+    'Inventory item updated successfully',
+    inventory,
   );
 };
 

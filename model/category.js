@@ -1,6 +1,7 @@
-import mongoose from "mongoose";
-import { CATEGORY_TYPES } from "../utils/constants.js";
-import { paginate } from "../model/plugin/paginate.plugin.js";
+import mongoose from 'mongoose';
+
+import { paginate } from '../model/plugin/paginate.plugin.js';
+import { CATEGORY_TYPES } from '../utils/constants.js';
 
 const categorySchema = new mongoose.Schema(
   {
@@ -18,10 +19,10 @@ const categorySchema = new mongoose.Schema(
 
     adminId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       default: null,
       index: true,
-    },  
+    },
   },
   { timestamps: true },
 );
@@ -35,4 +36,4 @@ categorySchema.index(
 
 categorySchema.plugin(paginate);
 
-export const Category = mongoose.model("Category", categorySchema);
+export const Category = mongoose.model('Category', categorySchema);

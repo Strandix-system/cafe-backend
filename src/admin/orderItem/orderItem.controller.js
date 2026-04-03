@@ -1,13 +1,14 @@
-import {orderItemService} from "./orderItem.service.js";
-import { sendSuccessResponse } from "../../../utils/response.js";
+import { sendSuccessResponse } from '../../../utils/response.js';
+
+import { orderItemService } from './orderItem.service.js';
 
 export const orderItemController = {
   getItems: async (req, res) => {
     const result = await orderItemService.getOrderItems(
       req.params.orderId,
-      req.user._id
+      req.user._id,
     );
-    sendSuccessResponse(res, 200, "Order items fetched", result);
+    sendSuccessResponse(res, 200, 'Order items fetched', result);
   },
 
   updateItemStatus: async (req, res) => {
@@ -15,9 +16,9 @@ export const orderItemController = {
     const result = await orderItemService.updateItemStatus(
       orderItemId,
       status,
-      req.user._id
+      req.user._id,
     );
-    sendSuccessResponse(res, 200, "Item status updated", result);
+    sendSuccessResponse(res, 200, 'Item status updated', result);
   },
 
   updateQuantity: async (req, res) => {
@@ -30,9 +31,9 @@ export const orderItemController = {
         role,
         customerId: customerId ?? userId,
         _id: req.user?._id,
-      }
+      },
     );
-    sendSuccessResponse(res, 200, "Item quantity updated", result);
+    sendSuccessResponse(res, 200, 'Item quantity updated', result);
   },
 
   deleteItem: async (req, res) => {
@@ -44,8 +45,8 @@ export const orderItemController = {
         role,
         customerId: customerId ?? userId,
         _id: req.user?._id,
-      }
+      },
     );
-    sendSuccessResponse(res, 200, "Order item deleted", result);
+    sendSuccessResponse(res, 200, 'Order item deleted', result);
   },
 };

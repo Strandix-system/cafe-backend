@@ -1,11 +1,12 @@
-import mongoose from "mongoose";
-import { paginate } from "./plugin/paginate.plugin.js";
+import mongoose from 'mongoose';
+
+import { paginate } from './plugin/paginate.plugin.js';
 
 const inventorySchema = new mongoose.Schema(
   {
     adminId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
       index: true,
     },
@@ -18,16 +19,16 @@ const inventorySchema = new mongoose.Schema(
       type: String,
       trim: true,
       required: false,
-      default: null
+      default: null,
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
+      ref: 'Category',
       required: true,
     },
     unit: {
       type: String,
-      enum: ["kg", "gram", "liter", "ml", "pcs", "packet"],
+      enum: ['kg', 'gram', 'liter', 'ml', 'pcs', 'packet'],
       required: true,
     },
     currentStock: {
@@ -65,4 +66,4 @@ inventorySchema.index(
 
 inventorySchema.plugin(paginate);
 
-export const Inventory = mongoose.model("Inventory", inventorySchema);
+export const Inventory = mongoose.model('Inventory', inventorySchema);

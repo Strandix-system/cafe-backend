@@ -1,5 +1,6 @@
-import mongoose from "mongoose";
-import { paginate } from "../model/plugin/paginate.plugin.js";
+import mongoose from 'mongoose';
+
+import { paginate } from '../model/plugin/paginate.plugin.js';
 
 const notificationSchema = new mongoose.Schema(
   {
@@ -22,29 +23,29 @@ const notificationSchema = new mongoose.Schema(
     // Tells whether this notification belongs to an admin user or a customer.
     recipientType: {
       type: String,
-      enum: ["admin", "customer"],
+      enum: ['admin', 'customer'],
       required: true,
     },
     // Stores the recipient admin user when recipientType is "admin".
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required() {
-        return this.recipientType === "admin";
+        return this.recipientType === 'admin';
       },
     },
     // Stores the recipient customer when recipientType is "customer".
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Customer",
+      ref: 'Customer',
       required() {
-        return this.recipientType === "customer";
+        return this.recipientType === 'customer';
       },
     },
     // Tracks which admin created or triggered the notification.
     adminId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
     },
     // where
     entityType: {
@@ -66,7 +67,7 @@ const notificationSchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 notificationSchema.plugin(paginate);
@@ -75,4 +76,4 @@ notificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
 notificationSchema.index({ customerId: 1, isRead: 1, createdAt: -1 });
 notificationSchema.index({ adminId: 1, createdAt: -1 });
 
-export const Notification = mongoose.model("Notification", notificationSchema);
+export const Notification = mongoose.model('Notification', notificationSchema);

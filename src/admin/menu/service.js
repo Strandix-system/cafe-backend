@@ -1,8 +1,8 @@
-import Menu from "../../../model/menu.js";
-import { Category } from "../../../model/category.js";
-import { deleteSingleFile } from "../../../utils/s3utils.js";
-import { ApiError } from "../../../utils/apiError.js";
-import { CATEGORY_TYPES } from "../../../utils/constants.js";
+import { Category } from '../../../model/category.js';
+import Menu from '../../../model/menu.js';
+import { ApiError } from '../../../utils/apiError.js';
+import { CATEGORY_TYPES } from '../../../utils/constants.js';
+import { deleteSingleFile } from '../../../utils/s3utils.js';
 
 export const menuService = {
   createMenu: async (adminId, body, file) => {
@@ -11,7 +11,7 @@ export const menuService = {
     }
     const categoryExists = await Category.findOne({
       type: CATEGORY_TYPES.MENU,
-      name: { $regex: new RegExp(`^${body.category}$`, "i") },
+      name: { $regex: new RegExp(`^${body.category}$`, 'i') },
     });
     if (!categoryExists) {
       throw new ApiError(404, `Category '${body.category}' does not exist`);

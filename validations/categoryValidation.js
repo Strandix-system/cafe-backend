@@ -1,5 +1,6 @@
-import Joi from "joi";
-import { CATEGORY_TYPES } from "../utils/constants.js";
+import Joi from 'joi';
+
+import { CATEGORY_TYPES } from '../utils/constants.js';
 
 const createCategorySchema = {
   body: Joi.object({

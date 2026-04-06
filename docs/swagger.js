@@ -1,5 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 
+import { authSchemas } from './schemas/auth.schema.js';
 import { categorySchemas } from './schemas/category.schema.js';
 import { commonSchemas } from './schemas/common.schema.js';
 import { swaggerTags } from './tags.js';
@@ -52,6 +53,7 @@ const swaggerOptions = {
       schemas: {
         ...commonSchemas,
         ...categorySchemas,
+        ...authSchemas,
         // ...customerSchemas,
         // ...menuSchemas,
         // ...orderSchemas,

@@ -10,7 +10,7 @@
     "dev": "nodemon server.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky",
+    "prepare": "husky || true",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

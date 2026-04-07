@@ -73,9 +73,15 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['superadmin', 'admin'],
+      enum: ['superadmin', 'admin', 'manager'],
       default: 'admin',
       required: true,
+    },
+    adminId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      index: true,
     },
     hours: {
       weekdays: { type: String, default: null },
@@ -128,5 +134,6 @@ userSchema.index(
     },
   },
 );
+userSchema.index({ role: 1, adminId: 1 });
 
 export default mongoose.model('User', userSchema);

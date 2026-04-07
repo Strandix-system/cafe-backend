@@ -60,6 +60,10 @@ const addressUpdateRule = Joi.object({
   state: Joi.string().trim().min(2).max(50),
   pincode: pincodeRule,
 }).min(1);
+const hoursCreateRule = Joi.object({
+  weekdays: Joi.string().trim().min(2).max(100).required(),
+  weekends: Joi.string().trim().min(2).max(100).required(),
+});
 const gstCreateRule = Joi.object({
   gstNumber: Joi.string().trim().allow(null).empty(''),
   gstPercentage: Joi.number().min(5).max(18).allow(null).empty(''),
@@ -83,6 +87,18 @@ const createAdminValidator = {
     hours: Joi.any().required(),
     socialLinks: socialLinksSchema.optional(),
     gst: gstCreateRule,
+  }),
+};
+
+const createOutletManagerValidator = {
+  body: Joi.object({
+    firstName: nameRule.required(),
+    lastName: nameRule.required(),
+    phoneNumber: phoneRule.required(),
+    email: emailRule.required(),
+    password: passwordRule.required(),
+    address: addressCreateRule.required(),
+    hours: hoursCreateRule.required(),
   }),
 };
 
@@ -136,6 +152,7 @@ const updateSuperAdmin = {
 };
 export {
   createAdminValidator,
+  createOutletManagerValidator,
   updateAdminValidator,
   deleteAdminValidator,
   updateProfileValidator,

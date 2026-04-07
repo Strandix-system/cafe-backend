@@ -9,6 +9,15 @@ export default {
     const result = await service.createAdmin(req.body, req.files);
     sendSuccessResponse(res, 201, 'Admin created successfully', result);
   },
+  createOutletManager: async (req, res) => {
+    const result = await service.createOutletManager(req.user, req.body);
+    sendSuccessResponse(
+      res,
+      201,
+      'Outlet manager created successfully',
+      result,
+    );
+  },
   updateAdmin: async (req, res) => {
     const result = await service.updateAdmin(
       req.params.id,

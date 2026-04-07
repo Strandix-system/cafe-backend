@@ -11,6 +11,7 @@ import { portfolioController } from '../../src/portfolio/controller.js';
 import { parseJSONFields } from '../../utils/helper.js';
 import {
   createAdminValidator,
+  createOutletManagerValidator,
   updateAdminValidator,
   deleteAdminValidator,
   updateSuperAdmin,
@@ -41,6 +42,16 @@ router.post(
   parseJSONFields(['socialLinks', 'hours', 'address', 'gst']),
   validate(createAdminValidator),
   controller.createAdmin,
+);
+
+router.post(
+  '/create-outlet-manager',
+  tokenVerification,
+  allowRoles('admin'),
+  uploadAdminImages.none(),
+  parseJSONFields(['address', 'hours']),
+  validate(createOutletManagerValidator),
+  controller.createOutletManager,
 );
 
 router.patch(

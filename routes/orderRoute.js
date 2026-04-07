@@ -120,6 +120,15 @@ router.get(
   orderController.getMyOrders,
 );
 
+router.get(
+  '/my-created',
+  validate(getOrdersSchema),
+  tokenVerification,
+  allowRoles('staff', 'admin'),
+  allowStaffTypes(STAFF_TYPES.WAITER, STAFF_TYPES.KITCHEN_STAFF),
+  orderController.getMyCreatedOrdersStats,
+);
+
 router.patch(
   '/payment-status',
   tokenVerification,

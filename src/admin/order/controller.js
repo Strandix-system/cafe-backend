@@ -1,3 +1,5 @@
+import Staff from '../../../model/staff.js';
+import { ApiError } from '../../../utils/apiError.js';
 import { pick } from '../../../utils/pick.js';
 import { sendSuccessResponse } from '../../../utils/response.js';
 
@@ -50,6 +52,53 @@ export const orderController = {
     const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
     const result = await orderService.getMyOrders(filter, options);
     sendSuccessResponse(res, 200, 'Orders fetched successfully', result);
+  },
+  getMyCreatedOrdersStats: async (req, res) => {
+    if (!req.user) {
+      throw new ApiError(401, 'Unauthorized');
+    }
+
+    const role = req.user.role;
+
+    let staffId = null;
+    let adminId = null;
+
+    if (role === 'staff') {
+      staffId = req.user._id;
+      adminId = req.user.adminId;
+    } else if (role === 'admin') {
+      adminId = req.user._id;
+      staffId = req.query.staffId;
+
+      if (!staffId) {
+        throw new ApiError(400, 'staffId query parameter is required');
+      }
+
+      const staffExists = await Staff.exists({ _id: staffId, adminId });
+      if (!staffExists) {
+        throw new ApiError(404, 'Staff not found');
+      }
+    } else {
+      throw new ApiError(403, 'Access denied');
+    }
+
+    const filter = pick(req.query, [
+      'isCompleted',
+      'tableNumber',
+      'paymentStatus',
+      'search',
+      'orderType',
+    ]);
+    const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
+
+    const result = await orderService.getStaffCreatedOrdersStats(
+      staffId,
+      adminId,
+      filter,
+      options,
+    );
+
+    sendSuccessResponse(res, 200, 'Staff order stats fetched', result);
   },
   updateIsCompletedStatus: async (req, res) => {
     const adminId = getEffectiveAdminId(req.user);

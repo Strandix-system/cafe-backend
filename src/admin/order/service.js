@@ -3,6 +3,7 @@ import Menu from '../../../model/menu.js';
 import Order from '../../../model/order.js';
 import { OrderItem } from '../../../model/orderItem.js';
 import Qr from '../../../model/qr.js';
+import Staff from '../../../model/staff.js';
 import User from '../../../model/user.js';
 import { getIO, socketRooms } from '../../../socket.js';
 import { ApiError } from '../../../utils/apiError.js';
@@ -13,11 +14,27 @@ import {
   RECIPIENT_TYPES,
 } from '../../../utils/constants.js';
 import { ORDER_TYPES, STAFF_ROLE } from '../../../utils/constants.js';
+import { getCurrentUtcDayRange } from '../../../utils/dateRange.js';
 import { resolveAdminGst, calculateTotalsByGst } from '../../../utils/gst.js';
-import { buildAggregatedItems } from '../../../utils/utils.js';
-import { generateOrderNumber } from '../../../utils/utils.js';
+import {
+  buildAggregatedItems,
+  attachOrderItems,
+  generateOrderNumber,
+} from '../../../utils/utils.js';
 import { sendWhatsAppMessage } from '../../../utils/whatsapp.js';
 import { notificationService } from '../../notification/notification.service.js';
+
+const isOrderCreatorAdminOrStaff = async (orderBy, adminId) => {
+  if (!orderBy || !adminId) {
+    return false;
+  }
+
+  if (orderBy.equals(adminId)) {
+    return true;
+  }
+
+  return Boolean(await Staff.exists({ _id: orderBy, adminId }));
+};
 
 const buildTableStatusOverview = async (adminId) => {
   const qrs = await Qr.find({ adminId });
@@ -26,6 +43,12 @@ const buildTableStatusOverview = async (adminId) => {
     adminId,
     isCompleted: false,
   }).populate('adminId', 'name email');
+
+  const orderByIds = activeOrders.map((o) => o.orderBy).filter(Boolean);
+  const staffs = orderByIds.length
+    ? await Staff.find({ _id: { $in: orderByIds }, adminId }).select('name')
+    : [];
+  const staffMap = new Map(staffs.map((s) => [s._id.toString(), s]));
 
   const orderIds = activeOrders.map((o) => o._id);
 
@@ -68,6 +91,10 @@ const buildTableStatusOverview = async (adminId) => {
 
     const orderWithItems = {
       ...order.toObject(),
+      createdByStaff: (() => {
+        const staff = staffMap.get(order.orderBy?.toString?.() ?? '');
+        return staff ? { _id: staff._id, name: staff.name } : null;
+      })(),
 
       pricing: {
         subTotal: order.subTotal,
@@ -127,26 +154,6 @@ const emitTableStatusOverview = async (adminId, overview) => {
   } catch (error) {
     console.error('Table status overview socket emission error:', error);
   }
-};
-
-const attachOrderItems = async (orders) => {
-  if (!orders || !orders.length) return [];
-  const orderIds = orders.map((o) => o._id);
-  const items = await OrderItem.find({ orderId: { $in: orderIds } })
-    .populate('menuId')
-    .populate('customerId', 'name email phoneNumber');
-
-  const grouped = new Map();
-  for (const item of items) {
-    const id = item.orderId.toString();
-    if (!grouped.has(id)) grouped.set(id, []);
-    grouped.get(id).push(item);
-  }
-
-  return orders.map((order) => ({
-    order,
-    orderItems: grouped.get(order._id.toString()) ?? [],
-  }));
 };
 
 /**
@@ -477,6 +484,8 @@ export const orderService = {
       throw new ApiError(401, 'Unauthorized');
     }
 
+    const orderBy = user?.role === STAFF_ROLE ? user?._id : adminId;
+
     const admin = await User.findOne({ _id: adminId, role: 'admin' }).select(
       'gst.gstNumber gst.gstPercentage gst.gstType',
     );
@@ -558,7 +567,7 @@ export const orderService = {
 
       const order = await Order.create({
         adminId,
-        orderBy: adminId,
+        orderBy,
         totalAmount: Math.round(finalTotal),
         gstPercent,
         gstType,
@@ -610,7 +619,12 @@ export const orderService = {
     let order;
 
     if (latestActiveOrder) {
-      if (!latestActiveOrder.orderBy.equals(adminId)) {
+      const isOfflineOrder = await isOrderCreatorAdminOrStaff(
+        latestActiveOrder.orderBy,
+        adminId,
+      );
+
+      if (!isOfflineOrder) {
         throw new ApiError(
           403,
           'This active order was created by customer; admin cannot add items via offline flow',
@@ -649,7 +663,7 @@ export const orderService = {
 
       order = await Order.create({
         adminId,
-        orderBy: adminId,
+        orderBy,
         tableNumber,
         totalAmount: Math.round(finalTotal),
         gstPercent,
@@ -1351,6 +1365,89 @@ See you again!
       adminId,
       changedBy: isStaff ? 'staff' : 'admin',
     });
+  },
+  getStaffCreatedOrdersStats: async (staffId, adminId, filter, options) => {
+    if (!staffId || !adminId) {
+      throw new ApiError(401, 'Unauthorized');
+    }
+
+    const baseQuery = {
+      adminId,
+      orderBy: staffId,
+    };
+
+    const { start, end } = getCurrentUtcDayRange();
+
+    const [totalOrder, todayOrder] = await Promise.all([
+      Order.countDocuments(baseQuery),
+      Order.countDocuments({
+        ...baseQuery,
+        createdAt: { $gte: start, $lte: end },
+      }),
+    ]);
+
+    const query = { ...baseQuery };
+
+    if (filter?.isCompleted !== undefined) {
+      query.isCompleted =
+        typeof filter.isCompleted === 'string'
+          ? filter.isCompleted === 'true'
+          : filter.isCompleted;
+    }
+
+    if (filter?.tableNumber !== undefined) {
+      query.tableNumber = Number(filter.tableNumber);
+    }
+
+    if (filter?.paymentStatus !== undefined) {
+      query.paymentStatus =
+        typeof filter.paymentStatus === 'string'
+          ? filter.paymentStatus.toLowerCase() === 'true'
+          : filter.paymentStatus;
+    }
+
+    if (filter?.orderType) {
+      query.orderType = filter.orderType;
+    }
+
+    if (filter?.search) {
+      const searchValue = filter.search.trim();
+      const isOrderNumberSearch =
+        searchValue.length > 1 || searchValue.startsWith('0');
+
+      if (isOrderNumberSearch) {
+        query.orderNumber = new RegExp(searchValue, 'i');
+      } else {
+        query.tableNumber = Number(searchValue);
+      }
+    }
+
+    const { populate: _populate, ...safeOptions } = options ?? {};
+    const result = await Order.paginate(query, safeOptions);
+
+    const ordersWithItems = await attachOrderItems(result.results);
+    result.results = ordersWithItems.map(({ order, orderItems }) => ({
+      ...order.toObject(),
+      items: buildAggregatedItems(orderItems),
+      orderItems: orderItems.map((i) => ({
+        _id: i._id,
+        menuId: i.menuId?._id,
+        customerId: i.customerId?._id,
+        quantity: i.quantity,
+        status: i.status,
+        specialInstruction: i.specialInstruction ?? '',
+        timestamps: {
+          createdAt: i.createdAt,
+          updatedAt: i.updatedAt,
+        },
+      })),
+    }));
+
+    return {
+      totalOrder,
+      todayOrder,
+      orders: result,
+    };
   },
   changeTablePublic: async (orderId, newTableNumber, qrId) => {
     const qr = await Qr.findById(qrId);

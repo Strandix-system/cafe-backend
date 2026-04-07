@@ -37,7 +37,7 @@ router.get(
 router.get(
   '/admin-category',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'staff'),
   categoryController.getUsedCategoriesForDropdown,
 );
 

@@ -3,6 +3,9 @@ import { sendSuccessResponse } from '../../../utils/response.js';
 
 import { orderService } from './service.js';
 
+const getEffectiveAdminId = (user) =>
+  user?.role === 'staff' ? user.adminId : user?._id;
+
 const handleChangeTable = async (req, res, serviceFn) => {
   const { orderId, newTableNumber, qrId } = req.body;
 
@@ -24,7 +27,7 @@ export const orderController = {
     sendSuccessResponse(res, 201, 'Offline order created', order);
   },
   getOrders: async (req, res) => {
-    const adminId = req.user._id;
+    const adminId = getEffectiveAdminId(req.user);
     const filter = pick(req.query, [
       'isCompleted',
       'tableNumber',
@@ -38,7 +41,8 @@ export const orderController = {
   },
   getOrderById: async (req, res) => {
     const orderId = req.params.orderId;
-    const result = await orderService.getOrderById(orderId, req.user._id);
+    const adminId = getEffectiveAdminId(req.user);
+    const result = await orderService.getOrderById(orderId, adminId);
     sendSuccessResponse(res, 200, 'Order details fetched', result);
   },
   getMyOrders: async (req, res) => {
@@ -48,39 +52,41 @@ export const orderController = {
     sendSuccessResponse(res, 200, 'Orders fetched successfully', result);
   },
   updateIsCompletedStatus: async (req, res) => {
+    const adminId = getEffectiveAdminId(req.user);
     const result = await orderService.updateIsCompletedStatus(
       req.body.orderId,
       req.body.isCompleted,
-      req.user._id,
+      adminId,
     );
     sendSuccessResponse(res, 200, 'Status updated', result);
   },
   updatePaymentStatus: async (req, res) => {
     const { orderId, paymentStatus } = req.body;
+    const adminId = getEffectiveAdminId(req.user);
     const result = await orderService.updatePaymentStatus(
       orderId,
       paymentStatus,
-      req.user._id,
+      adminId,
     );
     sendSuccessResponse(res, 200, 'Payment status updated', result);
   },
   deleteOrder: async (req, res) => {
-    const result = await orderService.deleteOrder(
-      req.params.orderId,
-      req.user._id,
-    );
+    const adminId = getEffectiveAdminId(req.user);
+    const result = await orderService.deleteOrder(req.params.orderId, adminId);
     sendSuccessResponse(res, 200, 'Order deleted', result);
   },
   getBillDetails: async (req, res) => {
+    const adminId = getEffectiveAdminId(req.user);
     const result = await orderService.getOrderBillDetails(
       req.params.id,
-      req.user._id,
+      adminId,
     );
 
     sendSuccessResponse(res, 200, 'Bill details fetched', result);
   },
   getTableStatusOverview: async (req, res) => {
-    const result = await orderService.getTableStatusOverview(req.user._id);
+    const adminId = getEffectiveAdminId(req.user);
+    const result = await orderService.getTableStatusOverview(adminId);
 
     sendSuccessResponse(res, 200, 'Table status fetched', result);
   },

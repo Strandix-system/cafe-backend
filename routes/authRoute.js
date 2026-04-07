@@ -26,7 +26,7 @@ router.post('/reset-password/:token', controller.resetPassword);
 router.get(
   '/me',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'superadmin', 'staff'),
   checkSubscription,
   controller.me,
 );

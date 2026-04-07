@@ -4,7 +4,7 @@ import Order from '../../../model/order.js';
 import { OrderItem } from '../../../model/orderItem.js';
 import Qr from '../../../model/qr.js';
 import User from '../../../model/user.js';
-import { getIO } from '../../../socket.js';
+import { getIO, socketRooms } from '../../../socket.js';
 import { ApiError } from '../../../utils/apiError.js';
 import {
   ENTITY_TYPES,
@@ -12,7 +12,7 @@ import {
   ORDER_STATUS,
   RECIPIENT_TYPES,
 } from '../../../utils/constants.js';
-import { ORDER_TYPES } from '../../../utils/constants.js';
+import { ORDER_TYPES, STAFF_ROLE } from '../../../utils/constants.js';
 import { resolveAdminGst, calculateTotalsByGst } from '../../../utils/gst.js';
 import { buildAggregatedItems } from '../../../utils/utils.js';
 import { generateOrderNumber } from '../../../utils/utils.js';
@@ -120,7 +120,10 @@ const emitTableStatusOverview = async (adminId, overview) => {
   try {
     const io = getIO();
     const payload = overview ?? (await buildTableStatusOverview(adminId));
-    io.to(id).emit('tableStatusOverviewUpdate', payload);
+    io.to(id)
+      .to(socketRooms.user(id))
+      .to(socketRooms.admin(id))
+      .emit('tableStatusOverviewUpdate', payload);
   } catch (error) {
     console.error('Table status overview socket emission error:', error);
   }
@@ -331,6 +334,8 @@ export const orderService = {
       isCompleted: false,
     }).sort({ createdAt: -1 });
 
+    const isNewOrder = !latestActiveOrder;
+
     let order = null;
 
     const createOrderItems = async (orderId, newItems) => {
@@ -418,7 +423,20 @@ export const orderService = {
       orderItems: orderItems.map((i) => i.toObject()),
     };
 
-    io.to(adminId.toString()).emit('order:new', orderWithItems);
+    const id = adminId.toString();
+    const adminBroadcaster = io
+      .to(id)
+      .to(socketRooms.user(id))
+      .to(socketRooms.admin(id));
+
+    if (isNewOrder) {
+      adminBroadcaster.emit('order:new', orderWithItems);
+    } else {
+      adminBroadcaster.emit('order:updated', {
+        orderId: order._id,
+        order: orderWithItems,
+      });
+    }
     const customerIds = await OrderItem.distinct('customerId', {
       orderId: order._id,
     });
@@ -454,7 +472,7 @@ export const orderService = {
       orderType = ORDER_TYPES.DINE_IN,
     } = body;
 
-    const adminId = user?._id;
+    const adminId = user?.role === STAFF_ROLE ? user?.adminId : user?._id;
     if (!adminId) {
       throw new ApiError(401, 'Unauthorized');
     }
@@ -567,7 +585,11 @@ export const orderService = {
         orderItems: orderItems.map((i) => i.toObject()),
       };
 
-      io.to(adminId.toString()).emit('order:new', orderWithItems);
+      const id = adminId.toString();
+      io.to(id)
+        .to(socketRooms.user(id))
+        .to(socketRooms.admin(id))
+        .emit('order:new', orderWithItems);
 
       await emitTableStatusOverview(adminId);
       return orderWithItems;
@@ -582,6 +604,8 @@ export const orderService = {
       tableNumber,
       isCompleted: false,
     }).sort({ createdAt: -1 });
+
+    const isNewOrder = !latestActiveOrder;
 
     let order;
 
@@ -656,7 +680,20 @@ export const orderService = {
       orderItems: orderItems.map((i) => i.toObject()),
     };
 
-    io.to(adminId.toString()).emit('order:new', orderWithItems);
+    const id = adminId.toString();
+    const adminBroadcaster = io
+      .to(id)
+      .to(socketRooms.user(id))
+      .to(socketRooms.admin(id));
+
+    if (isNewOrder) {
+      adminBroadcaster.emit('order:new', orderWithItems);
+    } else {
+      adminBroadcaster.emit('order:updated', {
+        orderId: order._id,
+        order: orderWithItems,
+      });
+    }
     const customerIds = await OrderItem.distinct('customerId', {
       orderId: order._id,
     });
@@ -995,6 +1032,9 @@ See you again!
       await emitTableStatusOverview(adminId);
       return order;
     } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
       throw new ApiError(500, error.message);
     }
   },
@@ -1293,17 +1333,23 @@ See you again!
     };
   },
   changeTable: async (orderId, newTableNumber, user) => {
-    if (user.role !== 'admin') {
-      throw new ApiError(403, 'Only admin can change table');
+    const isAdmin = user?.role === 'admin';
+    const isStaff = user?.role === STAFF_ROLE;
+
+    if (!isAdmin && !isStaff) {
+      throw new ApiError(403, 'Only admin or staff can change table');
     }
 
-    const adminId = user._id;
+    const adminId = isStaff ? user?.adminId : user?._id;
+    if (!adminId) {
+      throw new ApiError(401, 'Unauthorized');
+    }
 
     return await changeTableCore({
       orderId,
       newTableNumber,
       adminId,
-      changedBy: 'admin',
+      changedBy: isStaff ? 'staff' : 'admin',
     });
   },
   changeTablePublic: async (orderId, newTableNumber, qrId) => {

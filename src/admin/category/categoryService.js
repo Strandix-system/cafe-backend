@@ -2,6 +2,7 @@ import { Category } from '../../../model/category.js';
 import Menu from '../../../model/menu.js';
 import { ApiError } from '../../../utils/apiError.js';
 import { CATEGORY_TYPES } from '../../../utils/constants.js';
+import { STAFF_ROLE } from '../../../utils/constants.js';
 export const categoryService = {
   createCategory: async (user, data) => {
     if (!user) {
@@ -85,6 +86,13 @@ export const categoryService = {
         throw new ApiError(400, 'adminId is required for superadmin');
       }
       return requestedAdminId;
+    }
+
+    if (user.role === STAFF_ROLE) {
+      if (!user.adminId) {
+        throw new ApiError(400, 'adminId not found for staff user');
+      }
+      return user.adminId;
     }
 
     return user._id;

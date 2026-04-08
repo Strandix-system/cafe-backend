@@ -4,7 +4,10 @@ export const notFoundError = (req, _, next) => {
   next(new ApiError(404, `Route not found - ${req.originalUrl}`));
 };
 
-export const errorHandler = (err, req, res, next) => {
+export const errorHandler = (err, _req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
   let statusCode = err.statusCode || 500;
 
   let message = err.message || 'Internal Server Error';
@@ -14,7 +17,7 @@ export const errorHandler = (err, req, res, next) => {
     message = err.message;
   }
 
-  res.status(statusCode).json({
+  return res.status(statusCode).json({
     success: false,
     message,
   });

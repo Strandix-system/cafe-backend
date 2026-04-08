@@ -1374,6 +1374,7 @@ See you again!
     const baseQuery = {
       adminId,
       orderBy: staffId,
+      isCompleted: false,
     };
 
     const { start, end } = getCurrentUtcDayRange();
@@ -1387,13 +1388,6 @@ See you again!
     ]);
 
     const query = { ...baseQuery };
-
-    if (filter?.isCompleted !== undefined) {
-      query.isCompleted =
-        typeof filter.isCompleted === 'string'
-          ? filter.isCompleted === 'true'
-          : filter.isCompleted;
-    }
 
     if (filter?.tableNumber !== undefined) {
       query.tableNumber = Number(filter.tableNumber);

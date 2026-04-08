@@ -21,10 +21,41 @@ export const staffService = {
     if (!adminId) {
       throw new ApiError(401, 'Unauthorized');
     }
-    if (filter.isActive !== undefined) {
-      filter.isActive = filter.isActive === 'true';
+    const query = { adminId };
+
+    if (filter?.staffType) {
+      query.staffType = filter.staffType;
     }
-    return await Staff.paginate({ adminId, ...filter }, options);
+
+    if (filter?.isActive !== undefined) {
+      query.isActive =
+        typeof filter.isActive === 'boolean'
+          ? filter.isActive
+          : filter.isActive === 'true';
+    }
+
+    if (filter?.search?.toString().trim()) {
+      const escapeRegex = (value) =>
+        String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+      const search = filter.search.toString().trim();
+      const escapedSearch = escapeRegex(search);
+      query.$or = [
+        { name: { $regex: escapedSearch, $options: 'i' } },
+        { email: { $regex: escapedSearch, $options: 'i' } },
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $toString: { $ifNull: ['$phoneNumber', ''] } },
+              regex: escapedSearch,
+              options: 'i',
+            },
+          },
+        },
+      ];
+    }
+
+    return await Staff.paginate(query, options);
   },
 
   updateStaff: async (staffId, data, file, adminUser) => {

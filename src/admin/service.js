@@ -26,6 +26,48 @@ const adminService = {
     });
     return admin;
   },
+  createOutletManager: async (currentUser, body) => {
+    if (currentUser?.role !== 'admin') {
+      throw new ApiError(403, 'Only admin can create outlet manager');
+    }
+
+    const creator = await User.findById(currentUser._id).select(
+      'role cafeName gst socialLinks profileImage logo',
+    );
+    if (!creator) {
+      throw new ApiError(404, 'Creator admin not found');
+    }
+
+    const exists = await User.findOne({ email: body.email });
+    if (exists) {
+      throw new ApiError(409, 'User already exists');
+    }
+
+    const phoneExists = await User.findOne({ phoneNumber: body.phoneNumber });
+    if (phoneExists) {
+      throw new ApiError(409, 'PhoneNumber already exists');
+    }
+
+    const manager = await User.create({
+      firstName: body.firstName,
+      lastName: body.lastName,
+      phoneNumber: body.phoneNumber,
+      email: body.email,
+      password: body.password,
+      cafeName: creator.cafeName ?? null,
+      address: body.address,
+      hours: body.hours,
+      role: 'manager',
+      adminId: creator._id,
+      gst: creator.gst?.toObject?.() ?? creator.gst ?? null,
+      socialLinks:
+        creator.socialLinks?.toObject?.() ?? creator.socialLinks ?? null,
+      profileImage: creator.profileImage ?? null,
+      logo: creator.logo ?? null,
+    });
+
+    return manager;
+  },
   updateAdmin: async (id, body, files) => {
     const admin = await User.findById(id);
     if (!admin) throw new ApiError(404, 'Admin not found');

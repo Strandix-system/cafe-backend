@@ -17,13 +17,16 @@ import { resolveAdminGst, calculateTotalsByGst } from '../../../utils/gst.js';
 import { buildAggregatedItems } from '../../../utils/utils.js';
 import { generateOrderNumber } from '../../../utils/utils.js';
 import { sendWhatsAppMessage } from '../../../utils/whatsapp.js';
+import { resolveAdminOwnerId } from '../../../utils/adminAccess.js';
 import { notificationService } from '../../notification/notification.service.js';
 
-const buildTableStatusOverview = async (adminId) => {
-  const qrs = await Qr.find({ adminId });
+const buildTableStatusOverview = async (adminId, outletId = null) => {
+  const scopedFilter = outletId ? { outletId } : {};
+  const qrs = await Qr.find({ adminId, ...scopedFilter });
 
   const activeOrders = await Order.find({
     adminId,
+    ...scopedFilter,
     isCompleted: false,
   }).populate('adminId', 'name email');
 
@@ -111,7 +114,7 @@ const buildTableStatusOverview = async (adminId) => {
   });
 };
 
-const emitTableStatusOverview = async (adminId, overview) => {
+const emitTableStatusOverview = async (adminId, outletId = null, overview) => {
   const id = adminId?.toString();
   if (!id) {
     return;
@@ -119,7 +122,8 @@ const emitTableStatusOverview = async (adminId, overview) => {
 
   try {
     const io = getIO();
-    const payload = overview ?? (await buildTableStatusOverview(adminId));
+    const payload =
+      overview ?? (await buildTableStatusOverview(adminId, outletId));
     io.to(id).emit('tableStatusOverviewUpdate', payload);
   } catch (error) {
     console.error('Table status overview socket emission error:', error);
@@ -155,10 +159,13 @@ const changeTableCore = async ({
   orderId,
   newTableNumber,
   adminId,
+  outletId = null,
   changedBy,
 }) => {
   const order = await Order.findOne({
     _id: orderId,
+    adminId,
+    ...(outletId ? { outletId } : {}),
     isCompleted: false,
   });
 
@@ -172,7 +179,11 @@ const changeTableCore = async ({
     throw new ApiError(400, 'Already on this table');
   }
 
-  const newQr = await Qr.findOne({ adminId, tableNumber: newTableNumber });
+  const newQr = await Qr.findOne({
+    adminId,
+    ...(outletId ? { outletId } : {}),
+    tableNumber: newTableNumber,
+  });
 
   if (!newQr) {
     throw new ApiError(404, 'Target table not found');
@@ -182,7 +193,11 @@ const changeTableCore = async ({
     throw new ApiError(400, 'Table already occupied');
   }
 
-  const oldQr = await Qr.findOne({ adminId, tableNumber: oldTableNumber });
+  const oldQr = await Qr.findOne({
+    adminId,
+    ...(outletId ? { outletId } : {}),
+    tableNumber: oldTableNumber,
+  });
 
   order.tableNumber = newTableNumber;
   await order.save();
@@ -210,6 +225,7 @@ const changeTableCore = async ({
 
   const newQrData = await Qr.findOne({
     adminId,
+    ...(outletId ? { outletId } : {}),
     tableNumber: newTableNumber,
   });
 
@@ -223,7 +239,7 @@ const changeTableCore = async ({
     });
   }
 
-  await emitTableStatusOverview(adminId);
+  await emitTableStatusOverview(adminId, outletId);
 
   await notificationService.createNotification({
     title: 'Table changed',
@@ -232,6 +248,7 @@ const changeTableCore = async ({
     recipientType: RECIPIENT_TYPES.ADMIN,
     userId: adminId,
     adminId,
+    outletId,
     entityType: ENTITY_TYPES.ORDER,
     entityId: order._id,
   });
@@ -245,6 +262,7 @@ const changeTableCore = async ({
         recipientType: RECIPIENT_TYPES.CUSTOMER,
         customerId: custId,
         adminId,
+        outletId,
         entityType: ENTITY_TYPES.ORDER,
         entityId: order._id,
       }),
@@ -268,6 +286,7 @@ export const orderService = {
     }
 
     const adminId = customer.adminId;
+    const outletId = customer.outletId ?? null;
     if (!adminId) {
       throw new ApiError(400, 'Customer adminId is missing');
     }
@@ -320,13 +339,14 @@ export const orderService = {
       hasGstNumber,
     });
 
-    const qr = await Qr.findOne({ adminId, tableNumber });
+    const qr = await Qr.findOne({ adminId, outletId, tableNumber });
     if (!qr) {
       throw new ApiError(404, 'Table not found');
     }
 
     const latestActiveOrder = await Order.findOne({
       adminId,
+      ...(outletId ? { outletId } : {}),
       tableNumber,
       isCompleted: false,
     }).sort({ createdAt: -1 });
@@ -387,6 +407,7 @@ export const orderService = {
 
       order = await Order.create({
         adminId,
+        outletId,
         orderBy: customerId,
         tableNumber,
         totalAmount: Math.round(finalTotal),
@@ -442,11 +463,11 @@ export const orderService = {
       });
     }
 
-    await emitTableStatusOverview(adminId);
+    await emitTableStatusOverview(adminId, outletId);
     return orderWithItems;
   },
   // offline order created by admin from admin panel.
-  createOfflineOrderByAdmin: async (body, user) => {
+  createOfflineOrderByAdmin: async (body, user, outletId = null) => {
     const {
       items,
       tableNumber,
@@ -454,7 +475,7 @@ export const orderService = {
       orderType = ORDER_TYPES.DINE_IN,
     } = body;
 
-    const adminId = user?._id;
+    const adminId = resolveAdminOwnerId(user);
     if (!adminId) {
       throw new ApiError(401, 'Unauthorized');
     }
@@ -474,14 +495,23 @@ export const orderService = {
     const phoneNumber = customer?.phoneNumber ?? '';
     const name = customer?.name ?? '';
 
-    let dbCustomer = await Customer.findOne({ phoneNumber, adminId });
+    let dbCustomer = await Customer.findOne({
+      phoneNumber,
+      adminId,
+      ...(outletId ? { outletId } : {}),
+    });
     if (dbCustomer) {
       if (name && dbCustomer.name !== name) {
         dbCustomer.name = name;
         await dbCustomer.save();
       }
     } else {
-      dbCustomer = await Customer.create({ name, phoneNumber, adminId });
+      dbCustomer = await Customer.create({
+        name,
+        phoneNumber,
+        adminId,
+        outletId,
+      });
     }
 
     const customerId = dbCustomer._id;
@@ -540,6 +570,7 @@ export const orderService = {
 
       const order = await Order.create({
         adminId,
+        outletId,
         orderBy: adminId,
         totalAmount: Math.round(finalTotal),
         gstPercent,
@@ -569,16 +600,21 @@ export const orderService = {
 
       io.to(adminId.toString()).emit('order:new', orderWithItems);
 
-      await emitTableStatusOverview(adminId);
+      await emitTableStatusOverview(adminId, outletId);
       return orderWithItems;
     }
-    const qr = await Qr.findOne({ adminId, tableNumber });
+    const qr = await Qr.findOne({
+      adminId,
+      ...(outletId ? { outletId } : {}),
+      tableNumber,
+    });
     if (!qr) {
       throw new ApiError(404, 'Table not found');
     }
 
     const latestActiveOrder = await Order.findOne({
       adminId,
+      ...(outletId ? { outletId } : {}),
       tableNumber,
       isCompleted: false,
     }).sort({ createdAt: -1 });
@@ -625,6 +661,7 @@ export const orderService = {
 
       order = await Order.create({
         adminId,
+        outletId,
         orderBy: adminId,
         tableNumber,
         totalAmount: Math.round(finalTotal),
@@ -675,14 +712,15 @@ export const orderService = {
       recipientType: RECIPIENT_TYPES.ADMIN,
       userId: adminId,
       adminId,
+      outletId,
       entityType: ENTITY_TYPES.ORDER,
       entityId: order._id,
     });
 
-    await emitTableStatusOverview(adminId);
+    await emitTableStatusOverview(adminId, outletId);
     return orderWithItems;
   },
-  getOrders: async (adminId, filter, options) => {
+  getOrders: async (adminId, outletId, filter, options) => {
     if (filter?.isCompleted !== undefined) {
       if (typeof filter.isCompleted === 'string') {
         filter.isCompleted = filter.isCompleted === 'true';
@@ -691,6 +729,9 @@ export const orderService = {
 
     const { populate: _populate, ...safeOptions } = options ?? {};
     const query = { adminId };
+    if (outletId) {
+      query.outletId = outletId;
+    }
 
     if (filter?.isCompleted !== undefined) {
       query.isCompleted = filter.isCompleted;
@@ -808,8 +849,12 @@ export const orderService = {
     });
     return result;
   },
-  getOrderById: async (orderId, adminId) => {
-    const order = await Order.findOne({ _id: orderId, adminId }).populate(
+  getOrderById: async (orderId, adminId, outletId = null) => {
+    const order = await Order.findOne({
+      _id: orderId,
+      adminId,
+      ...(outletId ? { outletId } : {}),
+    }).populate(
       'adminId',
       'name email',
     );
@@ -823,7 +868,7 @@ export const orderService = {
       orderItems: orderItems.map((i) => i.toObject()),
     };
   },
-  updateIsCompletedStatus: async (orderId, isCompleted, adminId) => {
+  updateIsCompletedStatus: async (orderId, isCompleted, adminId, outletId = null) => {
     try {
       if (isCompleted === true) {
         await OrderItem.updateMany(
@@ -841,7 +886,7 @@ export const orderService = {
       }
 
       const updatedOrder = await Order.findOneAndUpdate(
-        { _id: orderId, adminId },
+        { _id: orderId, adminId, ...(outletId ? { outletId } : {}) },
         { isCompleted },
         {
           new: true,
@@ -883,7 +928,11 @@ export const orderService = {
         if (isCompleted === true) {
           io.to(adminId.toString()).emit('completeOrder', updatedOrder._id);
           await Qr.findOneAndUpdate(
-            { adminId, tableNumber: updatedOrder.tableNumber },
+            {
+              adminId,
+              ...(outletId ? { outletId } : {}),
+              tableNumber: updatedOrder.tableNumber,
+            },
             { occupied: false },
           );
         }
@@ -891,7 +940,7 @@ export const orderService = {
         console.error('Socket emission error:', socketError);
       }
 
-      await emitTableStatusOverview(adminId);
+      await emitTableStatusOverview(adminId, outletId);
 
       try {
         const customerIds = await OrderItem.distinct('customerId', {
@@ -909,6 +958,7 @@ export const orderService = {
               recipientType: RECIPIENT_TYPES.CUSTOMER,
               customerId: custId,
               adminId,
+              outletId,
               entityType: ENTITY_TYPES.ORDER,
               entityId: updatedOrder._id,
             }),
@@ -923,9 +973,13 @@ export const orderService = {
       throw new ApiError(500, `Error updating order: ${error.message}`);
     }
   },
-  updatePaymentStatus: async (orderId, paymentStatus, adminId) => {
+  updatePaymentStatus: async (orderId, paymentStatus, adminId, outletId = null) => {
     try {
-      const order = await Order.findOne({ _id: orderId, adminId });
+      const order = await Order.findOne({
+        _id: orderId,
+        adminId,
+        ...(outletId ? { outletId } : {}),
+      });
 
       if (!order) {
         throw new ApiError(404, 'Order not found');
@@ -948,7 +1002,7 @@ export const orderService = {
       if (paymentStatus === true) {
         try {
           const [billDetails, populatedOrder] = await Promise.all([
-            orderService.getOrderBillDetails(orderId, adminId),
+            orderService.getOrderBillDetails(orderId, adminId, outletId),
             Order.findById(orderId).populate('adminId', 'cafeName'),
           ]);
 
@@ -992,14 +1046,18 @@ See you again!
         } catch (_whatsappError) {}
       }
 
-      await emitTableStatusOverview(adminId);
+      await emitTableStatusOverview(adminId, outletId);
       return order;
     } catch (error) {
       throw new ApiError(500, error.message);
     }
   },
-  deleteOrder: async (orderId, adminId) => {
-    const order = await Order.findOne({ _id: orderId, adminId });
+  deleteOrder: async (orderId, adminId, outletId = null) => {
+    const order = await Order.findOne({
+      _id: orderId,
+      adminId,
+      ...(outletId ? { outletId } : {}),
+    });
     if (!order) {
       throw new ApiError(404, 'Order not found');
     }
@@ -1009,18 +1067,23 @@ See you again!
 
     if (!order.isCompleted) {
       await Qr.findOneAndUpdate(
-        { adminId, tableNumber: order.tableNumber },
+        {
+          adminId,
+          ...(outletId ? { outletId } : {}),
+          tableNumber: order.tableNumber,
+        },
         { occupied: false },
       );
     }
 
-    await emitTableStatusOverview(adminId);
+    await emitTableStatusOverview(adminId, outletId);
     return order;
   },
-  getOrderBillDetails: async (orderId, adminId) => {
+  getOrderBillDetails: async (orderId, adminId, outletId = null) => {
     const order = await Order.findOne({
       _id: orderId,
       adminId,
+      ...(outletId ? { outletId } : {}),
     }).populate(
       'adminId',
       'cafeName gst.gstNumber gst.gstPercentage gst.gstType address phoneNumber',
@@ -1221,6 +1284,7 @@ See you again!
 
     const latestActiveOrder = await Order.findOne({
       adminId: qr.adminId._id,
+      ...(qr.outletId ? { outletId: qr.outletId } : {}),
       tableNumber: qr.tableNumber,
       isCompleted: false,
     })
@@ -1293,17 +1357,19 @@ See you again!
     };
   },
   changeTable: async (orderId, newTableNumber, user) => {
-    if (user.role !== 'admin') {
-      throw new ApiError(403, 'Only admin can change table');
+    if (!['admin', 'manager'].includes(user.role)) {
+      throw new ApiError(403, 'Only admin or manager can change table');
     }
 
-    const adminId = user._id;
+    const adminId = resolveAdminOwnerId(user);
+    const outletId = user?.outletId ?? null;
 
     return await changeTableCore({
       orderId,
       newTableNumber,
       adminId,
-      changedBy: 'admin',
+      outletId,
+      changedBy: user.role,
     });
   },
   changeTablePublic: async (orderId, newTableNumber, qrId) => {
@@ -1314,17 +1380,19 @@ See you again!
     }
 
     const adminId = qr.adminId;
+    const outletId = qr.outletId ?? null;
 
     return await changeTableCore({
       orderId,
       newTableNumber,
       adminId,
+      outletId,
       changedBy: 'customer',
     });
   },
-  getTableStatusOverview: async (adminId) => {
-    const overview = await buildTableStatusOverview(adminId);
-    await emitTableStatusOverview(adminId, overview);
+  getTableStatusOverview: async (adminId, outletId = null) => {
+    const overview = await buildTableStatusOverview(adminId, outletId);
+    await emitTableStatusOverview(adminId, outletId, overview);
     return overview;
   },
 };

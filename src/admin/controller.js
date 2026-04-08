@@ -18,6 +18,39 @@ export default {
       result,
     );
   },
+  getOutlets: async (req, res) => {
+    const filter = pick(req.query, ['search', 'isActive']);
+    const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
+
+    if (filter.isActive !== undefined) {
+      filter.isActive = filter.isActive === 'true';
+    }
+    const adminId = req.user._id;
+
+    const result = await service.getOutlets(adminId, filter, options);
+
+    sendSuccessResponse(res, 200, 'Outlets fetched successfully', result);
+  },
+
+  getOutletById: async (req, res) => {
+  const result = await service.getOutletById(req.params.id);
+
+  sendSuccessResponse(
+    res,
+    200,
+    "Outlet fetched successfully",
+    result
+  );
+},
+
+  updateOutlet: async (req, res) => {
+  const result = await service.updateOutlet(
+    req.params.id,
+    req.body
+  );
+
+  sendSuccessResponse(res, 200, "Outlet updated successfully", result);
+},
   updateAdmin: async (req, res) => {
     const result = await service.updateAdmin(
       req.params.id,

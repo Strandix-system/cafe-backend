@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import razorpay from '../../config/razorpay.js';
 import { Transaction } from '../../model/transaction.js';
 import User from '../../model/user.js';
+import { resolveAdminOwnerId } from '../../utils/adminAccess.js';
 import { ApiError } from '../../utils/apiError.js';
 
 const PLAN_ID = process.env.RAZORPAY_PLAN_ID;
@@ -152,7 +153,8 @@ export const signUpService = {
     );
 
     // Fetch user
-    const user = await User.findById(currentUser._id);
+    const ownerAdminId = resolveAdminOwnerId(currentUser);
+    const user = await User.findById(ownerAdminId);
     if (!user) {
       throw new ApiError(404, 'User not found');
     }
@@ -384,7 +386,7 @@ export const signUpService = {
     if (
       currentUser &&
       currentUser.role !== 'superadmin' &&
-      String(user._id) !== String(currentUser._id)
+      String(user._id) !== String(resolveAdminOwnerId(currentUser))
     ) {
       throw new ApiError(403, 'Unauthorized renewal verification');
     }

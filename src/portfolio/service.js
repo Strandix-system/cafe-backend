@@ -39,7 +39,7 @@ export const portfolioService = {
   },
   createCustomerFeedback: async (body = {}) => {
     const customer = await Customer.findById(body.customerId).select(
-      '_id adminId',
+      '_id adminId outletId',
     );
 
     if (!customer) {
@@ -60,6 +60,7 @@ export const portfolioService = {
     return await CustomerFeedback.create({
       ...body,
       adminId,
+      outletId: customer.outletId ?? null,
     });
   },
   getTopCustomerFeedbacks: async (filter = {}) => {
@@ -87,10 +88,11 @@ export const portfolioService = {
 
     return [...featuredFeedbacks, ...fallbackFeedbacks];
   },
-  updateFeedback: async (adminId, feedbackId, body) => {
+  updateFeedback: async (adminId, outletId, feedbackId, body) => {
     const feedback = await CustomerFeedback.findOne({
       _id: feedbackId,
       adminId,
+      ...(outletId ? { outletId } : {}),
     });
 
     if (!feedback) throw new ApiError(404, 'Customer feedback not found');
@@ -98,6 +100,7 @@ export const portfolioService = {
     if (body.isPortfolioFeatured === true) {
       const selectedCount = await CustomerFeedback.countDocuments({
         adminId,
+        ...(outletId ? { outletId } : {}),
         isPortfolioFeatured: true,
       });
 
@@ -117,6 +120,8 @@ export const portfolioService = {
   getCustomerFeedbacks: async (filter = {}, options = {}) => {
     if (filter.search) {
       const matchedCustomers = await Customer.find({
+        adminId: filter.adminId,
+        ...(filter.outletId ? { outletId: filter.outletId } : {}),
         $or: [
           { name: { $regex: filter.search, $options: 'i' } },
           { phoneNumber: { $regex: filter.search, $options: 'i' } },
@@ -134,10 +139,11 @@ export const portfolioService = {
 
     return await CustomerFeedback.paginate(filter, options);
   },
-  deleteCustomerFeedback: async (feedbackId, adminId) => {
+  deleteCustomerFeedback: async (feedbackId, adminId, outletId) => {
     const feedback = await CustomerFeedback.findOneAndDelete({
       _id: feedbackId,
       adminId,
+      ...(outletId ? { outletId } : {}),
     });
 
     if (!feedback) {

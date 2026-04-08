@@ -18,14 +18,14 @@ const router = express.Router();
 router.post(
   '/create-subscription',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   validate(createSubscriptionValidation),
   signUpController.createSubscription,
 );
 router.post(
   '/verify-subscription',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   validate(verifySubscriptionValidation),
   signUpController.verifySubscription,
 );
@@ -38,21 +38,21 @@ router.get('/plans', signUpController.getAllPlans);
 router.get(
   '/transactions',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'manager', 'superadmin'),
   validate(getTransactionsValidation),
   signUpController.getTransactions,
 );
 router.post(
   '/renew-subscription',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   validate(renewSubscriptionValidation),
   signUpController.renewSubscription,
 );
 router.post(
   '/verify-renew-subscription',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   validate(verifyRenewSubscriptionValidation),
   signUpController.verifyRenewSubscription,
 );

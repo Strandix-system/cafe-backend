@@ -9,20 +9,20 @@ const router = express.Router();
 router.post(
   '/create',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   qrController.createQr,
 );
 router.get('/scan/:qrId', qrController.scanQr);
 router.get(
   '/get-all',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   qrController.getAllQr,
 );
 router.get(
   '/count/:layoutId',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   qrController.getQrCountforLayout,
 );
 

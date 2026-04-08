@@ -1,14 +1,15 @@
 import { Transaction } from '../model/transaction.js';
 import User from '../model/user.js';
+import { resolveAdminOwnerId } from '../utils/adminAccess.js';
 import { ApiError } from '../utils/apiError.js';
 
 const checkSubscription = async (req, res, next) => {
   try {
-    if (req.user.role !== 'admin') {
+    if (!['admin', 'manager'].includes(req.user.role)) {
       return next();
     }
 
-    const userId = req.user._id;
+    const userId = resolveAdminOwnerId(req.user);
     const today = new Date();
     const ONE_DAY_IN_MS = 1000 * 60 * 60 * 24;
 
@@ -94,12 +95,12 @@ const checkSubscription = async (req, res, next) => {
 
 const blockExpiredSubscription = async (req, res, next) => {
   try {
-    if (req.user.role !== 'admin') {
+    if (!['admin', 'manager'].includes(req.user.role)) {
       return next();
     }
 
     const latestTransaction = await Transaction.findOne({
-      user: req.user._id,
+      user: resolveAdminOwnerId(req.user),
       subscriptionEndDate: { $ne: null },
     }).sort({ subscriptionEndDate: -1 });
 
@@ -126,7 +127,7 @@ const blockExpiredSubscription = async (req, res, next) => {
     }
 
     // If no subscription exists, enforce 14-day trial expiry
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(resolveAdminOwnerId(req.user));
 
     const createdAt = new Date(user.createdAt);
     const trialEnd = new Date(createdAt);

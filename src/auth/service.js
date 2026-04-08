@@ -66,6 +66,8 @@ const authService = {
     return {
       token,
       role: user.role,
+      adminId: user.adminId ?? user._id,
+      outletId: user.outletId ?? null,
     };
   },
 

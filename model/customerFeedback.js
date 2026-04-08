@@ -14,6 +14,12 @@ const customerFeedbackSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    outletId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Outlet',
+      default: null,
+      index: true,
+    },
     rate: {
       type: Number,
       default: null,
@@ -32,7 +38,7 @@ const customerFeedbackSchema = new mongoose.Schema(
   { timestamps: true },
 );
 customerFeedbackSchema.plugin(paginate);
-customerFeedbackSchema.index({ adminId: 1, isPortfolioFeatured: 1 });
+customerFeedbackSchema.index({ adminId: 1, outletId: 1, isPortfolioFeatured: 1 });
 
 export const CustomerFeedback = mongoose.model(
   'CustomerFeedback',

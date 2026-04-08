@@ -92,6 +92,7 @@ const createAdminValidator = {
 
 const createOutletManagerValidator = {
   body: Joi.object({
+    outletName: Joi.string().trim().min(2).max(100).required(),
     firstName: nameRule.required(),
     lastName: nameRule.required(),
     phoneNumber: phoneRule.required(),

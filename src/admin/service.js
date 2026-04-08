@@ -1,8 +1,40 @@
 import bcrypt from 'bcryptjs';
 
+import Outlet from '../../model/outlet.js';
 import User from '../../model/user.js';
 import { ApiError } from '../../utils/apiError.js';
 import { deleteSingleFile } from '../../utils/s3utils.js';
+
+const buildSearchRegex = (value) => ({
+  $regex: value,
+  $options: 'i',
+});
+
+const ensureMainOutletForAdmin = async (admin) => {
+  if (!admin?._id) {
+    throw new ApiError(404, 'Admin not found');
+  }
+
+  const existingMainOutlet = await Outlet.findOne({
+    adminId: admin._id,
+    isMain: true,
+  });
+
+  if (existingMainOutlet) {
+    return existingMainOutlet;
+  }
+
+  return await Outlet.create({
+    adminId: admin._id,
+    name: admin.cafeName ?? 'Main Outlet',
+    email: admin.email ?? null,
+    phoneNumber: admin.phoneNumber ?? null,
+    address: admin.address ?? null,
+    hours: admin.hours ?? null,
+    isMain: true,
+    isActive: admin.isActive ?? true,
+  });
+};
 
 const adminService = {
   createAdmin: async (body, files) => {
@@ -24,6 +56,8 @@ const adminService = {
       logo: files.logo[0].location,
       profileImage: files?.profileImage?.[0]?.location || null,
     });
+
+    await ensureMainOutletForAdmin(admin);
     return admin;
   },
   createOutletManager: async (currentUser, body) => {
@@ -32,10 +66,20 @@ const adminService = {
     }
 
     const creator = await User.findById(currentUser._id).select(
-      'role cafeName gst socialLinks profileImage logo',
+      'role cafeName gst socialLinks profileImage logo email phoneNumber address hours isActive',
     );
     if (!creator) {
       throw new ApiError(404, 'Creator admin not found');
+    }
+
+    await ensureMainOutletForAdmin(creator);
+
+    const outletNameExists = await Outlet.findOne({
+      adminId: creator._id,
+      name: { $regex: new RegExp(`^${body.outletName}$`, 'i') },
+    });
+    if (outletNameExists) {
+      throw new ApiError(409, 'Outlet name already exists');
     }
 
     const exists = await User.findOne({ email: body.email });
@@ -54,11 +98,12 @@ const adminService = {
       phoneNumber: body.phoneNumber,
       email: body.email,
       password: body.password,
-      cafeName: creator.cafeName ?? null,
+      cafeName: body.outletName,
       address: body.address,
       hours: body.hours,
       role: 'manager',
       adminId: creator._id,
+      outletId: null,
       gst: creator.gst?.toObject?.() ?? creator.gst ?? null,
       socialLinks:
         creator.socialLinks?.toObject?.() ?? creator.socialLinks ?? null,
@@ -66,13 +111,180 @@ const adminService = {
       logo: creator.logo ?? null,
     });
 
-    return manager;
+    const outlet = await Outlet.create({
+      adminId: creator._id,
+      managerId: manager._id,
+      name: body.outletName,
+      email: body.email,
+      phoneNumber: body.phoneNumber,
+      address: body.address,
+      hours: body.hours,
+      isMain: false,
+      isActive: true,
+    });
+
+    manager.outletId = outlet._id;
+    await manager.save();
+
+    return {
+      outlet,
+      manager,
+    };
+  },
+
+  getOutlets: async (adminId, filter, options) => {
+    const admin = await User.findById(adminId).select(
+      'cafeName email phoneNumber address hours isActive',
+    );
+
+    if (admin) {
+      await ensureMainOutletForAdmin(admin);
+    }
+
+    const query = {
+      adminId,
+    };
+
+    if (filter.isActive !== undefined) {
+      query.isActive = filter.isActive;
+    }
+
+    if (filter.search) {
+      query.$or = [
+        { name: buildSearchRegex(filter.search) },
+        { email: buildSearchRegex(filter.search) },
+        { 'address.city': buildSearchRegex(filter.search) },
+        { 'address.state': buildSearchRegex(filter.search) },
+      ];
+    }
+
+    return await Outlet.paginate(query, {
+      ...options,
+      populate: 'managerId',
+    });
+  },
+  getOutletById: async (id) => {
+    const outlet = await Outlet.findById(id).populate(
+      'managerId',
+      'firstName lastName email phoneNumber isActive profileImage outletId',
+    );
+
+    if (!outlet) {
+      throw new ApiError(404, 'Outlet not found');
+    }
+
+    return outlet;
+  },
+
+  updateOutlet: async (id, body) => {
+    const outlet = await Outlet.findById(id).populate(
+      'managerId',
+      'firstName lastName email phoneNumber isActive address hours',
+    );
+
+    if (!outlet) {
+      throw new ApiError(404, 'Outlet not found');
+    }
+
+    const manager = outlet.managerId
+      ? await User.findById(outlet.managerId._id)
+      : null;
+
+    if (body.outletName && body.outletName !== outlet.name) {
+      const outletNameExists = await Outlet.findOne({
+        adminId: outlet.adminId,
+        name: { $regex: new RegExp(`^${body.outletName}$`, 'i') },
+        _id: { $ne: outlet._id },
+      });
+
+      if (outletNameExists) {
+        throw new ApiError(409, 'Outlet name already exists');
+      }
+    }
+
+    if (body.email && body.email !== outlet.email) {
+      const outletEmailExists = await Outlet.findOne({
+        email: body.email,
+        _id: { $ne: id },
+      });
+      if (outletEmailExists) {
+        throw new ApiError(409, 'Outlet email already exists');
+      }
+    }
+
+    if (body.phoneNumber && body.phoneNumber !== outlet.phoneNumber) {
+      const outletPhoneExists = await Outlet.findOne({
+        phoneNumber: body.phoneNumber,
+        _id: { $ne: id },
+      });
+      if (outletPhoneExists) {
+        throw new ApiError(409, 'Outlet phone number already exists');
+      }
+    }
+
+    if (body.address) {
+      outlet.address = {
+        ...(outlet.address || {}),
+        ...body.address,
+      };
+    }
+
+    if (body.hours) {
+      outlet.hours = {
+        ...(outlet.hours || {}),
+        ...body.hours,
+      };
+    }
+
+    if (body.outletName) {
+      outlet.name = body.outletName;
+    }
+
+    for (const field of ['email', 'phoneNumber', 'isActive']) {
+      if (body[field] !== undefined) {
+        outlet[field] = body[field];
+      }
+    }
+
+    await outlet.save();
+
+    if (manager) {
+      if (body.firstName !== undefined) manager.firstName = body.firstName;
+      if (body.lastName !== undefined) manager.lastName = body.lastName;
+      if (body.email !== undefined) manager.email = body.email;
+      if (body.phoneNumber !== undefined) manager.phoneNumber = body.phoneNumber;
+      if (body.isActive !== undefined) manager.isActive = body.isActive;
+      if (body.address) {
+        manager.address = {
+          ...(manager.address || {}),
+          ...body.address,
+        };
+      }
+      if (body.hours) {
+        manager.hours = {
+          ...(manager.hours || {}),
+          ...body.hours,
+        };
+      }
+      if (body.password) {
+        manager.password = await bcrypt.hash(body.password, 10);
+      }
+      if (body.outletName) {
+        manager.cafeName = body.outletName;
+      }
+
+      await manager.save();
+    }
+
+    return await Outlet.findById(id).populate(
+      'managerId',
+      'firstName lastName email phoneNumber isActive profileImage outletId',
+    );
   },
   updateAdmin: async (id, body, files) => {
     const admin = await User.findById(id);
     if (!admin) throw new ApiError(404, 'Admin not found');
 
-    // ✅ Unique field check
     const uniqueFields = ['email', 'phoneNumber'];
     for (const field of uniqueFields) {
       if (body[field] && body[field] !== admin[field]) {
@@ -81,7 +293,6 @@ const adminService = {
       }
     }
 
-    // ✅ Merge nested object fields (LIKE hours, socialLinks)
     const nestedFields = ['hours', 'socialLinks', 'address', 'gst'];
 
     nestedFields.forEach((field) => {
@@ -124,7 +335,6 @@ const adminService = {
       }
     });
 
-    // ✅ File handling
     if (files) {
       const fileFields = ['logo', 'profileImage'];
       for (const key of fileFields) {
@@ -136,24 +346,39 @@ const adminService = {
             try {
               await deleteSingleFile(oldFileUrl);
             } catch (err) {
-              console.error(`❌ Failed to delete old ${key}:`, err.message);
+              console.error(`Failed to delete old ${key}:`, err.message);
             }
           }
-          admin[key] = newFile.location; // directly assign to admin
+          admin[key] = newFile.location;
         }
       }
     }
 
-    // ✅ Password hashing
     if (body.password) {
       admin.password = await bcrypt.hash(body.password, 10);
       delete body.password;
     }
 
-    // ✅ Assign remaining simple fields
     Object.assign(admin, body);
 
     await admin.save();
+    await ensureMainOutletForAdmin(admin);
+
+    if (admin.cafeName || admin.email || admin.phoneNumber || body.address || body.hours) {
+      await Outlet.findOneAndUpdate(
+        { adminId: admin._id, isMain: true },
+        {
+          $set: {
+            name: admin.cafeName ?? 'Main Outlet',
+            email: admin.email ?? null,
+            phoneNumber: admin.phoneNumber ?? null,
+            address: admin.address ?? null,
+            hours: admin.hours ?? null,
+            isActive: admin.isActive,
+          },
+        },
+      );
+    }
 
     return admin;
   },
@@ -208,6 +433,12 @@ const adminService = {
     if (!admin) {
       throw new ApiError(404, 'Admin not found');
     }
+
+    await Outlet.findOneAndUpdate(
+      { adminId: admin._id, isMain: true },
+      { $set: { isActive } },
+    );
+
     return admin;
   },
   updateSuperAdmin: async (id, body, files) => {
@@ -217,10 +448,8 @@ const adminService = {
       throw new ApiError(404, 'Admin not found');
     }
 
-    // 🔐 Only allow specific fields
     const allowedFields = ['firstName', 'lastName', 'email', 'phoneNumber'];
 
-    // ✅ Unique check (with self exclusion)
     for (const field of ['email', 'phoneNumber']) {
       if (body[field] && body[field] !== superadmin[field]) {
         const exists = await User.findOne({
@@ -234,14 +463,12 @@ const adminService = {
       }
     }
 
-    // ✅ Assign only allowed fields
     allowedFields.forEach((field) => {
       if (body[field] !== undefined) {
         superadmin[field] = body[field];
       }
     });
 
-    // ✅ Profile Image handling
     if (files?.profileImage?.[0]) {
       const newFile = files.profileImage[0];
       const oldFileUrl = superadmin.profileImage;
@@ -251,7 +478,7 @@ const adminService = {
           try {
             await deleteSingleFile(oldFileUrl);
           } catch (err) {
-            console.error('❌ Failed to delete old profileImage:', err.message);
+            console.error('Failed to delete old profileImage:', err.message);
           }
         }
 
@@ -265,4 +492,5 @@ const adminService = {
   },
 };
 
+export { ensureMainOutletForAdmin };
 export default adminService;

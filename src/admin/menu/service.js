@@ -5,11 +5,13 @@ import { CATEGORY_TYPES } from '../../../utils/constants.js';
 import { deleteSingleFile } from '../../../utils/s3utils.js';
 
 export const menuService = {
-  createMenu: async (adminId, body, file) => {
+  createMenu: async (adminId, outletId, body, file) => {
     if (!file) {
       throw new ApiError(400, 'Image is required');
     }
     const categoryExists = await Category.findOne({
+      adminId,
+      ...(outletId ? { outletId } : {}),
       type: CATEGORY_TYPES.MENU,
       name: { $regex: new RegExp(`^${body.category}$`, 'i') },
     });
@@ -19,6 +21,7 @@ export const menuService = {
     const menu = await Menu.create({
       ...body,
       adminId,
+      outletId,
       category: categoryExists.name,
       image: file.location,
       price: Number(body.price),
@@ -29,8 +32,12 @@ export const menuService = {
     });
     return menu;
   },
-  updateMenu: async (menuId, body, file) => {
-    const menu = await Menu.findById(menuId);
+  updateMenu: async (menuId, adminId, outletId, body, file) => {
+    const menu = await Menu.findOne({
+      _id: menuId,
+      adminId,
+      ...(outletId ? { outletId } : {}),
+    });
     if (!menu) {
       throw new ApiError(404, 'Menu not found');
     }
@@ -49,7 +56,11 @@ export const menuService = {
     await menu.save();
     return menu;
   },
-  getAllMenus: async (filter, options) => {
+  getAllMenus: async (adminId, outletId, filter, options) => {
+    filter.adminId = adminId;
+    if (outletId) {
+      filter.outletId = outletId;
+    }
     if (filter.isActive !== undefined) {
       filter.isActive = filter.isActive === 'true';
     }
@@ -61,6 +72,7 @@ export const menuService = {
   getPublicMenus: async (adminId, query) => {
     const filter = {
       adminId,
+      ...(query.outletId ? { outletId: query.outletId } : {}),
       isActive: true,
     };
     if (query.inStock !== undefined) {
@@ -80,8 +92,11 @@ export const menuService = {
       .sort({ createdAt: -1 });
     return menus;
   },
-  getMenusByAdmin: async (adminId, filter, options) => {
+  getMenusByAdmin: async (adminId, outletId, filter, options) => {
     filter.adminId = adminId;
+    if (outletId) {
+      filter.outletId = outletId;
+    }
     if (filter.isActive !== undefined) {
       filter.isActive = filter.isActive === 'true';
     }
@@ -97,8 +112,12 @@ export const menuService = {
     delete filter.search;
     return await Menu.paginate(filter, options);
   },
-  getMenuById: async (menuId) => {
-    const menu = await Menu.findById(menuId);
+  getMenuById: async (menuId, adminId, outletId) => {
+    const menu = await Menu.findOne({
+      _id: menuId,
+      adminId,
+      ...(outletId ? { outletId } : {}),
+    });
     return menu;
   },
 };

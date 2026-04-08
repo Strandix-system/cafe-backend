@@ -20,6 +20,14 @@ export const dashboardService = {
       return user._id;
     }
 
+    if (user.role === 'manager') {
+      if (!user.adminId) {
+        throw new ApiError(403, 'Manager is not linked to an admin account');
+      }
+
+      return user.adminId;
+    }
+
     if (user.role !== 'superadmin') {
       throw new ApiError(403, 'Access Denied');
     }

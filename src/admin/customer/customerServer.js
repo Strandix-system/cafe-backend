@@ -50,24 +50,27 @@ const customerService = {
 
     return newCustomer.toObject();
   },
-  getCustomers: async (filter, options, user) => {
-    let adminId = user.role === 'admin' ? user._id : filter.adminId;
-
-    if (user.role === 'superadmin' && !filter.adminId) {
-      throw new ApiError(400, 'adminId is required to view customers');
-    }
+  getCustomers: async (filter, options, user, context) => {
+    let adminId = context.adminId;
+    let outletId = context.outletId;
 
     if (!mongoose.Types.ObjectId.isValid(adminId)) {
       throw new ApiError(400, 'Invalid adminId');
     }
 
     adminId = new mongoose.Types.ObjectId(adminId);
+    if (outletId) {
+      outletId = new mongoose.Types.ObjectId(outletId);
+    }
 
     const page = Number(options.page) || 0;
     const limit = Number(options.limit) || 10;
     const skip = page * limit;
 
-    const matchStage = { adminId };
+    const matchStage = {
+      adminId,
+      ...(outletId ? { outletId } : {}),
+    };
 
     if (filter.search) {
       matchStage.$or = [
@@ -88,7 +91,7 @@ const customerService = {
       {
         $lookup: {
           from: 'orderitems',
-          let: { customerId: '$_id', adminId },
+          let: { customerId: '$_id', adminId, outletId },
           pipeline: [
             {
               $match: {
@@ -109,6 +112,7 @@ const customerService = {
                 $expr: {
                   $and: [
                     { $eq: ['$order.adminId', '$$adminId'] },
+                    ...(outletId ? [{ $eq: ['$order.outletId', '$$outletId'] }] : []),
                     { $eq: ['$order.isCompleted', true] },
                   ],
                 },
@@ -152,7 +156,7 @@ const customerService = {
       {
         $lookup: {
           from: 'orderitems',
-          let: { customerId: '$_id', adminId },
+          let: { customerId: '$_id', adminId, outletId },
           pipeline: [
             {
               $match: {
@@ -173,6 +177,7 @@ const customerService = {
                 $expr: {
                   $and: [
                     { $eq: ['$order.adminId', '$$adminId'] },
+                    ...(outletId ? [{ $eq: ['$order.outletId', '$$outletId'] }] : []),
                     { $eq: ['$order.isCompleted', true] },
                   ],
                 },

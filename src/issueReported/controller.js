@@ -1,4 +1,5 @@
 import { ApiError } from '../../utils/apiError.js';
+import { resolveAdminOwnerId } from '../../utils/adminAccess.js';
 import { pick } from '../../utils/pick.js';
 import { sendSuccessResponse } from '../../utils/response.js';
 
@@ -11,7 +12,7 @@ export const issueController = {
     }
     const data = await issueService.raiseTicket(
       req.body,
-      req.user._id,
+      resolveAdminOwnerId(req.user),
       req.files,
     );
     sendSuccessResponse(res, 201, 'Ticket raised successfully', data);
@@ -19,8 +20,8 @@ export const issueController = {
   getTickets: async (req, res) => {
     const filter = pick(req.query, ['search', 'status', 'ticketId', 'adminId']);
     const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
-    if (req.user.role === 'admin') {
-      filter.adminId = req.user._id;
+    if (req.user.role === 'admin' || req.user.role === 'manager') {
+      filter.adminId = resolveAdminOwnerId(req.user);
     }
     const data = await issueService.getTickets(filter, options);
     sendSuccessResponse(res, 200, 'Tickets fetched', data);

@@ -35,7 +35,7 @@ router.post(
 router.post(
   '/offline/create',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   validate(createOfflineOrderSchema),
   orderController.createOfflineOrder,
 );
@@ -50,7 +50,7 @@ router.get(
   '/get-all',
   validate(getOrdersSchema),
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   orderController.getOrders,
 );
 
@@ -58,14 +58,14 @@ router.patch(
   '/status',
   validate(updateIsCompletedSchema),
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   orderController.updateIsCompletedStatus,
 );
 
 router.get(
   '/items/:orderId',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   validate(getItemsSchema),
   orderItemController.getItems,
 );
@@ -73,7 +73,7 @@ router.get(
 router.patch(
   '/item-status',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   validate(updateItemStatusSchema),
   orderItemController.updateItemStatus,
 );
@@ -81,7 +81,7 @@ router.patch(
 router.patch(
   '/item-quantity',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   validate(updateQuantitySchema),
   orderItemController.updateQuantity,
 );
@@ -95,7 +95,7 @@ router.patch(
 router.delete(
   '/item/:orderItemId',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   validate(deleteItemSchema),
   orderItemController.deleteItem,
 );
@@ -115,7 +115,7 @@ router.get(
 router.patch(
   '/payment-status',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   validate(updatePaymentStatusSchema),
   orderController.updatePaymentStatus,
 );
@@ -123,7 +123,7 @@ router.patch(
 router.patch(
   '/change-table',
   tokenVerification,
-  allowRoles('admin', 'customer'),
+  allowRoles('admin', 'manager', 'customer'),
   validate(changeTableSchema),
   orderController.changeTable,
 );
@@ -137,7 +137,7 @@ router.patch(
 router.get(
   '/bill/:id',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'manager', 'superadmin'),
   validate(getBillSchema),
   orderController.getBillDetails,
 );
@@ -145,7 +145,7 @@ router.get(
 router.delete(
   '/:orderId',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   validate(deleteOrderSchema),
   orderController.deleteOrder,
 );
@@ -153,14 +153,14 @@ router.delete(
 router.get(
   '/admin/:orderId',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   orderController.getOrderById,
 );
 
 router.get(
   '/table-status',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   orderController.getTableStatusOverview,
 );
 

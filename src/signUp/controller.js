@@ -1,11 +1,15 @@
 import { pick } from '../../utils/pick.js';
 import { sendSuccessResponse } from '../../utils/response.js';
+import { resolveAdminOwnerId } from '../../utils/adminAccess.js';
 
 import { signUpService } from './service.js';
 export const signUpController = {
   createSubscription: async (req, res) => {
     const { planId } = req.body || {};
-    const result = await signUpService.createSubscription(req.user._id, planId);
+    const result = await signUpService.createSubscription(
+      resolveAdminOwnerId(req.user),
+      planId,
+    );
     sendSuccessResponse(res, 200, 'Subscription created successfully.', result);
   },
 
@@ -34,9 +38,9 @@ export const signUpController = {
     const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
     let userId = null;
 
-    if (req.user.role === 'admin') {
-      filter.user = req.user._id;
-      userId = req.user._id;
+    if (req.user.role === 'admin' || req.user.role === 'manager') {
+      filter.user = resolveAdminOwnerId(req.user);
+      userId = filter.user;
     }
 
     if (req.user.role === 'superadmin') {
@@ -65,7 +69,9 @@ export const signUpController = {
     sendSuccessResponse(res, 200, 'Plans fetched successfully', plans);
   },
   renewSubscription: async (req, res) => {
-    const subscription = await signUpService.renewSubscription(req.user._id);
+    const subscription = await signUpService.renewSubscription(
+      resolveAdminOwnerId(req.user),
+    );
     sendSuccessResponse(
       res,
       200,

@@ -9,7 +9,7 @@ const router = express.Router();
 router.post(
   '/create',
   tokenVerification,
-  allowRoles('superadmin', 'admin'),
+  allowRoles('superadmin', 'admin', 'manager'),
   uploadLayoutImages,
   cafeLayoutController.createCafeLayout,
 );
@@ -25,39 +25,39 @@ router.get(
 router.patch(
   '/update-status',
   tokenVerification,
-  allowRoles('admin', ' superadmin'),
+  allowRoles('admin', 'manager', 'superadmin'),
   cafeLayoutController.updateLayoutStatus,
 );
 router.delete(
   '/delete/:id',
   tokenVerification,
-  allowRoles('superadmin', 'admin'),
+  allowRoles('superadmin', 'admin', 'manager'),
   cafeLayoutController.deleteCafeLayout,
 );
 router.patch(
   '/update/:id',
   tokenVerification,
-  allowRoles('admin', ' superadmin'),
+  allowRoles('admin', 'manager', 'superadmin'),
   uploadLayoutImages,
   cafeLayoutController.updateCafeLayout,
 );
 router.get(
   '/admin-layout',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   cafeLayoutController.getCafeLayoutByAdmin,
 );
 router.get('/active/:id', cafeLayoutController.getActiveLayout);
 router.get(
   '/all-layouts',
   tokenVerification,
-  allowRoles('superadmin', 'admin'),
+  allowRoles('superadmin', 'admin', 'manager'),
   cafeLayoutController.getAllLayout,
 );
 router.get(
   '/:id',
   tokenVerification,
-  allowRoles('superadmin', 'admin'),
+  allowRoles('superadmin', 'admin', 'manager'),
   cafeLayoutController.getLayoutById,
 );
 

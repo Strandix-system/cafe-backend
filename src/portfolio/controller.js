@@ -1,5 +1,9 @@
 import { pick } from '../../utils/pick.js';
 import { sendSuccessResponse } from '../../utils/response.js';
+import {
+  resolveAdminOwnerId,
+  resolveOutletAccessContext,
+} from '../../utils/adminAccess.js';
 
 import { portfolioService } from './service.js';
 
@@ -19,23 +23,44 @@ export const portfolioController = {
     sendSuccessResponse(res, 200, 'Top customer feedback fetched', data);
   },
   updateFeedback: async (req, res) => {
+    const context = await resolveOutletAccessContext(
+      req.user,
+      req.body.outletId ?? req.query.outletId,
+      { requireOutlet: req.user.role === 'manager' },
+    );
     const data = await portfolioService.updateFeedback(
-      req.user._id,
+      context.adminId,
+      context.outletId,
       req.params.feedbackId,
       req.body,
     );
     sendSuccessResponse(res, 200, 'Portfolio feedback selection updated', data);
   },
   getCustomerFeedbacks: async (req, res) => {
+    const context = await resolveOutletAccessContext(
+      req.user,
+      req.query.outletId,
+      { requireOutlet: req.user.role === 'manager' },
+    );
     const filter = pick(req.query, ['search']);
     const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
     options.populate = 'customerId';
-    filter.adminId = req.user._id;
+    filter.adminId = context.adminId;
+    filter.outletId = context.outletId;
     const data = await portfolioService.getCustomerFeedbacks(filter, options);
     sendSuccessResponse(res, 200, 'Customer feedback fetched', data);
   },
   deleteCustomerFeedback: async (req, res) => {
-    await portfolioService.deleteCustomerFeedback(req.params.id, req.user._id);
+    const context = await resolveOutletAccessContext(
+      req.user,
+      req.body?.outletId ?? req.query.outletId,
+      { requireOutlet: req.user.role === 'manager' },
+    );
+    await portfolioService.deleteCustomerFeedback(
+      req.params.id,
+      context.adminId,
+      context.outletId,
+    );
     sendSuccessResponse(res, 200, 'Customer feedback deleted', undefined);
   },
   calculatePortfolioBill: async (req, res) => {

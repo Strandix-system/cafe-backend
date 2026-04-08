@@ -54,10 +54,30 @@ router.post(
   controller.createOutletManager,
 );
 
+router.get(
+  '/get-outlets',
+  tokenVerification,
+  allowRoles('admin'),
+  controller.getOutlets,
+);
+router.get(
+  '/get-outlet/:id',
+  tokenVerification,
+  allowRoles('admin'),
+  controller.getOutletById,
+);
+router.patch(
+  '/update-outlet/:id',
+  tokenVerification,
+  allowRoles('admin'),
+  parseJSONFields(['address', 'hours']),
+  controller.updateOutlet,
+);
+
 router.patch(
   '/update/:id',
   tokenVerification,
-  allowRoles('superadmin', 'admin'),
+  allowRoles('superadmin', 'admin', 'manager'),
   uploadAdminImages.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'profileImage', maxCount: 1 },
@@ -107,7 +127,7 @@ router.patch(
 router.get(
   '/dashboard/stats',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'manager', 'superadmin'),
   validate(dashboardStatsValidator),
   dashboardController.getStats,
 );
@@ -115,7 +135,7 @@ router.get(
 router.get(
   '/dashboard/sales',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'manager', 'superadmin'),
   validate(dashboardSalesValidator),
   dashboardController.getSalesChart,
 );
@@ -123,7 +143,7 @@ router.get(
 router.get(
   '/dashboard/items-performance',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'manager', 'superadmin'),
   validate(dashboardItemPerformanceValidator),
   dashboardController.getItemPerformance,
 );
@@ -131,7 +151,7 @@ router.get(
 router.get(
   '/dashboard/peak-time',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'manager', 'superadmin'),
   validate(dashboardPeakTimeValidator),
   dashboardController.getPeakTime,
 );
@@ -139,14 +159,14 @@ router.get(
 router.get(
   '/dashboard/tables',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'manager', 'superadmin'),
   validate(dashboardTablePerformanceValidator),
   dashboardController.getTablePerformance,
 );
 router.get(
   '/dashboard/top-customers',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'manager', 'superadmin'),
   validate(dashboardTopCustomersValidator),
   dashboardController.getTopCustomers,
 );
@@ -183,21 +203,21 @@ router.get(
 router.get(
   '/get-feedback',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   portfolioController.getCustomerFeedbacks,
 );
 
 router.delete(
   '/delete-feedback/:id',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   portfolioController.deleteCustomerFeedback,
 );
 
 router.patch(
   '/feedback-selection/:feedbackId',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'manager'),
   validate(updateFeedbackValidator),
   portfolioController.updateFeedback,
 );

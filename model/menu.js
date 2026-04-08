@@ -9,6 +9,12 @@ const menuSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    outletId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Outlet',
+      default: null,
+      index: true,
+    },
     name: {
       type: String,
       required: true,

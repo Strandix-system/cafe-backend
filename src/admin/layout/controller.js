@@ -1,5 +1,6 @@
 import { pick } from '../../../utils/pick.js';
 import { sendSuccessResponse } from '../../../utils/response.js';
+import { resolveAdminOwnerId } from '../../../utils/adminAccess.js';
 
 import layoutService from './service.js';
 
@@ -9,7 +10,7 @@ const cafeLayoutController = {
       req.body.hours = JSON.parse(req.body.hours);
     }
     const result = await layoutService.createCafeLayout(
-      req.user._id,
+      resolveAdminOwnerId(req.user, { allowSuperadmin: true }),
       req.body,
       req.files,
       req.user.role,
@@ -60,8 +61,8 @@ const cafeLayoutController = {
     if (filter.defaultLayout) {
       filter.defaultLayout = filter.defaultLayout === 'true';
     }
-    if (req.user.role === 'admin') {
-      filter.adminId = req.user._id;
+    if (req.user.role === 'admin' || req.user.role === 'manager') {
+      filter.adminId = resolveAdminOwnerId(req.user);
     }
     const result = await layoutService.getCafeLayoutByAdmin(filter, options);
     sendSuccessResponse(res, 200, 'Cafe layouts fetched successfully', result);

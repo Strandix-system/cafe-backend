@@ -11,6 +11,12 @@ const orderSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    outletId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Outlet',
+      default: null,
+      index: true,
+    },
     orderBy: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,

@@ -8,6 +8,12 @@ const cafeLayoutSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    outletId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Outlet',
+      default: null,
+      index: true,
+    },
 
     homeImage: { type: String, required: true },
     aboutImage: { type: String, required: true },
@@ -40,8 +46,8 @@ const cafeLayoutSchema = new mongoose.Schema(
 );
 cafeLayoutSchema.virtual('menus', {
   ref: 'Menu', // The name of your Menu model
-  localField: 'adminId', // Field in CafeLayout
-  foreignField: 'adminId', // Field in Menu
+  localField: 'outletId', // Field in CafeLayout
+  foreignField: 'outletId', // Field in Menu
 });
 
 cafeLayoutSchema.plugin(paginate);

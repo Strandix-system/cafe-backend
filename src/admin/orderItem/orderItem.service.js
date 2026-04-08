@@ -10,6 +10,7 @@ import {
   RECIPIENT_TYPES,
 } from '../../../utils/constants.js';
 import { buildAggregatedItems } from '../../../utils/utils.js';
+import { resolveAdminOwnerId } from '../../../utils/adminAccess.js';
 import { notificationService } from '../../notification/notification.service.js';
 import { emitTableStatusOverview } from '../order/service.js';
 
@@ -72,8 +73,12 @@ const buildOrderWithItems = async (orderId) => {
 };
 
 export const orderItemService = {
-  getOrderItems: async (orderId, adminId) => {
-    const order = await Order.findOne({ _id: orderId, adminId });
+  getOrderItems: async (orderId, adminId, outletId = null) => {
+    const order = await Order.findOne({
+      _id: orderId,
+      adminId,
+      ...(outletId ? { outletId } : {}),
+    });
     if (!order) {
       throw new ApiError(404, 'Order not found');
     }
@@ -83,7 +88,7 @@ export const orderItemService = {
       .populate('customerId', 'name email phoneNumber');
   },
 
-  updateItemStatus: async (orderItemId, status, adminId) => {
+  updateItemStatus: async (orderItemId, status, adminId, outletId = null) => {
     const orderItem = await OrderItem.findById(orderItemId);
     if (!orderItem) {
       throw new ApiError(404, 'Order item not found');
@@ -92,6 +97,7 @@ export const orderItemService = {
     const order = await Order.findOne({
       _id: orderItem.orderId,
       adminId,
+      ...(outletId ? { outletId } : {}),
     });
     if (!order) {
       throw new ApiError(404, 'Order not found');
@@ -126,7 +132,7 @@ export const orderItemService = {
       console.error('Socket emission error:', socketError);
     }
 
-    await emitTableStatusOverview(adminId);
+    await emitTableStatusOverview(adminId, outletId);
 
     if (orderItem.customerId) {
       await notificationService.createNotification({
@@ -136,6 +142,7 @@ export const orderItemService = {
         recipientType: RECIPIENT_TYPES.CUSTOMER,
         customerId: orderItem.customerId,
         adminId,
+        outletId,
         entityType: ENTITY_TYPES.ORDER,
         entityId: orderItem.orderId,
       });
@@ -155,13 +162,24 @@ export const orderItemService = {
 
     const role = user?.role ?? 'customer';
 
-    const order = await Order.findById(orderItem.orderId).select('adminId');
+    const order = await Order.findById(orderItem.orderId).select(
+      'adminId outletId',
+    );
     if (!order) {
       throw new ApiError(404, 'Order not found');
     }
-    if (role === 'admin') {
-      if (order.adminId.toString() !== user?._id?.toString()) {
+    if (role === 'admin' || role === 'manager') {
+      if (
+        order.adminId.toString() !==
+        resolveAdminOwnerId(user).toString()
+      ) {
         throw new ApiError(403, 'Unauthorized to edit this order');
+      }
+      if (
+        user.role === 'manager' &&
+        order.outletId?.toString() !== user.outletId?.toString()
+      ) {
+        throw new ApiError(403, 'Unauthorized to edit another outlet order');
       }
       if (
         ![ORDER_STATUS.PENDING, ORDER_STATUS.PREPARING].includes(
@@ -232,7 +250,7 @@ export const orderItemService = {
       console.error('Socket emission error:', socketError);
     }
 
-    await emitTableStatusOverview(order.adminId);
+    await emitTableStatusOverview(order.adminId, order.outletId);
 
     return updatedItem;
   },
@@ -248,16 +266,25 @@ export const orderItemService = {
     }
 
     const order = await Order.findById(orderItem.orderId).select(
-      'adminId tableNumber isCompleted',
+      'adminId outletId tableNumber isCompleted',
     );
     if (!order) {
       throw new ApiError(404, 'Order not found');
     }
 
     const role = user?.role ?? 'customer';
-    if (role === 'admin') {
-      if (order.adminId.toString() !== user?._id?.toString()) {
+    if (role === 'admin' || role === 'manager') {
+      if (
+        order.adminId.toString() !==
+        resolveAdminOwnerId(user).toString()
+      ) {
         throw new ApiError(403, 'Unauthorized to delete this order item');
+      }
+      if (
+        user.role === 'manager' &&
+        order.outletId?.toString() !== user.outletId?.toString()
+      ) {
+        throw new ApiError(403, 'Unauthorized to delete another outlet order');
       }
       if (order.isCompleted) {
         throw new ApiError(400, 'Completed orders cannot be edited');
@@ -295,7 +322,11 @@ export const orderItemService = {
       await Order.deleteOne({ _id: orderItem.orderId });
       if (order.adminId && order.tableNumber !== undefined) {
         await Qr.findOneAndUpdate(
-          { adminId: order.adminId, tableNumber: order.tableNumber },
+          {
+            adminId: order.adminId,
+            ...(order.outletId ? { outletId: order.outletId } : {}),
+            tableNumber: order.tableNumber,
+          },
           { occupied: false },
         );
       }
@@ -335,7 +366,7 @@ export const orderItemService = {
       console.error('Socket emission error:', socketError);
     }
 
-    await emitTableStatusOverview(order.adminId);
+    await emitTableStatusOverview(order.adminId, order.outletId);
 
     return { orderItem, autoDeletedOrder };
   },

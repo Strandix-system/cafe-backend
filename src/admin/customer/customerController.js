@@ -1,5 +1,6 @@
 import { pick } from '../../../utils/pick.js';
 import { sendSuccessResponse } from '../../../utils/response.js';
+import { resolveOutletAccessContext } from '../../../utils/adminAccess.js';
 
 import customerService from './customerServer.js';
 
@@ -9,12 +10,21 @@ const customerController = {
     sendSuccessResponse(res, 201, 'Customer created', customer);
   },
   getCustomers: async (req, res) => {
-    const filter = pick(req.query, ['search', 'adminId', 'status']);
+    const context = await resolveOutletAccessContext(
+      req.user,
+      req.query.outletId,
+      {
+        allowSuperadmin: req.user.role === 'superadmin',
+        requestedAdminId: req.query.adminId,
+      },
+    );
+    const filter = pick(req.query, ['search', 'status']);
     const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
     const customers = await customerService.getCustomers(
       filter,
       options,
       req.user,
+      context,
     );
     sendSuccessResponse(res, 200, 'Customers fetched', customers);
   },

@@ -17,6 +17,12 @@ const customerSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    outletId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Outlet',
+      default: null,
+      index: true,
+    },
     customerStatus: {
       type: String,
       enum: ['new', 'frequent', 'vip'],
@@ -28,6 +34,6 @@ const customerSchema = new mongoose.Schema(
   { timestamps: true },
 );
 customerSchema.plugin(paginate);
-customerSchema.index({ adminId: 1, phoneNumber: 1 }, { unique: true });
+customerSchema.index({ adminId: 1, outletId: 1, phoneNumber: 1 }, { unique: true });
 
 export default mongoose.model('Customer', customerSchema);

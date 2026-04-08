@@ -23,12 +23,18 @@ const categorySchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    outletId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Outlet',
+      default: null,
+      index: true,
+    },
   },
   { timestamps: true },
 );
 
 categorySchema.index(
-  { adminId: 1, name: 1, type: 1 },
+  { adminId: 1, outletId: 1, name: 1, type: 1 },
   {
     unique: true,
   },

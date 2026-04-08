@@ -83,6 +83,12 @@ const userSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    outletId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Outlet',
+      default: null,
+      index: true,
+    },
     hours: {
       weekdays: { type: String, default: null },
       weekends: { type: String, default: null },
@@ -134,6 +140,6 @@ userSchema.index(
     },
   },
 );
-userSchema.index({ role: 1, adminId: 1 });
+userSchema.index({ role: 1, adminId: 1, outletId: 1 });
 
 export default mongoose.model('User', userSchema);

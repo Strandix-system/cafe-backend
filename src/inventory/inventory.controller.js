@@ -11,7 +11,7 @@ const createInventoryController = async (req, res) => {
   const inventory = await createInventory({
     ...req.body,
     adminId: req.user.adminId || req.user._id,
-    image: req.file ? req.file.location : undefined,
+    image: req.file ? req.file.location : null,
   });
 
   sendSuccessResponse(
@@ -57,7 +57,7 @@ const updateInventoryController = async (req, res) => {
     adminId: req.user.adminId || req.user._id,
     body: {
       ...req.body,
-      image: req.file ? [req.file.location] : undefined,
+      image: req.file ? req.file.location : undefined,
     },
   });
 

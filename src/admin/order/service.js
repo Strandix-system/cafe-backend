@@ -14,6 +14,7 @@ import {
 } from '../../../utils/constants.js';
 import { ORDER_TYPES } from '../../../utils/constants.js';
 import { resolveAdminGst, calculateTotalsByGst } from '../../../utils/gst.js';
+import { deductInventoryForOrder } from '../../../utils/inventory.helper.js';
 import { buildAggregatedItems } from '../../../utils/utils.js';
 import { generateOrderNumber } from '../../../utils/utils.js';
 import { sendWhatsAppMessage } from '../../../utils/whatsapp.js';
@@ -313,6 +314,8 @@ export const orderService = {
       throw new ApiError(400, 'customerId is required for each item');
     }
 
+    await deductInventoryForOrder(finalItems);
+
     const { gstAmount, finalTotal, taxableAmount } = calculateTotalsByGst({
       subTotal,
       gstPercent,
@@ -514,6 +517,8 @@ export const orderService = {
         specialInstruction: item.specialInstruction ?? '',
       };
     });
+
+    await deductInventoryForOrder(finalItems);
 
     const { gstAmount, finalTotal } = calculateTotalsByGst({
       subTotal,

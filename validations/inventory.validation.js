@@ -11,11 +11,11 @@ const objectId = (value, helpers) => {
 const createInventoryValidation = {
   body: Joi.object({
     name: Joi.string().trim().required(),
-    image: Joi.array().items(Joi.string().trim()).optional(),
+    image: Joi.any(),
     category: Joi.string().custom(objectId).required(),
 
     unit: Joi.string()
-      .valid('kg', 'gram', 'liter', 'ml', 'pcs', 'packet')
+      .valid('ml', 'L', 'g', 'kg', 'pcs', 'packets', 'box', 'dozen')
       .required(),
 
     currentStock: Joi.number().min(0).optional(),
@@ -31,14 +31,15 @@ const updateInventoryValidation = {
 
   body: Joi.object({
     name: Joi.string().trim().optional(),
-    image: Joi.array().items(Joi.string().trim()).optional(),
+    image: Joi.any(),
 
     category: Joi.string().custom(objectId).optional(),
 
     unit: Joi.string()
-      .valid('kg', 'gram', 'liter', 'ml', 'pcs', 'packet')
+      .valid('ml', 'L', 'g', 'kg', 'pcs', 'packets', 'box', 'dozen')
       .optional(),
 
+    currentStock: Joi.number().min(0).optional(),
     minStockLevel: Joi.number().min(0).optional(),
 
     isActive: Joi.boolean().optional(),

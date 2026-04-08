@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 import { paginate } from '../model/plugin/paginate.plugin.js';
+import { STOCK_TYPES } from '../utils/constants.js';
 
 const menuSchema = new mongoose.Schema(
   {
@@ -45,6 +46,15 @@ const menuSchema = new mongoose.Schema(
     inStock: {
       type: Boolean,
       default: true,
+    },
+    stockStatus: {
+      type: String,
+      enum: [
+        STOCK_TYPES.IN_STOCK,
+        STOCK_TYPES.LOW_STOCK,
+        STOCK_TYPES.OUT_OF_STOCK,
+      ],
+      default: STOCK_TYPES.IN_STOCK,
     },
   },
   { timestamps: true },

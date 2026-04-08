@@ -20,7 +20,7 @@ export const inventoryRouter = express.Router();
 inventoryRouter.post(
   '/create',
   tokenVerification,
-  uploadInventoryImages.array('image', 5),
+  uploadInventoryImages.single('image'),
   validate(createInventoryValidation),
   createInventoryController,
 );

@@ -1,9 +1,18 @@
 import Joi from 'joi';
 
+const ingredientSchema = Joi.object({
+  inventoryItemId: Joi.string().hex().length(24).required(),
+  name: Joi.string().trim().min(2).max(100).required(),
+  quantity: Joi.number().positive().required(),
+  unit: Joi.string()
+    .valid('ml', 'L', 'g', 'kg', 'pcs', 'packets', 'box', 'dozen')
+    .required(),
+});
+
 const menuSchema = {
   body: Joi.object({
     name: Joi.string().trim().min(2).max(100).required(),
-    category: Joi.string().required(), // Assuming ObjectId string
+    category: Joi.string().required(),
     description: Joi.string().trim().min(10).max(500).required(),
     price: Joi.number().positive().required(),
     discountPrice: Joi.number()
@@ -18,12 +27,22 @@ const menuSchema = {
     isPopular: Joi.boolean(),
     isActive: Joi.boolean(),
     inStock: Joi.boolean(),
+
+    ingredients: Joi.array().items(ingredientSchema).optional(),
+    preparationInstructions: Joi.array()
+      .items(Joi.string().trim().max(300))
+      .optional(),
+    servingSize: Joi.number().positive().optional(),
+    preparationTime: Joi.number().positive().optional(),
+    note: Joi.string().trim().max(500).optional(),
   }),
 };
+
 const updateMenuSchema = {
   params: Joi.object({
-    menuId: Joi.string().hex().length(24).required(), // Validates MongoDB ObjectId
+    menuId: Joi.string().hex().length(24).required(),
   }),
+
   body: Joi.object({
     name: Joi.string().trim().min(2).max(100).optional(),
     category: Joi.string().optional(),
@@ -42,7 +61,15 @@ const updateMenuSchema = {
     isPopular: Joi.boolean(),
     isActive: Joi.boolean(),
     inStock: Joi.boolean(),
-  }).min(0),
+
+    ingredients: Joi.array().items(ingredientSchema).optional(),
+    preparationInstructions: Joi.array()
+      .items(Joi.string().trim().max(300))
+      .optional(),
+    note: Joi.string().trim().max(500).optional(),
+    servingSize: Joi.number().positive().optional(),
+    preparationTime: Joi.number().positive().optional(),
+  }).min(1),
 };
 
 export { menuSchema, updateMenuSchema };

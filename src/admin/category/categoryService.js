@@ -3,90 +3,111 @@ import Menu from '../../../model/menu.js';
 import { ApiError } from '../../../utils/apiError.js';
 import { CATEGORY_TYPES } from '../../../utils/constants.js';
 export const categoryService = {
-  createCategory: async (user, data) => {
-    if (!user) {
+  createCategory: async (context, data) => {
+    if (!context?.adminId) {
       throw new ApiError(401, 'Unauthorized');
     }
     const exists = await Category.findOne({
-      adminId: user._id,
+      adminId: context.adminId,
+      ...(context.outletId ? { outletId: context.outletId } : {}),
       type: data.type,
       name: { $regex: new RegExp(`^${data.name}$`, 'i') },
     });
     if (exists) {
       throw new ApiError(409, 'Category already exists');
     }
-    const payload = { ...data, adminId: user._id };
+    const payload = {
+      ...data,
+      adminId: context.adminId,
+      outletId: context.outletId,
+    };
     const result = await Category.create(payload);
     return result;
   },
-  getAllCategories: async (filter, options) => {
+  getAllCategories: async (context, filter, options) => {
     if (filter.search) {
       filter.name = { $regex: filter.search, $options: 'i' };
       delete filter.search;
     }
+    filter.adminId = context.adminId;
+    if (context.outletId) {
+      filter.outletId = context.outletId;
+    }
     const result = await Category.paginate(filter, options);
     return result;
   },
-  updateCategoryById: async (categoryId, data) => {
-    const category = await Category.findById(categoryId);
+  updateCategoryById: async (categoryId, context, data) => {
+    const category = await Category.findOne({
+      _id: categoryId,
+      adminId: context.adminId,
+      ...(context.outletId ? { outletId: context.outletId } : {}),
+    });
     if (!category) {
       throw new ApiError(404, 'Category not found');
     }
-    const updatedCategory = await Category.findByIdAndUpdate(
-      categoryId,
+    const updatedCategory = await Category.findOneAndUpdate(
+      {
+        _id: categoryId,
+        adminId: context.adminId,
+        ...(context.outletId ? { outletId: context.outletId } : {}),
+      },
       { $set: data },
       { new: true, runValidators: true },
     );
     return updatedCategory;
   },
-  deleteCategoryById: async (categoryId) => {
-    const category = await Category.findByIdAndDelete(categoryId);
+  deleteCategoryById: async (categoryId, context) => {
+    const category = await Category.findOneAndDelete({
+      _id: categoryId,
+      adminId: context.adminId,
+      ...(context.outletId ? { outletId: context.outletId } : {}),
+    });
     if (!category) {
       throw new ApiError(404, 'Category not found');
     }
     return category;
   },
-  getCategoryById: async (categoryId) => {
-    const category = await Category.findById(categoryId);
+  getCategoryById: async (categoryId, context) => {
+    const category = await Category.findOne({
+      _id: categoryId,
+      adminId: context.adminId,
+      ...(context.outletId ? { outletId: context.outletId } : {}),
+    });
     if (!category) {
       throw new ApiError(404, 'Category not found');
     }
     return category;
   },
-  getCategoriesForDropdown: async (filter = {}) => {
-    const query = {};
+  getCategoriesForDropdown: async (context, filter = {}) => {
+    const query = {
+      adminId: context.adminId,
+      ...(context.outletId ? { outletId: context.outletId } : {}),
+    };
     if (filter.type) {
       query.type = filter.type;
     }
 
     return await Category.find(query).select('_id name').sort({ name: 1 });
   },
-  getUsedCategoriesForDropdown: async (user, requestedAdminId) => {
-    const adminId = await categoryService.resolveAdminIdForUsedCategories(
-      user,
-      requestedAdminId,
-    );
-
-    const usedCategoryIds = await Menu.distinct('category', { adminId });
+  getUsedCategoriesForDropdown: async (context) => {
+    const usedCategoryIds = await Menu.distinct('category', {
+      adminId: context.adminId,
+      ...(context.outletId ? { outletId: context.outletId } : {}),
+    });
 
     const categories = await Category.find({
+      adminId: context.adminId,
+      ...(context.outletId ? { outletId: context.outletId } : {}),
       type: CATEGORY_TYPES.MENU,
       name: { $in: usedCategoryIds },
     })
       .select('_id name')
       .sort({ name: 1 });
 
-    return { adminId, categories };
-  },
-
-  resolveAdminIdForUsedCategories: async (user, requestedAdminId) => {
-    if (user.role === 'superadmin') {
-      if (!requestedAdminId) {
-        throw new ApiError(400, 'adminId is required for superadmin');
-      }
-      return requestedAdminId;
-    }
-
-    return user._id;
+    return {
+      adminId: context.adminId,
+      outletId: context.outletId,
+      categories,
+    };
   },
 };

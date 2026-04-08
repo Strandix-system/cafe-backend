@@ -11,8 +11,10 @@ import {
 import { notificationService } from '../../notification/notification.service.js';
 
 const customerService = {
-  createCustomer: async (body) => {
-    const { name, phoneNumber, adminId } = body;
+  createCustomer: async (body, context) => {
+    const { name, phoneNumber } = body;
+    const adminId = context?.adminId ?? body.adminId;
+    const outletId = context?.outletId ?? body.outletId ?? null;
 
     if (!mongoose.Types.ObjectId.isValid(adminId)) {
       throw new ApiError(400, 'Invalid adminId');
@@ -21,6 +23,7 @@ const customerService = {
     const customer = await Customer.findOne({
       phoneNumber,
       adminId,
+      ...(outletId ? { outletId } : {}),
     });
 
     if (customer) {
@@ -33,6 +36,7 @@ const customerService = {
       name,
       phoneNumber,
       adminId,
+      outletId,
     });
 
     if (adminId) {
@@ -43,6 +47,7 @@ const customerService = {
         recipientType: RECIPIENT_TYPES.ADMIN,
         userId: adminId,
         adminId,
+        outletId,
         entityType: ENTITY_TYPES.CUSTOMER,
         entityId: newCustomer._id,
       });

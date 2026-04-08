@@ -1,6 +1,6 @@
 import { pick } from '../../../utils/pick.js';
 import { sendSuccessResponse } from '../../../utils/response.js';
-import { resolveAdminOwnerId } from '../../../utils/adminAccess.js';
+import { resolveOutletAccessContext } from '../../../utils/adminAccess.js';
 
 import layoutService from './service.js';
 
@@ -9,8 +9,18 @@ const cafeLayoutController = {
     if (typeof req.body.hours === 'string') {
       req.body.hours = JSON.parse(req.body.hours);
     }
+    const context = await resolveOutletAccessContext(
+      req.user,
+      req.body.outletId ?? req.query.outletId,
+      {
+        requireOutlet: req.user.role === 'manager',
+        allowSuperadmin: req.user.role === 'superadmin',
+        requestedAdminId: req.body.adminId ?? req.query.adminId,
+      },
+    );
     const result = await layoutService.createCafeLayout(
-      resolveAdminOwnerId(req.user, { allowSuperadmin: true }),
+      context.adminId,
+      context.outletId,
       req.body,
       req.files,
       req.user.role,
@@ -21,15 +31,39 @@ const cafeLayoutController = {
     if (typeof req.body.hours === 'string') {
       req.body.hours = JSON.parse(req.body.hours);
     }
+    const context = await resolveOutletAccessContext(
+      req.user,
+      req.body.outletId ?? req.query.outletId,
+      {
+        requireOutlet: req.user.role === 'manager',
+        allowSuperadmin: req.user.role === 'superadmin',
+        requestedAdminId: req.body.adminId ?? req.query.adminId,
+      },
+    );
     const result = await layoutService.updateCafeLayout(
       req.params.id,
+      context.adminId,
+      context.outletId,
       req.body,
       req.files,
     );
     sendSuccessResponse(res, 200, 'Cafe layout updated successfully', result);
   },
   updateLayoutStatus: async (req, res) => {
-    const result = await layoutService.updateLayoutStatus(req.body);
+    const context = await resolveOutletAccessContext(
+      req.user,
+      req.body.outletId ?? req.query.outletId,
+      {
+        requireOutlet: req.user.role === 'manager',
+        allowSuperadmin: req.user.role === 'superadmin',
+        requestedAdminId: req.body.adminId ?? req.query.adminId,
+      },
+    );
+    const result = await layoutService.updateLayoutStatus(
+      req.body,
+      context.adminId,
+      context.outletId,
+    );
     sendSuccessResponse(
       res,
       200,
@@ -52,23 +86,61 @@ const cafeLayoutController = {
     );
   },
   getLayoutById: async (req, res) => {
-    const layout = await layoutService.getLayoutById(req.params.id);
+    const context = await resolveOutletAccessContext(
+      req.user,
+      req.query.outletId,
+      {
+        requireOutlet: req.user.role === 'manager',
+        allowSuperadmin: req.user.role === 'superadmin',
+        requestedAdminId: req.query.adminId,
+      },
+    );
+    const layout = await layoutService.getLayoutById(
+      req.params.id,
+      context.adminId,
+      context.outletId,
+    );
     sendSuccessResponse(res, 200, 'Layout fetched by ID', layout);
   },
   getCafeLayoutByAdmin: async (req, res) => {
+    const context = await resolveOutletAccessContext(
+      req.user,
+      req.query.outletId,
+      {
+        requireOutlet: req.user.role === 'manager',
+        allowSuperadmin: req.user.role === 'superadmin',
+        requestedAdminId: req.query.adminId,
+      },
+    );
     const options = pick(req.query, ['page', 'limit', 'populate']);
     const filter = pick(req.query, ['adminId', 'search', 'defaultLayout']);
     if (filter.defaultLayout) {
       filter.defaultLayout = filter.defaultLayout === 'true';
     }
-    if (req.user.role === 'admin' || req.user.role === 'manager') {
-      filter.adminId = resolveAdminOwnerId(req.user);
+    if (!filter.defaultLayout) {
+      filter.adminId = context.adminId;
+      if (context.outletId) {
+        filter.outletId = context.outletId;
+      }
     }
     const result = await layoutService.getCafeLayoutByAdmin(filter, options);
     sendSuccessResponse(res, 200, 'Cafe layouts fetched successfully', result);
   },
   deleteCafeLayout: async (req, res) => {
-    await layoutService.deleteCafeLayout(req.params.id);
+    const context = await resolveOutletAccessContext(
+      req.user,
+      req.body?.outletId ?? req.query.outletId,
+      {
+        requireOutlet: req.user.role === 'manager',
+        allowSuperadmin: req.user.role === 'superadmin',
+        requestedAdminId: req.body?.adminId ?? req.query.adminId,
+      },
+    );
+    await layoutService.deleteCafeLayout(
+      req.params.id,
+      context.adminId,
+      context.outletId,
+    );
     sendSuccessResponse(res, 200, 'Cafe layout deleted successfully');
   },
   getActiveLayout: async (req, res) => {

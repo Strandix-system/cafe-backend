@@ -302,6 +302,7 @@ export const orderService = {
     const menuIds = items.map((menu) => menu.menuId);
     const menus = await Menu.find({
       _id: { $in: menuIds },
+      ...(outletId ? { outletId } : {}),
     });
 
     if (menus?.length !== items.length) {
@@ -519,6 +520,7 @@ export const orderService = {
     const menuIds = items.map((menu) => menu.menuId);
     const menus = await Menu.find({
       _id: { $in: menuIds },
+      ...(outletId ? { outletId } : {}),
     });
 
     if (menus?.length !== items.length) {

@@ -5,8 +5,9 @@ import Qr from '../../../model/qr.js';
 import { ApiError } from '../../../utils/apiError.js';
 
 const qrService = {
-  createQr: async (adminId, totalTables) => {
-    const layoutExists = await CafeLayout.exists({ adminId });
+  createQr: async (adminId, outletId, totalTables) => {
+    const scopedFilter = outletId ? { outletId } : {};
+    const layoutExists = await CafeLayout.exists({ adminId, ...scopedFilter });
     if (!layoutExists) {
       throw new ApiError(400, 'Please create cafe layout before generating Qr');
     }
@@ -18,7 +19,7 @@ const qrService = {
       throw new ApiError(500, 'PORTFOLIO_URL not set');
     }
 
-    const lastQr = await Qr.findOne({ adminId })
+    const lastQr = await Qr.findOne({ adminId, ...scopedFilter })
       .sort({ tableNumber: -1 })
       .select('tableNumber');
 
@@ -34,6 +35,7 @@ const qrService = {
     for (let i = lastTable + 1; i <= totalTables; i++) {
       qrList.push({
         adminId,
+        outletId,
         tableNumber: i,
         qrCodeUrl: '',
       });
@@ -63,8 +65,11 @@ const qrService = {
 
     return qr;
   },
-  getAllQr: async (filter, options, adminId) => {
-    filter.adminId = adminId;
+  getAllQr: async (filter, options, context) => {
+    filter.adminId = context.adminId;
+    if (context.outletId) {
+      filter.outletId = context.outletId;
+    }
     if (filter.search) {
       filter.tableNumber = Number(filter.search);
       delete filter.search;
@@ -72,8 +77,11 @@ const qrService = {
     const result = await Qr.paginate(filter, options);
     return result;
   },
-  getQrCountforLayout: async (adminId) => {
-    const count = await Qr.countDocuments({ adminId });
+  getQrCountforLayout: async (adminId, outletId = null) => {
+    const count = await Qr.countDocuments({
+      adminId,
+      ...(outletId ? { outletId } : {}),
+    });
     return count;
   },
 };

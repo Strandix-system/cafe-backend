@@ -5,7 +5,7 @@ import { deleteUploadedFiles } from '../../../utils/s3utils.js';
 import { deleteSingleFile } from '../../../utils/s3utils.js';
 
 const layoutService = {
-  createCafeLayout: async (adminId, body, files, role) => {
+  createCafeLayout: async (adminId, outletId, body, files, role) => {
     const homeImage = files?.homeImage?.[0]?.location;
     const aboutImage = files?.aboutImage?.[0]?.location;
 
@@ -14,11 +14,15 @@ const layoutService = {
     }
 
     const defaultLayout = role === 'superadmin';
-    const haveLayout = await CafeLayout.findOne({ adminId });
+    const haveLayout = await CafeLayout.findOne({
+      adminId,
+      ...(outletId ? { outletId } : {}),
+    });
 
     const layout = await CafeLayout.create({
       ...body,
       adminId,
+      outletId,
       homeImage,
       aboutImage,
       defaultLayout,
@@ -27,8 +31,12 @@ const layoutService = {
 
     return layout;
   },
-  updateCafeLayout: async (id, body, files) => {
-    const layout = await CafeLayout.findById(id);
+  updateCafeLayout: async (id, adminId, outletId, body, files) => {
+    const layout = await CafeLayout.findOne({
+      _id: id,
+      adminId,
+      ...(outletId ? { outletId } : {}),
+    });
     if (!layout) {
       throw new ApiError(404, 'Cafe layout not found');
     }
@@ -56,9 +64,13 @@ const layoutService = {
 
     return layout;
   },
-  updateLayoutStatus: async (body) => {
+  updateLayoutStatus: async (body, adminId, outletId = null) => {
     const { layoutId, active } = body;
-    const layout = await CafeLayout.findById(layoutId);
+    const layout = await CafeLayout.findOne({
+      _id: layoutId,
+      adminId,
+      ...(outletId ? { outletId } : {}),
+    });
     if (!layout) {
       throw new ApiError(404, 'Cafe layout not found');
     }
@@ -71,6 +83,7 @@ const layoutService = {
       await CafeLayout.updateMany(
         {
           adminId: layout.adminId,
+          ...(layout.outletId ? { outletId: layout.outletId } : {}),
           _id: { $ne: layout._id },
         },
         { $set: { active: false } },
@@ -85,8 +98,12 @@ const layoutService = {
 
     return layout;
   },
-  deleteCafeLayout: async (id) => {
-    const layout = await CafeLayout.findById(id);
+  deleteCafeLayout: async (id, adminId, outletId = null) => {
+    const layout = await CafeLayout.findOne({
+      _id: id,
+      adminId,
+      ...(outletId ? { outletId } : {}),
+    });
     if (!layout) {
       throw new ApiError(404, 'Cafe layout not found');
     }
@@ -107,7 +124,10 @@ const layoutService = {
   },
   getCafeLayoutByAdmin: async (filter, options) => {
     const result = await CafeLayout.paginate(filter, options);
-    const cafeQr = await Qr.findOne({ adminId: filter.adminId });
+    const cafeQr = await Qr.findOne({
+      adminId: filter.adminId,
+      ...(filter.outletId ? { outletId: filter.outletId } : {}),
+    });
 
     return { ...result, cafeQr };
   },
@@ -115,12 +135,34 @@ const layoutService = {
     const result = await CafeLayout.paginate(filter, options);
     return result;
   },
-  getLayoutById: async (id) => {
+  getLayoutById: async (id, adminId, outletId = null) => {
     const layout = await CafeLayout.findById(id).populate('adminId');
+    if (!layout) {
+      return null;
+    }
+
+    if (!layout.defaultLayout) {
+      const layoutAdminId = layout.adminId?._id?.toString?.() ?? layout.adminId?.toString?.();
+      const requestedAdminId = adminId?.toString?.() ?? adminId;
+      const layoutOutletId = layout.outletId?.toString?.() ?? null;
+      const requestedOutletId = outletId?.toString?.() ?? null;
+
+      if (
+        layoutAdminId !== requestedAdminId ||
+        layoutOutletId !== requestedOutletId
+      ) {
+        throw new ApiError(404, 'Cafe layout not found');
+      }
+    }
+
     return layout;
   },
-  getActiveLayout: async (adminid) => {
-    const result = await CafeLayout.findOne({ adminId: adminid, active: true })
+  getActiveLayout: async (adminid, outletId = null) => {
+    const result = await CafeLayout.findOne({
+      adminId: adminid,
+      ...(outletId ? { outletId } : {}),
+      active: true,
+    })
       .populate('adminId')
       .populate({ path: 'menus', match: { isActive: true } });
     return result;

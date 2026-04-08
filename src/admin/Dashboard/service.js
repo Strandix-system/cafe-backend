@@ -4,50 +4,37 @@ import Order from '../../../model/order.js';
 import { OrderItem } from '../../../model/orderItem.js';
 import User from '../../../model/user.js';
 import { ApiError } from '../../../utils/apiError.js';
+import { resolveOutletAccessContext } from '../../../utils/adminAccess.js';
 import {
   getCurrentUtcDayRange,
   getCurrentUtcYearRange,
   getUtcDateRange,
 } from '../../../utils/dateRange.js';
 
+const withOutlet = (filter = {}, outletId = null) => ({
+  ...filter,
+  ...(outletId ? { outletId } : {}),
+});
+
 export const dashboardService = {
-  resolveDashboardAdminId: async (
+  resolveDashboardContext: async (
     user,
     requestedAdminId,
+    requestedOutletId,
     { requireForSuperadmin = false } = {},
   ) => {
-    if (user.role === 'admin') {
-      return user._id;
-    }
-
-    if (user.role === 'manager') {
-      if (!user.adminId) {
-        throw new ApiError(403, 'Manager is not linked to an admin account');
-      }
-
-      return user.adminId;
-    }
-
-    if (user.role !== 'superadmin') {
-      throw new ApiError(403, 'Access Denied');
-    }
-
-    if (!requestedAdminId) {
+    if (user.role === 'superadmin' && !requestedAdminId) {
       if (requireForSuperadmin) {
         throw new ApiError(400, 'adminId query parameter is required');
       }
       return null;
     }
 
-    const admin = await User.findOne({
-      _id: requestedAdminId,
-      role: 'admin',
-    }).select('_id');
-    if (!admin) {
-      throw new ApiError(404, 'Admin not found');
-    }
-
-    return admin._id;
+    return await resolveOutletAccessContext(user, requestedOutletId, {
+      requireOutlet: user.role === 'manager',
+      allowSuperadmin: user.role === 'superadmin',
+      requestedAdminId,
+    });
   },
   superAdminStats: async () => {
     const [totalCafe, totalActive, totalInActive, totalDemoRequest, incomeAgg] =
@@ -77,8 +64,10 @@ export const dashboardService = {
       totalIncome: incomeAgg[0]?.total || 0,
     };
   },
-  adminStats: async (adminId) => {
+  adminStats: async (adminId, outletId = null) => {
     const { start, end } = getCurrentUtcDayRange();
+    const customerMatch = withOutlet({ adminId }, outletId);
+    const orderMatch = withOutlet({ adminId, isCompleted: true }, outletId);
 
     const [
       totalCustomer,
@@ -89,13 +78,10 @@ export const dashboardService = {
       todayOrder,
       todayIncomeAgg,
     ] = await Promise.all([
-      Customer.countDocuments({ adminId }),
-      Order.countDocuments({
-        adminId,
-        isCompleted: true,
-      }),
+      Customer.countDocuments(customerMatch),
+      Order.countDocuments(orderMatch),
       Order.aggregate([
-        { $match: { adminId, isCompleted: true } },
+        { $match: orderMatch },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } },
       ]),
 
@@ -112,21 +98,20 @@ export const dashboardService = {
         {
           $match: {
             'order.adminId': adminId,
+            ...(outletId ? { 'order.outletId': outletId } : {}),
             'order.createdAt': { $gte: start, $lte: end },
           },
         },
         { $group: { _id: '$customerId' } },
       ]),
       Order.countDocuments({
-        adminId,
-        isCompleted: true,
+        ...orderMatch,
         createdAt: { $gte: start, $lte: end },
       }),
       Order.aggregate([
         {
           $match: {
-            adminId,
-            isCompleted: true,
+            ...orderMatch,
             createdAt: { $gte: start, $lte: end },
           },
         },
@@ -148,7 +133,7 @@ export const dashboardService = {
       todayIncome: todayIncomeAgg[0]?.total || 0,
     };
   },
-  salesChart: async (adminId, startDate, endDate) => {
+  salesChart: async (adminId, outletId = null, startDate, endDate) => {
     let start, end, groupId, labelFormatter;
 
     if (!startDate || !endDate) {
@@ -186,7 +171,7 @@ export const dashboardService = {
     const sales = await Order.aggregate([
       {
         $match: {
-          adminId,
+          ...withOutlet({ adminId }, outletId),
           createdAt: { $gte: start, $lte: end },
         },
       },
@@ -204,7 +189,7 @@ export const dashboardService = {
       total: s.total,
     }));
   },
-  itemPerformance: async (adminId) => {
+  itemPerformance: async (adminId, outletId = null) => {
     const pipeline = (sortOrder) => [
       {
         $lookup: {
@@ -215,7 +200,12 @@ export const dashboardService = {
         },
       },
       { $unwind: '$order' },
-      { $match: { 'order.adminId': adminId } },
+      {
+        $match: {
+          'order.adminId': adminId,
+          ...(outletId ? { 'order.outletId': outletId } : {}),
+        },
+      },
       {
         $lookup: {
           from: 'menus',
@@ -279,7 +269,7 @@ export const dashboardService = {
       lowSelling: lowItem,
     };
   },
-  peakTime: async (adminId, startDate, endDate) => {
+  peakTime: async (adminId, outletId = null, startDate, endDate) => {
     let start, end;
 
     if (!startDate || !endDate) {
@@ -292,7 +282,7 @@ export const dashboardService = {
     const raw = await Order.aggregate([
       {
         $match: {
-          adminId,
+          ...withOutlet({ adminId }, outletId),
           createdAt: { $gte: start, $lte: end },
         },
       },
@@ -323,7 +313,7 @@ export const dashboardService = {
 
     return result;
   },
-  topCustomers: async (adminId, filter = {}) => {
+  topCustomers: async (adminId, outletId = null, filter = {}) => {
     const sortBy = filter.sortBy;
 
     let sortStage = {
@@ -351,6 +341,7 @@ export const dashboardService = {
       {
         $match: {
           'order.adminId': adminId,
+          ...(outletId ? { 'order.outletId': outletId } : {}),
           'order.isCompleted': true,
         },
       },
@@ -406,9 +397,9 @@ export const dashboardService = {
 
     return customers;
   },
-  tablePerformance: async (adminId) => {
+  tablePerformance: async (adminId, outletId = null) => {
     return Order.aggregate([
-      { $match: { adminId } },
+      { $match: withOutlet({ adminId }, outletId) },
       {
         $group: {
           _id: '$tableNumber',

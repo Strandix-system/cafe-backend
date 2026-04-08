@@ -6,7 +6,16 @@ import customerService from './customerServer.js';
 
 const customerController = {
   createCustomer: async (req, res) => {
-    const customer = await customerService.createCustomer(req.body);
+    const context = await resolveOutletAccessContext(
+      req.user,
+      req.body.outletId ?? req.query.outletId,
+      {
+        requireOutlet: req.user.role === 'manager',
+        allowSuperadmin: req.user.role === 'superadmin',
+        requestedAdminId: req.body.adminId ?? req.query.adminId,
+      },
+    );
+    const customer = await customerService.createCustomer(req.body, context);
     sendSuccessResponse(res, 201, 'Customer created', customer);
   },
   getCustomers: async (req, res) => {

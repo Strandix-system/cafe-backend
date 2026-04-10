@@ -80,8 +80,14 @@ export const categoryService = {
   },
   getCategoriesForDropdown: async (context, filter = {}) => {
     const query = {
-      adminId: context.adminId,
-      ...(context.outletId ? { outletId: context.outletId } : {}),
+      $or: [
+        {
+          adminId: context.adminId,
+          ...(context.outletId ? { outletId: context.outletId } : {}),
+        },
+        // global categories shared across all admins/outlets
+        { outletId: null },
+      ],
     };
     if (filter.type) {
       query.type = filter.type;
@@ -96,10 +102,15 @@ export const categoryService = {
     });
 
     const categories = await Category.find({
-      adminId: context.adminId,
-      ...(context.outletId ? { outletId: context.outletId } : {}),
       type: CATEGORY_TYPES.MENU,
       name: { $in: usedCategoryIds },
+      $or: [
+        {
+          adminId: context.adminId,
+          ...(context.outletId ? { outletId: context.outletId } : {}),
+        },
+        { outletId: null },
+      ],
     })
       .select('_id name')
       .sort({ name: 1 });

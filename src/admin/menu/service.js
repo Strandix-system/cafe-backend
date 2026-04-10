@@ -4,19 +4,35 @@ import { ApiError } from '../../../utils/apiError.js';
 import { CATEGORY_TYPES } from '../../../utils/constants.js';
 import { deleteSingleFile } from '../../../utils/s3utils.js';
 
+const escapeRegex = (value) =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 export const menuService = {
   createMenu: async (adminId, outletId, body, file) => {
     if (!file) {
       throw new ApiError(400, 'Image is required');
     }
+    const categoryName = String(body.category ?? '').trim();
+    if (!categoryName) {
+      throw new ApiError(400, 'Category is required');
+    }
+    const categoryNameRegex = new RegExp(`^${escapeRegex(categoryName)}$`, 'i');
+
     const categoryExists = await Category.findOne({
-      adminId,
-      ...(outletId ? { outletId } : {}),
       type: CATEGORY_TYPES.MENU,
-      name: { $regex: new RegExp(`^${body.category}$`, 'i') },
+      name: { $regex: categoryNameRegex },
+      $or: [
+        // outlet-scoped category for this admin/outlet
+        {
+          adminId,
+          ...(outletId ? { outletId } : {}),
+        },
+        // global category (shared across all admins/outlets)
+        { outletId: null },
+      ],
     });
     if (!categoryExists) {
-      throw new ApiError(404, `Category '${body.category}' does not exist`);
+      throw new ApiError(404, `Category '${categoryName}' does not exist`);
     }
     const menu = await Menu.create({
       ...body,

@@ -16,6 +16,7 @@ import profileRoute from './profileRoute.js';
 import qrRoute from './qrRoute.js';
 import { signUpRoutes } from './signUp.js';
 import stateRoute from './stateRoute.js';
+import { supplierRouter } from './supplier.route.js';
 const router = express.Router();
 
 const defaultRoutes = [
@@ -82,6 +83,10 @@ const defaultRoutes = [
   {
     path: '/inventory',
     route: inventoryRouter,
+  },
+  {
+    path: '/supplier',
+    route: supplierRouter,
   },
 ];
 

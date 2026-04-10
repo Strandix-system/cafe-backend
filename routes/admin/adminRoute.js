@@ -2,10 +2,14 @@ import express from 'express';
 
 import { tokenVerification } from '../../middleware/auth.js';
 import { allowRoles } from '../../middleware/permission.js';
-import { uploadAdminImages } from '../../middleware/upload.js';
+import {
+  uploadAdminImages,
+  uploadStaffImages,
+} from '../../middleware/upload.js';
 import { validate } from '../../middleware/validate.js';
 import controller from '../../src/admin/controller.js';
 import { dashboardController } from '../../src/admin/Dashboard/controller.js';
+import { staffController } from '../../src/admin/staff/controller.js';
 import visitController from '../../src/admin/visit/controller.js';
 import { portfolioController } from '../../src/portfolio/controller.js';
 import { parseJSONFields } from '../../utils/helper.js';
@@ -27,6 +31,10 @@ import {
   dashboardTopCustomersValidator,
 } from '../../validations/dashboard.validation.js';
 import { updateFeedbackValidator } from '../../validations/portfolio.validation.js';
+import {
+  createStaffSchema,
+  updateStaffSchema,
+} from '../../validations/staff.validation.js';
 
 const router = express.Router();
 
@@ -189,6 +197,31 @@ router.patch(
   allowRoles('admin'),
   validate(updateFeedbackValidator),
   portfolioController.updateFeedback,
+);
+
+router.post(
+  '/staff-create',
+  tokenVerification,
+  allowRoles('admin'),
+  uploadStaffImages.single('profileImage'),
+  validate(createStaffSchema),
+  staffController.createStaff,
+);
+
+router.get(
+  '/staff-list',
+  tokenVerification,
+  allowRoles('admin'),
+  staffController.listStaff,
+);
+
+router.patch(
+  '/staff-update/:id',
+  tokenVerification,
+  allowRoles('admin'),
+  uploadStaffImages.single('profileImage'),
+  validate(updateStaffSchema),
+  staffController.updateStaff,
 );
 
 export default router;

@@ -16,7 +16,7 @@ router.get('/scan/:qrId', qrController.scanQr);
 router.get(
   '/get-all',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'staff'),
   qrController.getAllQr,
 );
 router.get(

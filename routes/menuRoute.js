@@ -34,7 +34,7 @@ router.get(
 router.get(
   '/my-menus', // Descriptive path
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'staff'),
   menuController.getMenusByAdmin,
 );
 router.get(

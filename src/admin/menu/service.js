@@ -1,5 +1,3 @@
-import mongoose from 'mongoose';
-
 import { Category } from '../../../model/category.js';
 import Menu from '../../../model/menu.js';
 import { ApiError } from '../../../utils/apiError.js';
@@ -88,8 +86,9 @@ export const menuService = {
       filter.inStock = filter.inStock === 'true';
     }
 
-    if (filter.category) {
-      filter.category = new mongoose.Types.ObjectId(filter.category);
+    if (filter.search) {
+      filter.name = { $regex: filter.search, $options: 'i' };
+      delete filter.search;
     }
 
     options.populate = 'category';
@@ -126,10 +125,11 @@ export const menuService = {
     if (filter.inStock !== undefined) {
       filter.inStock = filter.inStock === 'true';
     }
-    if (filter.category) {
-      filter.category = new mongoose.Types.ObjectId(filter.category);
+
+    if (filter.search) {
+      filter.name = { $regex: filter.search, $options: 'i' };
+      delete filter.search;
     }
-    delete filter.search;
     options.populate = 'category';
     return await Menu.paginate(filter, options);
   },

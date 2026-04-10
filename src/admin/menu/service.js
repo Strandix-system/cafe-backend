@@ -1,3 +1,5 @@
+import mongoose from 'mongoose';
+
 import { Category } from '../../../model/category.js';
 import Menu from '../../../model/menu.js';
 import { ApiError } from '../../../utils/apiError.js';
@@ -10,16 +12,16 @@ export const menuService = {
       throw new ApiError(400, 'Image is required');
     }
     const categoryExists = await Category.findOne({
+      _id: body.category,
       type: CATEGORY_TYPES.MENU,
-      name: { $regex: new RegExp(`^${body.category}$`, 'i') },
     });
     if (!categoryExists) {
-      throw new ApiError(404, `Category '${body.category}' does not exist`);
+      throw new ApiError(404, 'Category not found');
     }
     const menu = await Menu.create({
       ...body,
       adminId,
-      category: categoryExists.name,
+      category: categoryExists._id,
       image: file.location,
       price: Number(body.price),
       discountPrice: body.discountPrice
@@ -27,13 +29,29 @@ export const menuService = {
         : undefined,
       inStock: body.inStock,
     });
-    return menu;
+    return await Menu.findById(menu._id).populate('category', 'name');
   },
+
   updateMenu: async (menuId, body, file) => {
     const menu = await Menu.findById(menuId);
+
     if (!menu) {
       throw new ApiError(404, 'Menu not found');
     }
+
+    if (body.category) {
+      const categoryExists = await Category.findOne({
+        _id: body.category,
+        type: CATEGORY_TYPES.MENU,
+      });
+
+      if (!categoryExists) {
+        throw new ApiError(404, 'Category not found');
+      }
+
+      body.category = categoryExists._id;
+    }
+
     if (file?.location) {
       if (menu.image) {
         try {
@@ -42,20 +60,40 @@ export const menuService = {
           console.error('❌ S3 Delete Error:', err.message);
         }
       }
+
       body.image = file.location;
     }
+
+    if (body.price) {
+      body.price = Number(body.price);
+    }
+
+    if (body.discountPrice) {
+      body.discountPrice = Number(body.discountPrice);
+    }
+
     Object.assign(menu, body);
 
     await menu.save();
-    return menu;
+
+    return await Menu.findById(menu._id).populate('category', 'name');
   },
+
   getAllMenus: async (filter, options) => {
     if (filter.isActive !== undefined) {
       filter.isActive = filter.isActive === 'true';
     }
+
     if (filter.inStock !== undefined) {
       filter.inStock = filter.inStock === 'true';
     }
+
+    if (filter.category) {
+      filter.category = new mongoose.Types.ObjectId(filter.category);
+    }
+
+    options.populate = 'category';
+
     return await Menu.paginate(filter, options);
   },
   getPublicMenus: async (adminId, query) => {
@@ -88,17 +126,20 @@ export const menuService = {
     if (filter.inStock !== undefined) {
       filter.inStock = filter.inStock === 'true';
     }
-    if (filter.search) {
-      filter.$or = [
-        { name: { $regex: filter.search, $options: 'i' } },
-        { category: { $regex: filter.search, $options: 'i' } },
-      ];
+    if (filter.category) {
+      filter.category = new mongoose.Types.ObjectId(filter.category);
     }
     delete filter.search;
+    options.populate = 'category';
     return await Menu.paginate(filter, options);
   },
   getMenuById: async (menuId) => {
-    const menu = await Menu.findById(menuId);
+    const menu = await Menu.findById(menuId).populate('category', 'name');
+
+    if (!menu) {
+      throw new ApiError(404, 'Menu not found');
+    }
+
     return menu;
   },
 };

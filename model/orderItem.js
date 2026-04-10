@@ -1,22 +1,23 @@
-import mongoose from "mongoose";
-import { paginate } from "../model/plugin/paginate.plugin.js";
-import { ORDER_STATUS } from "../utils/constants.js";
+import mongoose from 'mongoose';
+
+import { paginate } from '../model/plugin/paginate.plugin.js';
+import { ORDER_STATUS } from '../utils/constants.js';
 
 const orderItemSchema = new mongoose.Schema(
   {
     orderId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Order",
+      ref: 'Order',
       required: true,
     },
     menuId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Menu",
+      ref: 'Menu',
       required: true,
     },
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Customer",
+      ref: 'Customer',
       required: true,
     },
     quantity: {
@@ -24,7 +25,7 @@ const orderItemSchema = new mongoose.Schema(
       min: 1,
       required: true,
     },
-    specialInstruction: {   
+    specialInstruction: {
       type: String,
       trim: true,
     },
@@ -38,9 +39,9 @@ const orderItemSchema = new mongoose.Schema(
       type: Date,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 orderItemSchema.plugin(paginate);
 
-export const OrderItem = mongoose.model("OrderItem", orderItemSchema);
+export const OrderItem = mongoose.model('OrderItem', orderItemSchema);

@@ -1,16 +1,31 @@
-import mongoose from "mongoose";
-import { paginate } from "../model/plugin/paginate.plugin.js";
+import mongoose from 'mongoose';
+
+import { paginate } from '../model/plugin/paginate.plugin.js';
+import { GST_TYPES } from '../utils/constants.js';
+import { ORDER_TYPES } from '../utils/constants.js';
 
 const orderSchema = new mongoose.Schema(
   {
     adminId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
+      required: true,
+    },
+    orderBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+    orderType: {
+      type: String,
+      enum: Object.values(ORDER_TYPES),
+      default: ORDER_TYPES.DINE_IN,
       required: true,
     },
     tableNumber: {
       type: Number,
-      required: true,
+      required: function () {
+        return this.orderType === ORDER_TYPES.DINE_IN;
+      },
     },
     totalAmount: {
       type: Number,
@@ -26,7 +41,7 @@ const orderSchema = new mongoose.Schema(
     },
     gstAmount: {
       type: Number,
-      required: true,
+      required: false,
     },
     subTotal: {
       type: Number,
@@ -34,13 +49,23 @@ const orderSchema = new mongoose.Schema(
     },
     gstPercent: {
       type: Number,
+      required: false,
+    },
+    gstType: {
+      type: String,
+      enum: [...Object.values(GST_TYPES), null],
+      default: null,
+      required: false,
+    },
+    orderNumber: {
+      type: String,
       required: true,
     },
   },
 
-  { timestamps: true }
+  { timestamps: true },
 );
 
 orderSchema.plugin(paginate);
 
-export default mongoose.model("Order", orderSchema);
+export default mongoose.model('Order', orderSchema);

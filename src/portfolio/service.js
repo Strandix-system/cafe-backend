@@ -1,8 +1,11 @@
-import mongoose from "mongoose";
-import Customer from "../../model/customer.js";
-import Menu from "../../model/menu.js";
-import { CustomerFeedback } from "../../model/customerFeedback.js";
-import { ApiError } from "../../utils/apiError.js";
+import mongoose from 'mongoose';
+
+import Customer from '../../model/customer.js';
+import { CustomerFeedback } from '../../model/customerFeedback.js';
+import Menu from '../../model/menu.js';
+import User from '../../model/user.js';
+import { ApiError } from '../../utils/apiError.js';
+import { resolveAdminGst, calculateTotalsByGst } from '../../utils/gst.js';
 
 export const portfolioService = {
   aboutStats: async (filter = {}) => {
@@ -19,7 +22,7 @@ export const portfolioService = {
         {
           $group: {
             _id: null,
-            averageRating: { $avg: "$rate" },
+            averageRating: { $avg: '$rate' },
           },
         },
       ]),
@@ -35,20 +38,36 @@ export const portfolioService = {
     };
   },
   createCustomerFeedback: async (body = {}) => {
-    const customer = await Customer.findById(body.customerId).select("_id");
+    const customer = await Customer.findById(body.customerId).select(
+      '_id adminId',
+    );
 
     if (!customer) {
-      throw new ApiError(404, "Customer not found");
+      throw new ApiError(404, 'Customer not found');
     }
 
-    return await CustomerFeedback.create(body);
+    const customerAdminId = customer.adminId;
+    const adminId = body.adminId;
+
+    if (!customerAdminId || !adminId) {
+      throw new ApiError(400, 'adminId is required');
+    }
+
+    if (customerAdminId.toString() !== adminId) {
+      throw new ApiError(400, 'customerId does not belong to this admin');
+    }
+
+    return await CustomerFeedback.create({
+      ...body,
+      adminId,
+    });
   },
   getTopCustomerFeedbacks: async (filter = {}) => {
     const featuredFeedbacks = await CustomerFeedback.find({
       adminId: filter.adminId,
       isPortfolioFeatured: true,
     })
-      .populate("customerId", "name phoneNumber")
+      .populate('customerId', 'name phoneNumber')
       .sort({ createdAt: -1 })
       .limit(5);
 
@@ -62,7 +81,7 @@ export const portfolioService = {
       adminId: filter.adminId,
       _id: { $nin: featuredIds },
     })
-      .populate("customerId", "name phoneNumber")
+      .populate('customerId', 'name phoneNumber')
       .sort({ rate: -1, createdAt: -1 })
       .limit(remainingSlots);
 
@@ -74,7 +93,7 @@ export const portfolioService = {
       adminId,
     });
 
-    if (!feedback) throw new ApiError(404, "Customer feedback not found");
+    if (!feedback) throw new ApiError(404, 'Customer feedback not found');
 
     if (body.isPortfolioFeatured === true) {
       const selectedCount = await CustomerFeedback.countDocuments({
@@ -83,7 +102,10 @@ export const portfolioService = {
       });
 
       if (selectedCount >= 5 && !feedback.isPortfolioFeatured) {
-        throw new ApiError(400, "You can select a maximum of 5 customer feedbacks");
+        throw new ApiError(
+          400,
+          'You can select a maximum of 5 customer feedbacks',
+        );
       }
     }
 
@@ -96,14 +118,16 @@ export const portfolioService = {
     if (filter.search) {
       const matchedCustomers = await Customer.find({
         $or: [
-          { name: { $regex: filter.search, $options: "i" } },
-          { phoneNumber: { $regex: filter.search, $options: "i" } },
+          { name: { $regex: filter.search, $options: 'i' } },
+          { phoneNumber: { $regex: filter.search, $options: 'i' } },
         ],
-      }).select("_id");
+      }).select('_id');
 
       filter.$or = [
-        { description: { $regex: filter.search, $options: "i" } },
-        { customerId: { $in: matchedCustomers.map((customer) => customer._id) } },
+        { description: { $regex: filter.search, $options: 'i' } },
+        {
+          customerId: { $in: matchedCustomers.map((customer) => customer._id) },
+        },
       ];
     }
     delete filter.search;
@@ -117,7 +141,98 @@ export const portfolioService = {
     });
 
     if (!feedback) {
-      throw new ApiError(404, "Customer feedback not found");
+      throw new ApiError(404, 'Customer feedback not found');
     }
+  },
+
+  calculatePortfolioBill: async (body) => {
+    const { adminId, items = [] } = body;
+
+    if (!Array.isArray(items) || !items.length) {
+      throw new ApiError(400, 'At least one item is required');
+    }
+
+    if (!adminId) {
+      throw new ApiError(400, 'adminId is required');
+    }
+
+    const admin = await User.findById(adminId).select(
+      'gst.gstNumber gst.gstPercentage gst.gstType',
+    );
+
+    if (!admin) {
+      throw new ApiError(404, 'Admin not found');
+    }
+
+    const menuIds = items.map((item) => item.menuId);
+
+    const menus = await Menu.find({
+      _id: { $in: menuIds },
+    }).select('name price discountPrice');
+
+    const normalizedItems = items.map((item) => {
+      const menu = menus.find(
+        (m) => m._id.toString() === item.menuId.toString(),
+      );
+
+      if (!menu) {
+        throw new ApiError(400, `Menu item not found: ${item.menuId}`);
+      }
+
+      const price =
+        menu.discountPrice && menu.discountPrice > 0
+          ? menu.discountPrice
+          : menu.price;
+
+      const quantity = Number(item.quantity ?? 0);
+
+      return {
+        menuId: item.menuId,
+        name: menu.name,
+        price,
+        quantity,
+        amount: Math.round(price * quantity * 100) / 100,
+      };
+    });
+
+    const subTotal =
+      Math.round(
+        normalizedItems.reduce((sum, item) => sum + item.amount, 0) * 100,
+      ) / 100;
+
+    const {
+      hasGstNumber,
+      gstPercent,
+      gstType: finalGstType,
+    } = resolveAdminGst(admin);
+
+    const {
+      gstAmount: rawGstAmount,
+      taxableAmount: rawTaxableAmount,
+      finalTotal,
+    } = calculateTotalsByGst({
+      subTotal,
+      gstPercent,
+      gstType: finalGstType,
+      hasGstNumber,
+    });
+
+    const gstAmount =
+      rawGstAmount === null ? null : Math.round(rawGstAmount * 100) / 100;
+    const taxableAmount =
+      !hasGstNumber || rawTaxableAmount === null
+        ? null
+        : Math.round(rawTaxableAmount * 100) / 100;
+    const total = Math.round(finalTotal * 100) / 100;
+
+    return {
+      items: normalizedItems,
+      subTotal,
+      taxableAmount,
+      gstPercent: hasGstNumber ? gstPercent : null,
+      gstType: finalGstType,
+      gstAmount,
+      total,
+    };
   },
 };

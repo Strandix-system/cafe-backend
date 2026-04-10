@@ -1,76 +1,82 @@
-import express from "express";
-import authRoute from "./authRoute.js";
-import adminUserRoute from "./admin/adminRoute.js";
-import stateRoute from "./stateRoute.js"
-import { menuRoutes } from "./menuRoute.js"
-import layoutRoute from "./layoutRoute.js";
-import profileRoute from "./profileRoute.js";
-import customerRoute from "./customerRoute.js";
-import { categoryRoutes } from "./categoryRoute.js";
-import orderRoute from "./orderRoute.js";
-import qrRoute from "./qrRoute.js";
-import demoRoute from "./demoRoute.js";
-import { issueReportedRoute } from "./issueReported.route.js";
-import { portfolioRoute } from "./portfolio.route.js";
+import express from 'express';
 
-import { signUpRoutes } from "./signUp.js";
+import adminUserRoute from './admin/adminRoute.js';
+import authRoute from './authRoute.js';
+import { categoryRoutes } from './categoryRoute.js';
+import customerRoute from './customerRoute.js';
+import demoRoute from './demoRoute.js';
+import { issueReportedRoute } from './issueReported.route.js';
+import layoutRoute from './layoutRoute.js';
+import { menuRoutes } from './menuRoute.js';
+import notificationRoute from './notification.route.js';
+import orderRoute from './orderRoute.js';
+import { portfolioRoute } from './portfolio.route.js';
+import profileRoute from './profileRoute.js';
+import qrRoute from './qrRoute.js';
+import { signUpRoutes } from './signUp.js';
+import stateRoute from './stateRoute.js';
 const router = express.Router();
 
 const defaultRoutes = [
   {
-    path: "/auth",
+    path: '/auth',
     route: authRoute,
   },
   {
-    path: "/admin",
+    path: '/admin',
     route: adminUserRoute,
   },
   {
-    path: "/get-states",
+    path: '/get-states',
     route: stateRoute,
   },
   {
-    path: "/profile",
-    route: profileRoute
+    path: '/profile',
+    route: profileRoute,
   },
   {
-    path: "/menu",
+    path: '/menu',
     route: menuRoutes,
   },
   {
-    path: "/layout",
+    path: '/layout',
     route: layoutRoute,
   },
   {
-    path: "/customer",
+    path: '/customer',
     route: customerRoute,
-  }, {
-    path: "/category",
+  },
+  {
+    path: '/category',
     route: categoryRoutes,
   },
   {
-    path: "/qr",
+    path: '/qr',
     route: qrRoute,
   },
   {
-    path: "/order",
+    path: '/order',
     route: orderRoute,
   },
   {
-    path: "/signup",
+    path: '/signup',
     route: signUpRoutes,
   },
   {
-    path: "/demo",
+    path: '/demo',
     route: demoRoute,
   },
   {
-    path: "/issue-reported",
+    path: '/issue-reported',
     route: issueReportedRoute,
   },
   {
-    path: "/portfolio",
+    path: '/portfolio',
     route: portfolioRoute,
+  },
+  {
+    path: '/notification',
+    route: notificationRoute,
   },
 ];
 

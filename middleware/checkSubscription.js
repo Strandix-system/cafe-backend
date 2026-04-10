@@ -1,15 +1,21 @@
-import { Transaction } from "../model/transaction.js";
-import { ApiError } from "../utils/apiError.js";
-import User from "../model/user.js";
+import { Transaction } from '../model/transaction.js';
+import User from '../model/user.js';
+import { ApiError } from '../utils/apiError.js';
 
 const checkSubscription = async (req, res, next) => {
   try {
-    if (req.user.role !== "admin") {
+    if (req.user.role !== 'admin') {
       return next();
     }
 
     const userId = req.user._id;
     const today = new Date();
+    const ONE_DAY_IN_MS = 1000 * 60 * 60 * 24;
+
+    const setAlerts = (alert) => {
+      req.subscriptionAlert = alert;
+      req.notificationAlert = alert;
+    };
 
     const latestTransaction = await Transaction.findOne({
       user: userId,
@@ -20,62 +26,66 @@ const checkSubscription = async (req, res, next) => {
       const endDate = new Date(latestTransaction.subscriptionEndDate);
 
       const diffTime = endDate - today;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const diffDays = Math.ceil(diffTime / ONE_DAY_IN_MS);
 
       if (diffDays <= 0) {
-        req.subscriptionAlert = {
-          type: "expired",
+        setAlerts({
+          type: 'expired',
           message:
-            "Your subscription has expired. Please renew to continue using the service.",
+            'Your subscription has expired. Please renew to continue using the service.',
           endDate,
           modalClosable: false,
-        };
-
-        await Transaction.findByIdAndUpdate(latestTransaction._id, {
-          subscriptionStatus: "expired",
         });
+
+        if (latestTransaction.subscriptionStatus !== 'expired') {
+          await Transaction.findByIdAndUpdate(latestTransaction._id, {
+            subscriptionStatus: 'expired',
+          });
+        }
         return next();
       }
 
       if (diffDays <= 7) {
-        req.subscriptionAlert = {
-          type: "expiringSoon",
+        setAlerts({
+          type: 'expiringSoon',
           message: `Your subscription will expire in ${diffDays} day(s). Please renew soon.`,
           endDate,
           modalClosable: true,
-        };
+        });
       }
 
       return next();
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select('createdAt');
+    if (!user) {
+      return next(new ApiError(404, 'User not found'));
+    }
 
     const createdAt = new Date(user.createdAt);
     const trialEnd = new Date(createdAt);
     trialEnd.setDate(trialEnd.getDate() + 14);
 
     const trialDiffTime = trialEnd - today;
-    const trialDiffDays = Math.ceil(trialDiffTime / (1000 * 60 * 60 * 24));
+    const trialDiffDays = Math.ceil(trialDiffTime / ONE_DAY_IN_MS);
 
     if (trialDiffDays > 0) {
-      req.subscriptionAlert = {
-        type: "trial",
+      setAlerts({
+        type: 'trial',
         message: `Free trial active. Ends in ${trialDiffDays} day(s).`,
         trialEnd,
         modalClosable: true,
-      };
-
+      });
       return next();
     }
 
-    req.subscriptionAlert = {
-      type: "trialExpired",
+    setAlerts({
+      type: 'trialExpired',
       message:
-        "Your 14-day free trial has expired. Please subscribe to continue.",
+        'Your 14-day free trial has expired. Please subscribe to continue.',
       trialEnd,
       modalClosable: false,
-    };
+    });
     return next();
   } catch (error) {
     return next(error);
@@ -84,12 +94,11 @@ const checkSubscription = async (req, res, next) => {
 
 const blockExpiredSubscription = async (req, res, next) => {
   try {
-    // apply only for admin
-    if (req.user.role !== "admin") {
+    if (req.user.role !== 'admin') {
       return next();
     }
 
-    const latestSubscriptionTransaction = await Transaction.findOne({
+    const latestTransaction = await Transaction.findOne({
       user: req.user._id,
       subscriptionEndDate: { $ne: null },
     }).sort({ subscriptionEndDate: -1 });
@@ -97,19 +106,19 @@ const blockExpiredSubscription = async (req, res, next) => {
     const today = new Date();
 
     // If user has a subscription transaction, enforce subscription expiry
-    if (latestSubscriptionTransaction) {
-      const endDate = new Date(latestSubscriptionTransaction.subscriptionEndDate);
+    if (latestTransaction) {
+      const endDate = new Date(latestTransaction.subscriptionEndDate);
 
       if (
         today >= endDate ||
-        latestSubscriptionTransaction.subscriptionStatus === "expired"
+        latestTransaction.subscriptionStatus === 'expired'
       ) {
-        await Transaction.findByIdAndUpdate(latestSubscriptionTransaction._id, {
-          subscriptionStatus: "expired",
+        await Transaction.findByIdAndUpdate(latestTransaction._id, {
+          subscriptionStatus: 'expired',
         });
 
         return next(
-          new ApiError(403, "Subscription expired. Please renew to continue.")
+          new ApiError(403, 'Subscription expired. Please renew to continue.'),
         );
       }
 
@@ -131,9 +140,14 @@ const blockExpiredSubscription = async (req, res, next) => {
     }
 
     return next(
-      new ApiError( 403,"Your 14-day free trial has expired. Please subscribe to continue."));
+      new ApiError(
+        403,
+        'Your 14-day free trial has expired. Please subscribe to continue.',
+      ),
+    );
   } catch (error) {
     next(error);
   }
 };
+
 export { checkSubscription, blockExpiredSubscription };

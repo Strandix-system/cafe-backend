@@ -1,47 +1,56 @@
-import express from "express";
-import { tokenVerification } from "../middleware/auth.js";
-import categoryController  from "../src/admin/category/categoryController.js";
-import { allowRoles } from "../middleware/permission.js";
+import express from 'express';
+
+import { tokenVerification } from '../middleware/auth.js';
+import { allowRoles } from '../middleware/permission.js';
+import { validate } from '../middleware/validate.js';
+import categoryController from '../src/admin/category/categoryController.js';
+import {
+  createCategorySchema,
+  updateCategorySchema,
+} from '../validations/categoryValidation.js';
 
 const router = express.Router();
 
 // Only admin / superadmin
 router.post(
-  "/create",
+  '/create',
   tokenVerification,
-  allowRoles("superadmin"),
-  categoryController.createCategory
+  allowRoles('superadmin', 'admin'),
+  validate(createCategorySchema),
+  categoryController.createCategory,
 );
 
+router.get('/', tokenVerification, categoryController.getAllCategories);
 router.get(
-  "/",
+  '/categories',
   tokenVerification,
-  categoryController.getAllCategories
+  allowRoles('superadmin', 'admin'),
+  categoryController.getCategoriesForDropdown,
 );
-router.get("/categories", categoryController.getCategoriesForDropdown);
 router.patch(
-  "/update/:categoryId",
+  '/update/:categoryId',
   tokenVerification,
-  allowRoles("superadmin"),
-  categoryController.updateCategory
+  allowRoles('superadmin'),
+  validate(updateCategorySchema),
+  categoryController.updateCategory,
 );
 router.delete(
-  "/delete/:categoryId",
+  '/delete/:categoryId',
   tokenVerification,
-  allowRoles("superadmin"),
-  categoryController.deleteCategory
+  allowRoles('superadmin'),
+  categoryController.deleteCategory,
 );
 router.get(
-  "/get-by-id/:id",
+  '/get-by-id/:id',
   tokenVerification,
-  allowRoles("superadmin"),
-  categoryController.getCategoryById
+  allowRoles('superadmin'),
+  categoryController.getCategoryById,
 );
 router.get(
-  "/admin-category",
+  '/admin-category',
   tokenVerification,
-  allowRoles("admin"),
-  categoryController.getUsedCategoriesForDropdown
+  allowRoles('admin'),
+  categoryController.getUsedCategoriesForDropdown,
 );
 
 export const categoryRoutes = router;

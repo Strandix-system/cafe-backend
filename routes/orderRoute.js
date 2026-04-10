@@ -1,112 +1,167 @@
-import express from "express";
-import { orderController } from "../src/admin/order/controller.js";
-import { orderItemController } from "../src/admin/orderItem/orderItem.controller.js";
-import { tokenVerification } from "../middleware/auth.js";
-import { allowRoles } from "../middleware/permission.js";
-import { validate } from "../middleware/validate.js";
-import { updateItemStatusSchema ,deleteItemSchema, updateQuantitySchema, getItemsSchema } from "../validations/orderItem.Validation.js";
-import { createOrderSchema, getActiveOrderSchema, getOrdersSchema, updateIsCompletedSchema, getMyOrdersSchema, updatePaymentStatusSchema, getBillSchema, deleteOrderSchema } from "../validations/order.Validation.js";
+import express from 'express';
+
+import { tokenVerification } from '../middleware/auth.js';
+import { allowRoles } from '../middleware/permission.js';
+import { validate } from '../middleware/validate.js';
+import { orderController } from '../src/admin/order/controller.js';
+import { orderItemController } from '../src/admin/orderItem/orderItem.controller.js';
+import {
+  createOrderSchema,
+  createOfflineOrderSchema,
+  getActiveOrderSchema,
+  getOrdersSchema,
+  updateIsCompletedSchema,
+  getMyOrdersSchema,
+  updatePaymentStatusSchema,
+  getBillSchema,
+  deleteOrderSchema,
+  changeTableSchema,
+  changeTablePublicSchema,
+} from '../validations/order.Validation.js';
+import {
+  updateItemStatusSchema,
+  deleteItemSchema,
+  updateQuantitySchema,
+  getItemsSchema,
+} from '../validations/orderItem.Validation.js';
 const router = express.Router();
 
 router.post(
-  "/public/create",
+  '/public/create',
   validate(createOrderSchema),
-  orderController.createPublicOrder
+  orderController.createPublicOrder,
+);
+
+router.post(
+  '/offline/create',
+  tokenVerification,
+  allowRoles('admin'),
+  validate(createOfflineOrderSchema),
+  orderController.createOfflineOrder,
 );
 
 router.get(
-  "/active/:qrId",
+  '/active/:qrId',
   validate(getActiveOrderSchema),
-  orderController.getActiveOrderByQr
+  orderController.getActiveOrderByQr,
 );
 
 router.get(
-  "/get-all",
+  '/get-all',
   validate(getOrdersSchema),
   tokenVerification,
-  allowRoles("admin"),
-  orderController.getOrders
+  allowRoles('admin'),
+  orderController.getOrders,
 );
 
 router.patch(
-  "/status",
+  '/status',
   validate(updateIsCompletedSchema),
   tokenVerification,
-  allowRoles("admin"),
-  orderController.updateIsCompletedStatus
+  allowRoles('admin'),
+  orderController.updateIsCompletedStatus,
 );
 
 router.get(
-  "/items/:orderId",
+  '/items/:orderId',
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles('admin'),
   validate(getItemsSchema),
-  orderItemController.getItems
+  orderItemController.getItems,
 );
 
 router.patch(
-  "/item-status",
+  '/item-status',
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles('admin'),
   validate(updateItemStatusSchema),
-  orderItemController.updateItemStatus
+  orderItemController.updateItemStatus,
 );
 
 router.patch(
-  "/item-quantity",
+  '/item-quantity',
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles('admin'),
   validate(updateQuantitySchema),
-  orderItemController.updateQuantity
+  orderItemController.updateQuantity,
 );
 
 router.patch(
-  "/public/item-quantity",
+  '/public/item-quantity',
   validate(updateQuantitySchema),
-  orderItemController.updateQuantity
+  orderItemController.updateQuantity,
 );
 
 router.delete(
-  "/item/:orderItemId",
+  '/item/:orderItemId',
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles('admin'),
   validate(deleteItemSchema),
-  orderItemController.deleteItem
+  orderItemController.deleteItem,
 );
 
 router.delete(
-  "/public/item/:orderItemId",
+  '/public/item/:orderItemId',
   validate(deleteItemSchema),
-  orderItemController.deleteItem
+  orderItemController.deleteItem,
 );
 
 router.get(
-  "/my-orders",
+  '/my-orders',
   validate(getMyOrdersSchema),
-  orderController.getMyOrders
+  orderController.getMyOrders,
 );
 
 router.patch(
-  "/payment-status",
+  '/payment-status',
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles('admin'),
   validate(updatePaymentStatusSchema),
-  orderController.updatePaymentStatus
+  orderController.updatePaymentStatus,
 );
-router.get(
-  "/bill/:id",
+
+router.patch(
+  '/change-table',
   tokenVerification,
-  allowRoles("admin", "superadmin"),
+  allowRoles('admin', 'customer'),
+  validate(changeTableSchema),
+  orderController.changeTable,
+);
+
+router.patch(
+  '/public/change-table',
+  validate(changeTablePublicSchema),
+  orderController.changeTablePublic,
+);
+
+router.get(
+  '/bill/:id',
+  tokenVerification,
+  allowRoles('admin', 'superadmin'),
   validate(getBillSchema),
-  orderController.getBillDetails
+  orderController.getBillDetails,
 );
 
 router.delete(
-  "/:orderId",
+  '/:orderId',
   tokenVerification,
-  allowRoles("admin"),
+  allowRoles('admin'),
   validate(deleteOrderSchema),
-  orderController.deleteOrder
+  orderController.deleteOrder,
+);
+
+router.get(
+  '/admin/:orderId',
+  tokenVerification,
+  allowRoles('admin'),
+  orderController.getOrderById,
+);
+
+router.get(
+  '/table-status',
+  tokenVerification,
+  allowRoles('admin'),
+  orderController.getTableStatusOverview,
 );
 
 export default router;

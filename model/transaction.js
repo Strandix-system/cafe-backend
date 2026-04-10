@@ -1,11 +1,12 @@
-import mongoose from "mongoose";
-import { paginate } from "./plugin/paginate.plugin.js";
+import mongoose from 'mongoose';
+
+import { paginate } from './plugin/paginate.plugin.js';
 
 const transactionSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
       index: true,
     },
@@ -50,9 +51,9 @@ const transactionSchema = new mongoose.Schema(
     },
     subscriptionStatus: {
       type: String,
-      enum: ["created", "active", "cancelled", "completed", "expired"],
+      enum: ['created', 'active', 'cancelled', 'completed', 'expired'],
       trim: true,
-      default: "created",
+      default: 'created',
       index: true,
     },
     subscriptionStartDate: {
@@ -65,16 +66,16 @@ const transactionSchema = new mongoose.Schema(
     },
     source: {
       type: String,
-      enum: ["signup", "renewal", "webhook", "system"],
-      default: "signup",
+      enum: ['signup', 'renewal', 'webhook', 'system'],
+      default: 'signup',
     },
     raw: {
       type: Object,
       default: {},
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 transactionSchema.plugin(paginate);
 
-export const Transaction = mongoose.model("Transaction", transactionSchema);
+export const Transaction = mongoose.model('Transaction', transactionSchema);

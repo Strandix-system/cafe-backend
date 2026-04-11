@@ -5,6 +5,7 @@ import authRoute from './authRoute.js';
 import { categoryRoutes } from './categoryRoute.js';
 import customerRoute from './customerRoute.js';
 import demoRoute from './demoRoute.js';
+import { inventoryRouter } from './inventory.route.js';
 import { issueReportedRoute } from './issueReported.route.js';
 import layoutRoute from './layoutRoute.js';
 import { menuRoutes } from './menuRoute.js';
@@ -77,6 +78,10 @@ const defaultRoutes = [
   {
     path: '/notification',
     route: notificationRoute,
+  },
+  {
+    path: '/inventory',
+    route: inventoryRouter,
   },
 ];
 

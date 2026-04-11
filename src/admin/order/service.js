@@ -25,15 +25,21 @@ import { sendWhatsAppMessage } from '../../../utils/whatsapp.js';
 import { notificationService } from '../../notification/notification.service.js';
 
 const isOrderCreatorAdminOrStaff = async (orderBy, adminId) => {
-  if (!orderBy || !adminId) {
-    return false;
+  if (orderBy.toString() === adminId.toString()) {
+    return { role: 'Admin', name: 'Admin' };
   }
 
-  if (orderBy.equals(adminId)) {
-    return true;
+  const staff = await Staff.findOne({ _id: orderBy, adminId }).select('name');
+  if (staff) {
+    return { role: 'Staff', name: staff.name };
   }
 
-  return Boolean(await Staff.exists({ _id: orderBy, adminId }));
+  const customer = await Customer.findOne({ _id: orderBy, adminId }).select(
+    'name',
+  );
+  if (customer) {
+    return { role: 'Customer', name: customer.name };
+  }
 };
 
 const buildTableStatusOverview = async (adminId) => {
@@ -619,12 +625,12 @@ export const orderService = {
     let order;
 
     if (latestActiveOrder) {
-      const isOfflineOrder = await isOrderCreatorAdminOrStaff(
+      const isCustomer = await isOrderCreatorAdminOrStaff(
         latestActiveOrder.orderBy,
         adminId,
       );
 
-      if (!isOfflineOrder) {
+      if (isCustomer.role === 'Customer') {
         throw new ApiError(
           403,
           'This active order was created by customer; admin cannot add items via offline flow',
@@ -778,22 +784,33 @@ export const orderService = {
     const result = await Order.paginate(query, safeOptions);
 
     const ordersWithItems = await attachOrderItems(result.results);
-    result.results = ordersWithItems.map(({ order, orderItems }) => ({
-      ...order.toObject(),
-      items: buildAggregatedItems(orderItems),
-      orderItems: orderItems.map((i) => ({
-        _id: i._id,
-        menuId: i.menuId?._id,
-        customerId: i.customerId?._id,
-        quantity: i.quantity,
-        status: i.status,
-        specialInstruction: i.specialInstruction ?? '',
-        timestamps: {
-          createdAt: i.createdAt,
-          updatedAt: i.updatedAt,
-        },
-      })),
-    }));
+    result.results = await Promise.all(
+      ordersWithItems.map(async ({ order, orderItems }) => {
+        const orderRole = await isOrderCreatorAdminOrStaff(
+          order.orderBy,
+          adminId,
+        );
+        return {
+          ...order.toObject(),
+          createdBy: {
+            [orderRole.role]: orderRole.name ?? 'Admin',
+          },
+          items: buildAggregatedItems(orderItems),
+          orderItems: orderItems.map((i) => ({
+            _id: i._id,
+            menuId: i.menuId?._id,
+            customerId: i.customerId?._id,
+            quantity: i.quantity,
+            status: i.status,
+            specialInstruction: i.specialInstruction ?? '',
+            timestamps: {
+              createdAt: i.createdAt,
+              updatedAt: i.updatedAt,
+            },
+          })),
+        };
+      }),
+    );
     return result;
   },
   getMyOrders: async (filter, options) => {
@@ -1380,33 +1397,33 @@ See you again!
 
     const [totalOrder, todayOrder, totalSaleAgg, todaySaleAgg] =
       await Promise.all([
-      Order.countDocuments(baseQuery),
-      Order.countDocuments({
-        ...baseQuery,
-        createdAt: { $gte: start, $lte: end },
-      }),
-      Order.aggregate([
-        {
-          $match: {
-            adminId,
-            orderBy: staffId,
-            isCompleted: true,
+        Order.countDocuments(baseQuery),
+        Order.countDocuments({
+          ...baseQuery,
+          createdAt: { $gte: start, $lte: end },
+        }),
+        Order.aggregate([
+          {
+            $match: {
+              adminId,
+              orderBy: staffId,
+              isCompleted: true,
+            },
           },
-        },
-        { $group: { _id: null, total: { $sum: '$totalAmount' } } },
-      ]),
-      Order.aggregate([
-        {
-          $match: {
-            adminId,
-            orderBy: staffId,
-            isCompleted: true,
-            createdAt: { $gte: start, $lte: end },
+          { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+        ]),
+        Order.aggregate([
+          {
+            $match: {
+              adminId,
+              orderBy: staffId,
+              isCompleted: true,
+              createdAt: { $gte: start, $lte: end },
+            },
           },
-        },
-        { $group: { _id: null, total: { $sum: '$totalAmount' } } },
-      ]),
-    ]);
+          { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+        ]),
+      ]);
 
     const query = { ...baseQuery };
 

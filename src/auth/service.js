@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 import { ensureSubscriptionActive } from '../../middleware/checkSubscription.js';
-import Staff from '../../model/staff.js';
+import { Staff } from '../../model/staff.js';
 import User from '../../model/user.js';
 import { ApiError } from '../../utils/apiError.js';
 import { STAFF_ROLE } from '../../utils/constants.js';

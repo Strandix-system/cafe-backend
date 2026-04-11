@@ -1,4 +1,4 @@
-import Staff from '../../../model/staff.js';
+import { Staff } from '../../../model/staff.js';
 import { ApiError } from '../../../utils/apiError.js';
 import { deleteSingleFile } from '../../../utils/s3utils.js';
 

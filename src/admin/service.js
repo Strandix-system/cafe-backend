@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 
-import Staff from '../../model/staff.js';
+import { Staff } from '../../model/staff.js';
 import User from '../../model/user.js';
 import { ApiError } from '../../utils/apiError.js';
 import { deleteSingleFile } from '../../utils/s3utils.js';

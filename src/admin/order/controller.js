@@ -1,4 +1,4 @@
-import Staff from '../../../model/staff.js';
+import { Staff } from '../../../model/staff.js';
 import { ApiError } from '../../../utils/apiError.js';
 import { pick } from '../../../utils/pick.js';
 import { sendSuccessResponse } from '../../../utils/response.js';

@@ -88,4 +88,4 @@ staffSchema.pre('save', async function (next) {
 
 staffSchema.plugin(paginate);
 
-export default mongoose.model('Staff', staffSchema);
+export const Staff = mongoose.model('Staff', staffSchema);

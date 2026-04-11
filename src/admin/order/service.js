@@ -3,7 +3,7 @@ import Menu from '../../../model/menu.js';
 import Order from '../../../model/order.js';
 import { OrderItem } from '../../../model/orderItem.js';
 import Qr from '../../../model/qr.js';
-import Staff from '../../../model/staff.js';
+import { Staff } from '../../../model/staff.js';
 import User from '../../../model/user.js';
 import { getIO, socketRooms } from '../../../socket.js';
 import { ApiError } from '../../../utils/apiError.js';

@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 
-import Staff from './model/staff.js';
+import { Staff } from './model/staff.js';
 let io;
 
 const socketRooms = {

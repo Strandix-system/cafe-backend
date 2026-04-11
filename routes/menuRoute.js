@@ -26,13 +26,7 @@ router.patch(
   menuController.updateMenu,
 );
 router.get(
-  '/all-menu',
-  tokenVerification,
-  allowRoles('admin', 'superadmin'),
-  menuController.getAllMenus,
-);
-router.get(
-  '/my-menus', // Descriptive path
+  '/my-menus',
   tokenVerification,
   allowRoles('admin'),
   menuController.getMenusByAdmin,
@@ -42,6 +36,18 @@ router.get(
   tokenVerification,
   allowRoles('admin'),
   menuController.getMenuById,
+);
+router.get(
+  '/recipe-list',
+  tokenVerification,
+  allowRoles('admin'),
+  menuController.getRecipeListByAdmin,
+);
+router.get(
+  '/recipe/:menuId',
+  tokenVerification,
+  allowRoles('admin', 'superadmin'),
+  menuController.getRecipeByMenuId,
 );
 // 🌍 PUBLIC MENU FOR PORTFOLIO
 router.get('/public/:adminId', menuController.getPublicMenus);

@@ -4,6 +4,7 @@ import { Category } from '../../model/category.js';
 import { Inventory } from '../../model/inventory.model.js';
 import { ApiError } from '../../utils/apiError.js';
 import { STOCK_TYPES, PURCHASE_UNIT_ENUM } from '../../utils/constants.js';
+import { updateMenusUsingInventory } from '../../utils/inventory.helper.js';
 import { convertToBaseUnit } from '../../utils/inventory.helper.js';
 
 const { isValidObjectId } = mongoose;
@@ -268,6 +269,8 @@ const updateInventory = async ({ inventoryId, adminId, body }) => {
   }
 
   await inventory.save();
+
+  await updateMenusUsingInventory(inventory._id);
 
   return inventory;
 };

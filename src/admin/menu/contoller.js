@@ -20,18 +20,6 @@ export const menuController = {
     );
     sendSuccessResponse(res, 200, 'Menu updated successfully', result);
   },
-  getAllMenus: async (req, res) => {
-    const filter = pick(req.query, [
-      'adminId',
-      'search',
-      'category',
-      'isActive',
-      'inStock',
-    ]);
-    const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
-    const result = await menuService.getAllMenus(filter, options, req.user._id);
-    sendSuccessResponse(res, 200, 'menu fetched successfully', result);
-  },
   getMenusByAdmin: async (req, res) => {
     const adminId = req.user._id;
     const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
@@ -44,6 +32,26 @@ export const menuController = {
     ]);
     const result = await menuService.getMenusByAdmin(adminId, filter, options);
     sendSuccessResponse(res, 200, 'Admin menus fetched successfully', result);
+  },
+  getRecipeListByAdmin: async (req, res) => {
+    const adminId = req.user.adminId ?? req.user._id;
+
+    const filter = pick(req.query, ['search', 'isActive']);
+
+    const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
+
+    const result = await menuService.getRecipeListByAdmin(
+      adminId,
+      filter,
+      options,
+    );
+
+    sendSuccessResponse(res, 200, 'Recipe list fetched successfully', result);
+  },
+  getRecipeByMenuId: async (req, res) => {
+    const result = await menuService.getRecipeByMenuId(req.params.menuId);
+
+    sendSuccessResponse(res, 200, 'Recipe fetched successfully', result);
   },
   getMenuById: async (req, res) => {
     const menuId = req.params.menuId;

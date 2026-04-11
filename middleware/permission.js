@@ -1,5 +1,4 @@
 import { ApiError } from '../utils/apiError.js';
-import { STAFF_ROLE } from '../utils/constants.js';
 import { hasValidStaffRole } from '../utils/utils.js';
 
 export const allowRoles = (...roles) => {

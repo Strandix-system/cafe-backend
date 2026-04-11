@@ -3,7 +3,6 @@ import jwt from 'jsonwebtoken';
 import { Staff } from '../model/staff.js';
 import User from '../model/user.js';
 import { ApiError } from '../utils/apiError.js';
-import { STAFF_ROLE } from '../utils/constants.js';
 import { hasValidStaffRole } from '../utils/utils.js';
 
 import { blockExpiredSubscription } from './checkSubscription.js';

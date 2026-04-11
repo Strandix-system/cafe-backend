@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 
 import { paginate } from '../model/plugin/paginate.plugin.js';
-import { STAFF_ROLE, STAFF_TYPES } from '../utils/constants.js';
+import { STAFF_ROLE } from '../utils/constants.js';
 
 const staffSchema = new mongoose.Schema(
   {
@@ -40,12 +40,8 @@ const staffSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      default: STAFF_ROLE,
-      required: true,
-    },
-    staffType: {
-      type: String,
-      enum: Object.values(STAFF_TYPES),
+      default: STAFF_ROLE.WAITER,
+      enum: Object.values(STAFF_ROLE),
       required: true,
     },
     isActive: {
@@ -88,4 +84,4 @@ staffSchema.pre('save', async function (next) {
 
 staffSchema.plugin(paginate);
 
-export default mongoose.model('Staff', staffSchema);
+export const Staff = mongoose.model('Staff', staffSchema);

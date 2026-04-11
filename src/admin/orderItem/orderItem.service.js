@@ -175,8 +175,9 @@ export const orderItemService = {
     }
 
     const role = user?.role ?? 'customer';
-    const isBackoffice = role === 'admin' || role === STAFF_ROLE;
-    const effectiveAdminId = role === STAFF_ROLE ? user?.adminId : user?._id;
+    const isBackoffice = role === 'admin' || role === STAFF_ROLE.WAITER;
+    const effectiveAdminId =
+      role === STAFF_ROLE.WAITER ? user?.adminId : user?._id;
 
     const order = await Order.findById(orderItem.orderId).select('adminId');
     if (!order) {
@@ -281,8 +282,9 @@ export const orderItemService = {
     }
 
     const role = user?.role ?? 'customer';
-    const isBackoffice = role === 'admin' || role === STAFF_ROLE;
-    const effectiveAdminId = role === STAFF_ROLE ? user?.adminId : user?._id;
+    const isBackoffice = role === 'admin' || role === STAFF_ROLE.WAITER;
+    const effectiveAdminId =
+      role === STAFF_ROLE.WAITER ? user?.adminId : user?._id;
 
     if (isBackoffice) {
       if (

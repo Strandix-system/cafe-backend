@@ -1,4 +1,4 @@
-import Staff from '../../../model/staff.js';
+import { Staff } from '../../../model/staff.js';
 import { ApiError } from '../../../utils/apiError.js';
 import { deleteSingleFile } from '../../../utils/s3utils.js';
 
@@ -23,8 +23,8 @@ export const staffService = {
     }
     const query = { adminId };
 
-    if (filter?.staffType) {
-      query.staffType = filter.staffType;
+    if (filter?.role) {
+      query.role = filter.role;
     }
 
     if (filter?.isActive !== undefined) {

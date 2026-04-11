@@ -33,6 +33,7 @@ import {
 import { updateFeedbackValidator } from '../../validations/portfolio.validation.js';
 import {
   createStaffSchema,
+  listStaffSchema,
   updateStaffSchema,
 } from '../../validations/staff.validation.js';
 
@@ -211,7 +212,14 @@ router.post(
 router.get(
   '/staff-list',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'superadmin'),
+  (req, _res, next) => {
+    if (req.user?.role === 'admin') {
+      req.query.adminId = req.user._id?.toString();
+    }
+    next();
+  },
+  validate(listStaffSchema),
   staffController.listStaff,
 );
 

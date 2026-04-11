@@ -3,7 +3,7 @@ import Menu from '../../../model/menu.js';
 import Order from '../../../model/order.js';
 import { OrderItem } from '../../../model/orderItem.js';
 import Qr from '../../../model/qr.js';
-import Staff from '../../../model/staff.js';
+import { Staff } from '../../../model/staff.js';
 import User from '../../../model/user.js';
 import { getIO, socketRooms } from '../../../socket.js';
 import { ApiError } from '../../../utils/apiError.js';
@@ -25,15 +25,21 @@ import { sendWhatsAppMessage } from '../../../utils/whatsapp.js';
 import { notificationService } from '../../notification/notification.service.js';
 
 const isOrderCreatorAdminOrStaff = async (orderBy, adminId) => {
-  if (!orderBy || !adminId) {
-    return false;
+  if (orderBy.toString() === adminId.toString()) {
+    return { role: 'Admin', name: 'Admin' };
   }
 
-  if (orderBy.equals(adminId)) {
-    return true;
+  const staff = await Staff.findOne({ _id: orderBy, adminId }).select('name');
+  if (staff) {
+    return { role: 'Staff', name: staff.name };
   }
 
-  return Boolean(await Staff.exists({ _id: orderBy, adminId }));
+  const customer = await Customer.findOne({ _id: orderBy, adminId }).select(
+    'name',
+  );
+  if (customer) {
+    return { role: 'Customer', name: customer.name };
+  }
 };
 
 const buildTableStatusOverview = async (adminId) => {
@@ -479,12 +485,13 @@ export const orderService = {
       orderType = ORDER_TYPES.DINE_IN,
     } = body;
 
-    const adminId = user?.role === STAFF_ROLE ? user?.adminId : user?._id;
+    const adminId =
+      user?.role === STAFF_ROLE.WAITER ? user?.adminId : user?._id;
     if (!adminId) {
       throw new ApiError(401, 'Unauthorized');
     }
 
-    const orderBy = user?.role === STAFF_ROLE ? user?._id : adminId;
+    const orderBy = user?.role === STAFF_ROLE.WAITER ? user?._id : adminId;
 
     const admin = await User.findOne({ _id: adminId, role: 'admin' }).select(
       'gst.gstNumber gst.gstPercentage gst.gstType',
@@ -619,12 +626,12 @@ export const orderService = {
     let order;
 
     if (latestActiveOrder) {
-      const isOfflineOrder = await isOrderCreatorAdminOrStaff(
+      const isCustomer = await isOrderCreatorAdminOrStaff(
         latestActiveOrder.orderBy,
         adminId,
       );
 
-      if (!isOfflineOrder) {
+      if (isCustomer.role === 'Customer') {
         throw new ApiError(
           403,
           'This active order was created by customer; admin cannot add items via offline flow',
@@ -778,22 +785,33 @@ export const orderService = {
     const result = await Order.paginate(query, safeOptions);
 
     const ordersWithItems = await attachOrderItems(result.results);
-    result.results = ordersWithItems.map(({ order, orderItems }) => ({
-      ...order.toObject(),
-      items: buildAggregatedItems(orderItems),
-      orderItems: orderItems.map((i) => ({
-        _id: i._id,
-        menuId: i.menuId?._id,
-        customerId: i.customerId?._id,
-        quantity: i.quantity,
-        status: i.status,
-        specialInstruction: i.specialInstruction ?? '',
-        timestamps: {
-          createdAt: i.createdAt,
-          updatedAt: i.updatedAt,
-        },
-      })),
-    }));
+    result.results = await Promise.all(
+      ordersWithItems.map(async ({ order, orderItems }) => {
+        const orderRole = await isOrderCreatorAdminOrStaff(
+          order.orderBy,
+          adminId,
+        );
+        return {
+          ...order.toObject(),
+          createdBy: {
+            [orderRole.role]: orderRole.name ?? 'Admin',
+          },
+          items: buildAggregatedItems(orderItems),
+          orderItems: orderItems.map((i) => ({
+            _id: i._id,
+            menuId: i.menuId?._id,
+            customerId: i.customerId?._id,
+            quantity: i.quantity,
+            status: i.status,
+            specialInstruction: i.specialInstruction ?? '',
+            timestamps: {
+              createdAt: i.createdAt,
+              updatedAt: i.updatedAt,
+            },
+          })),
+        };
+      }),
+    );
     return result;
   },
   getMyOrders: async (filter, options) => {
@@ -1348,7 +1366,7 @@ See you again!
   },
   changeTable: async (orderId, newTableNumber, user) => {
     const isAdmin = user?.role === 'admin';
-    const isStaff = user?.role === STAFF_ROLE;
+    const isStaff = user?.role === STAFF_ROLE.WAITER;
 
     if (!isAdmin && !isStaff) {
       throw new ApiError(403, 'Only admin or staff can change table');
@@ -1374,20 +1392,48 @@ See you again!
     const baseQuery = {
       adminId,
       orderBy: staffId,
-      isCompleted: false,
     };
 
     const { start, end } = getCurrentUtcDayRange();
 
-    const [totalOrder, todayOrder] = await Promise.all([
-      Order.countDocuments(baseQuery),
-      Order.countDocuments({
-        ...baseQuery,
-        createdAt: { $gte: start, $lte: end },
-      }),
-    ]);
+    const [totalOrder, todayOrder, totalSaleAgg, todaySaleAgg] =
+      await Promise.all([
+        Order.countDocuments(baseQuery),
+        Order.countDocuments({
+          ...baseQuery,
+          createdAt: { $gte: start, $lte: end },
+        }),
+        Order.aggregate([
+          {
+            $match: {
+              adminId,
+              orderBy: staffId,
+              isCompleted: true,
+            },
+          },
+          { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+        ]),
+        Order.aggregate([
+          {
+            $match: {
+              adminId,
+              orderBy: staffId,
+              isCompleted: true,
+              createdAt: { $gte: start, $lte: end },
+            },
+          },
+          { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+        ]),
+      ]);
 
     const query = { ...baseQuery };
+
+    if (filter?.isCompleted !== undefined) {
+      query.isCompleted =
+        typeof filter.isCompleted === 'string'
+          ? filter.isCompleted.toLowerCase() === 'true'
+          : filter.isCompleted;
+    }
 
     if (filter?.tableNumber !== undefined) {
       query.tableNumber = Number(filter.tableNumber);
@@ -1440,6 +1486,8 @@ See you again!
     return {
       totalOrder,
       todayOrder,
+      totalSale: totalSaleAgg[0]?.total || 0,
+      todaySale: todaySaleAgg[0]?.total || 0,
       orders: result,
     };
   },

@@ -5,6 +5,7 @@ import { checkSubscription } from '../middleware/checkSubscription.js';
 import { allowRoles } from '../middleware/permission.js';
 import { validate } from '../middleware/validate.js';
 import controller from '../src/auth/controller.js';
+import { STAFF_ROLE } from '../utils/constants.js';
 import {
   registerValidator,
   loginValidator,
@@ -26,14 +27,14 @@ router.post('/reset-password/:token', controller.resetPassword);
 router.get(
   '/me',
   tokenVerification,
-  allowRoles('admin', 'superadmin', 'staff'),
+  allowRoles('admin', 'superadmin', ...Object.values(STAFF_ROLE)),
   checkSubscription,
   controller.me,
 );
 router.post(
   '/change-password',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'superadmin', ...Object.values(STAFF_ROLE)),
   controller.changePassword,
 );
 

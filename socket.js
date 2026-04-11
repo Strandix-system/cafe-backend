@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 
 import { Staff } from './model/staff.js';
+import { STAFF_ROLE } from './utils/constants.js';
 let io;
 
 const socketRooms = {
@@ -76,7 +77,7 @@ const initSocket = (server) => {
         rooms.push(socketRooms.role('superadmin'));
       }
 
-      if (role === 'staff' && adminId) {
+      if (role.includes(STAFF_ROLE) && adminId) {
         rooms.push(
           adminId,
           socketRooms.user(adminId),
@@ -84,7 +85,7 @@ const initSocket = (server) => {
         );
       }
 
-      if (role === 'staff' && !adminId) {
+      if (role.includes(STAFF_ROLE) && !adminId) {
         try {
           const staff = await Staff.findById(userId).select('adminId');
           const resolvedAdminId = staff?.adminId?.toString();

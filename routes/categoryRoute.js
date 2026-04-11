@@ -4,6 +4,7 @@ import { tokenVerification } from '../middleware/auth.js';
 import { allowRoles } from '../middleware/permission.js';
 import { validate } from '../middleware/validate.js';
 import categoryController from '../src/admin/category/categoryController.js';
+import { STAFF_ROLE } from '../utils/constants.js';
 import {
   createCategorySchema,
   updateCategorySchema,
@@ -49,7 +50,7 @@ router.get(
 router.get(
   '/admin-category',
   tokenVerification,
-  allowRoles('admin', 'staff'),
+  allowRoles('admin', ...Object.values(STAFF_ROLE)),
   categoryController.getUsedCategoriesForDropdown,
 );
 

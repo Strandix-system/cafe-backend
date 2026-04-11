@@ -8,9 +8,7 @@ export const ROLES = {
   SUPERADMIN: 'superadmin',
 };
 
-export const STAFF_ROLE = 'staff';
-
-export const STAFF_TYPES = Object.freeze({
+export const STAFF_ROLE = Object.freeze({
   WAITER: 'waiter',
   KITCHEN_STAFF: 'kitchen_staff',
 });

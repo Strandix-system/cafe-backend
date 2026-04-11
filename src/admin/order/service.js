@@ -485,12 +485,13 @@ export const orderService = {
       orderType = ORDER_TYPES.DINE_IN,
     } = body;
 
-    const adminId = user?.role === STAFF_ROLE ? user?.adminId : user?._id;
+    const adminId =
+      user?.role === STAFF_ROLE.WAITER ? user?.adminId : user?._id;
     if (!adminId) {
       throw new ApiError(401, 'Unauthorized');
     }
 
-    const orderBy = user?.role === STAFF_ROLE ? user?._id : adminId;
+    const orderBy = user?.role === STAFF_ROLE.WAITER ? user?._id : adminId;
 
     const admin = await User.findOne({ _id: adminId, role: 'admin' }).select(
       'gst.gstNumber gst.gstPercentage gst.gstType',
@@ -1365,7 +1366,7 @@ See you again!
   },
   changeTable: async (orderId, newTableNumber, user) => {
     const isAdmin = user?.role === 'admin';
-    const isStaff = user?.role === STAFF_ROLE;
+    const isStaff = user?.role === STAFF_ROLE.WAITER;
 
     if (!isAdmin && !isStaff) {
       throw new ApiError(403, 'Only admin or staff can change table');

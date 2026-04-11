@@ -65,12 +65,13 @@ const checkSubscription = async (req, res, next) => {
       return next();
     }
 
-    if (req.user.role !== 'admin' && req.user.role !== STAFF_ROLE) {
+    if (req.user.role !== 'admin' && !req.user.role.includes(STAFF_ROLE)) {
       return next();
     }
 
-    const userId =
-      req.user.role === STAFF_ROLE ? req.user.adminId : req.user._id;
+    const userId = req.user.role.includes(STAFF_ROLE)
+      ? req.user.adminId
+      : req.user._id;
     const today = new Date();
     const ONE_DAY_IN_MS = 1000 * 60 * 60 * 24;
 
@@ -160,12 +161,13 @@ const blockExpiredSubscription = async (req, res, next) => {
       return next();
     }
 
-    if (req.user.role !== 'admin' && req.user.role !== STAFF_ROLE) {
+    if (req.user.role !== 'admin' && !req.user.role.includes(STAFF_ROLE)) {
       return next();
     }
 
-    const userId =
-      req.user.role === STAFF_ROLE ? req.user.adminId : req.user._id;
+    const userId = req.user.role.includes(STAFF_ROLE)
+      ? req.user.adminId
+      : req.user._id;
 
     const latestTransaction = await Transaction.findOne({
       user: userId,

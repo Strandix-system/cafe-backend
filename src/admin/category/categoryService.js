@@ -88,7 +88,7 @@ export const categoryService = {
       return requestedAdminId;
     }
 
-    if (user.role === STAFF_ROLE) {
+    if (user.role.includes(STAFF_ROLE)) {
       if (!user.adminId) {
         throw new ApiError(400, 'adminId not found for staff user');
       }

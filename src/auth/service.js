@@ -5,7 +5,6 @@ import { ensureSubscriptionActive } from '../../middleware/checkSubscription.js'
 import { Staff } from '../../model/staff.js';
 import User from '../../model/user.js';
 import { ApiError } from '../../utils/apiError.js';
-import { STAFF_ROLE } from '../../utils/constants.js';
 import { sendResetEmail } from '../../utils/email.js';
 
 const authService = {
@@ -127,9 +126,8 @@ const authService = {
     const token = jwt.sign(
       {
         id: staff._id,
-        role: STAFF_ROLE,
+        role: staff.role,
         adminId: staff.adminId,
-        staffType: staff.staffType,
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' },
@@ -137,8 +135,7 @@ const authService = {
 
     return {
       token,
-      role: STAFF_ROLE,
-      staffType: staff.staffType,
+      role: staff.role,
       adminId: staff.adminId,
       type: 'staff',
     };

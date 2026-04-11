@@ -25,11 +25,11 @@ export const allowStaffTypes = (...staffTypes) => {
       throw new ApiError(401, 'Unauthorized');
     }
 
-    if (req.user.role !== STAFF_ROLE) {
+    if (!req.user.role.includes(STAFF_ROLE)) {
       return next();
     }
 
-    if (!staffTypes.includes(req.user.staffType)) {
+    if (!staffTypes.includes(req.user.role)) {
       throw new ApiError(403, 'Access denied');
     }
 

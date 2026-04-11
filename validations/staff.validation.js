@@ -1,6 +1,6 @@
 import Joi from 'joi';
 
-import { STAFF_TYPES } from '../utils/constants.js';
+import { STAFF_ROLE } from '../utils/constants.js';
 
 const phoneRule = Joi.number().integer().min(6000000000).max(9999999999);
 
@@ -12,8 +12,8 @@ export const createStaffSchema = {
       phoneNumber: phoneRule,
       profileImage: Joi.any().optional(),
       password: Joi.string().min(6).max(30).required(),
-      staffType: Joi.string()
-        .valid(...Object.values(STAFF_TYPES))
+      role: Joi.string()
+        .valid(...Object.values(STAFF_ROLE))
         .required(),
       isActive: Joi.boolean().optional(),
     })
@@ -38,7 +38,7 @@ export const updateStaffSchema = {
     phoneNumber: phoneRule.optional(),
     profileImage: Joi.any().optional(),
     password: Joi.string().min(6).max(30).empty('').optional(),
-    staffType: Joi.string().valid(...Object.values(STAFF_TYPES)),
+    role: Joi.string().valid(...Object.values(STAFF_ROLE)),
     isActive: Joi.boolean(),
   }).unknown(false),
 };
@@ -46,8 +46,8 @@ export const updateStaffSchema = {
 export const listStaffSchema = {
   query: Joi.object({
     adminId: Joi.string().hex().length(24).required(),
-    staffType: Joi.string()
-      .valid(...Object.values(STAFF_TYPES))
+    role: Joi.string()
+      .valid(...Object.values(STAFF_ROLE))
       .optional(),
     isActive: Joi.boolean().optional(),
     search: Joi.string().trim().optional(),

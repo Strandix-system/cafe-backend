@@ -23,8 +23,8 @@ export const staffService = {
     }
     const query = { adminId };
 
-    if (filter?.staffType) {
-      query.staffType = filter.staffType;
+    if (filter?.role) {
+      query.role = filter.role;
     }
 
     if (filter?.isActive !== undefined) {

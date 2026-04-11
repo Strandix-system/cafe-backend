@@ -1,9 +1,10 @@
+import { STAFF_ROLE } from '../../../utils/constants.js';
 import { sendSuccessResponse } from '../../../utils/response.js';
 
 import { orderItemService } from './orderItem.service.js';
 
 const getEffectiveAdminId = (user) =>
-  user?.role === 'staff' ? user.adminId : user?._id;
+  user?.role.includes(STAFF_ROLE) ? user.adminId : user?._id;
 
 export const orderItemController = {
   getItems: async (req, res) => {

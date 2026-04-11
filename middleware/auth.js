@@ -41,7 +41,7 @@ export const tokenVerification = async (req, res, next, isPublic = false) => {
       ? { id: req.body.adminId ?? req.params.adminId }
       : jwt.verify(token, process.env.JWT_SECRET);
 
-    if (decoded?.role === STAFF_ROLE) {
+    if (decoded?.role.includes(STAFF_ROLE)) {
       const staff = await Staff.findById(decoded.id);
       if (!staff) {
         return next(new ApiError(401, 'User not found'));

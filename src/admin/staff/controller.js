@@ -10,7 +10,7 @@ export const staffController = {
   },
 
   listStaff: async (req, res) => {
-    const filter = pick(req.query, ['staffType', 'isActive', 'search']);
+    const filter = pick(req.query, ['role', 'isActive', 'search']);
     const options = pick(req.query, ['page', 'limit', 'sortBy']);
     const result = await staffService.listStaff(
       req.query.adminId,

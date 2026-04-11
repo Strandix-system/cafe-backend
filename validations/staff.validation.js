@@ -42,3 +42,17 @@ export const updateStaffSchema = {
     isActive: Joi.boolean(),
   }).unknown(false),
 };
+
+export const listStaffSchema = {
+  query: Joi.object({
+    adminId: Joi.string().hex().length(24).required(),
+    staffType: Joi.string()
+      .valid(...Object.values(STAFF_TYPES))
+      .optional(),
+    isActive: Joi.boolean().optional(),
+    search: Joi.string().trim().optional(),
+    page: Joi.number().integer().min(0).optional(),
+    limit: Joi.number().integer().min(0).optional(),
+    sortBy: Joi.string().optional(),
+  }).unknown(false),
+};

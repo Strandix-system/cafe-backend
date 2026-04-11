@@ -1374,20 +1374,48 @@ See you again!
     const baseQuery = {
       adminId,
       orderBy: staffId,
-      isCompleted: false,
     };
 
     const { start, end } = getCurrentUtcDayRange();
 
-    const [totalOrder, todayOrder] = await Promise.all([
+    const [totalOrder, todayOrder, totalSaleAgg, todaySaleAgg] =
+      await Promise.all([
       Order.countDocuments(baseQuery),
       Order.countDocuments({
         ...baseQuery,
         createdAt: { $gte: start, $lte: end },
       }),
+      Order.aggregate([
+        {
+          $match: {
+            adminId,
+            orderBy: staffId,
+            isCompleted: true,
+          },
+        },
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+      ]),
+      Order.aggregate([
+        {
+          $match: {
+            adminId,
+            orderBy: staffId,
+            isCompleted: true,
+            createdAt: { $gte: start, $lte: end },
+          },
+        },
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+      ]),
     ]);
 
     const query = { ...baseQuery };
+
+    if (filter?.isCompleted !== undefined) {
+      query.isCompleted =
+        typeof filter.isCompleted === 'string'
+          ? filter.isCompleted.toLowerCase() === 'true'
+          : filter.isCompleted;
+    }
 
     if (filter?.tableNumber !== undefined) {
       query.tableNumber = Number(filter.tableNumber);
@@ -1440,6 +1468,8 @@ See you again!
     return {
       totalOrder,
       todayOrder,
+      totalSale: totalSaleAgg[0]?.total || 0,
+      todaySale: todaySaleAgg[0]?.total || 0,
       orders: result,
     };
   },

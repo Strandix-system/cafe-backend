@@ -12,7 +12,11 @@ export const staffController = {
   listStaff: async (req, res) => {
     const filter = pick(req.query, ['staffType', 'isActive', 'search']);
     const options = pick(req.query, ['page', 'limit', 'sortBy']);
-    const result = await staffService.listStaff(req.query.adminId, filter, options);
+    const result = await staffService.listStaff(
+      req.query.adminId,
+      filter,
+      options,
+    );
     sendSuccessResponse(res, 200, 'Staff fetched', result);
   },
 

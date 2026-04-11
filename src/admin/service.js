@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 
-import User from '../../model/user.js';
 import Staff from '../../model/staff.js';
+import User from '../../model/user.js';
 import { ApiError } from '../../utils/apiError.js';
 import { deleteSingleFile } from '../../utils/s3utils.js';
 
@@ -149,9 +149,7 @@ const adminService = {
         { $match: { adminId: { $in: adminIds } } },
         { $group: { _id: '$adminId', count: { $sum: 1 } } },
       ]);
-      const countMap = new Map(
-        counts.map((c) => [c._id.toString(), c.count]),
-      );
+      const countMap = new Map(counts.map((c) => [c._id.toString(), c.count]));
       result.results = result.results.map((admin) => {
         const adminObj = admin.toObject ? admin.toObject() : admin;
         return {

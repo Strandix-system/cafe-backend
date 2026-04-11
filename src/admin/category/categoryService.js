@@ -70,8 +70,8 @@ export const categoryService = {
     const usedCategoryIds = await Menu.distinct('category', { adminId });
 
     const categories = await Category.find({
+      _id: { $in: usedCategoryIds },
       type: CATEGORY_TYPES.MENU,
-      name: { $in: usedCategoryIds },
     })
       .select('_id name')
       .sort({ name: 1 });

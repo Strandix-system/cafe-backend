@@ -14,16 +14,16 @@ export const menuService = {
       throw new ApiError(400, 'Image is required');
     }
     const categoryExists = await Category.findOne({
+      _id: body.category,
       type: CATEGORY_TYPES.MENU,
-      name: { $regex: new RegExp(`^${body.category}$`, 'i') },
     });
     if (!categoryExists) {
-      throw new ApiError(404, `Category '${body.category}' does not exist`);
+      throw new ApiError(404, 'Category not found');
     }
     const menu = await Menu.create({
       ...body,
       adminId,
-      category: categoryExists.name,
+      category: categoryExists._id,
       image: file.location,
       price: Number(body.price),
       discountPrice: body.discountPrice
@@ -47,14 +47,28 @@ export const menuService = {
       });
       await updateMenuStockStatus(menu._id);
     }
-
-    return menu;
+    return await Menu.findById(menu._id).populate('category', 'name');
   },
   updateMenu: async (menuId, body, file) => {
     const menu = await Menu.findById(menuId);
+
     if (!menu) {
       throw new ApiError(404, 'Menu not found');
     }
+
+    if (body.category) {
+      const categoryExists = await Category.findOne({
+        _id: body.category,
+        type: CATEGORY_TYPES.MENU,
+      });
+
+      if (!categoryExists) {
+        throw new ApiError(404, 'Category not found');
+      }
+
+      body.category = categoryExists._id;
+    }
+
     if (file?.location) {
       if (menu.image) {
         try {
@@ -63,8 +77,18 @@ export const menuService = {
           console.error('❌ S3 Delete Error:', err.message);
         }
       }
+
       body.image = file.location;
     }
+
+    if (body.price) {
+      body.price = Number(body.price);
+    }
+
+    if (body.discountPrice) {
+      body.discountPrice = Number(body.discountPrice);
+    }
+
     Object.assign(menu, body);
     if (body.ingredients?.length) {
       const recipe = await Recipe.findOne({
@@ -116,8 +140,10 @@ export const menuService = {
       }
     }
     await menu.save();
+
     await updateMenuStockStatus(menu._id);
-    return menu;
+
+    return await Menu.findById(menu._id).populate('category', 'name');
   },
   getRecipeListByAdmin: async (adminId, filter = {}, options = {}) => {
     const menuFilter = { adminId };
@@ -141,7 +167,7 @@ export const menuService = {
 
     delete filter.search;
 
-    options.page = Number(options.page) || 0;
+    options.page = Number(options.page) || 1;
     options.limit = Number(options.limit) || 10;
     options.sort = { createdAt: -1 };
     options.lean = true;
@@ -163,7 +189,26 @@ export const menuService = {
       ...(recipe.toObject ? recipe.toObject() : recipe),
       ingredientsCount: recipe.ingredients?.length || 0,
     }));
+
     return recipes;
+  },
+  getAllMenus: async (filter, options) => {
+    if (filter.isActive !== undefined) {
+      filter.isActive = filter.isActive === 'true';
+    }
+
+    if (filter.inStock !== undefined) {
+      filter.inStock = filter.inStock === 'true';
+    }
+
+    if (filter.search) {
+      filter.name = { $regex: filter.search, $options: 'i' };
+      delete filter.search;
+    }
+
+    options.populate = 'category';
+
+    return await Menu.paginate(filter, options);
   },
   getRecipeByMenuId: async (menuId) => {
     const menu = await Menu.findById(menuId);
@@ -221,17 +266,21 @@ export const menuService = {
     if (filter.inStock !== undefined) {
       filter.inStock = filter.inStock === 'true';
     }
+
     if (filter.search) {
-      filter.$or = [
-        { name: { $regex: filter.search, $options: 'i' } },
-        { category: { $regex: filter.search, $options: 'i' } },
-      ];
+      filter.name = { $regex: filter.search, $options: 'i' };
+      delete filter.search;
     }
-    delete filter.search;
+    options.populate = 'category';
     return await Menu.paginate(filter, options);
   },
   getMenuById: async (menuId) => {
-    const menu = await Menu.findById(menuId);
+    const menu = await Menu.findById(menuId).populate('category', 'name');
+
+    if (!menu) {
+      throw new ApiError(404, 'Menu not found');
+    }
+
     return menu;
   },
 };

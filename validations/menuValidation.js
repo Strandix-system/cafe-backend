@@ -8,11 +8,18 @@ const ingredientSchema = Joi.object({
     .valid('ml', 'L', 'g', 'kg', 'pcs', 'packets', 'box', 'dozen')
     .required(),
 });
+const objectId = Joi.string().hex().length(24);
 
 const menuSchema = {
   body: Joi.object({
     name: Joi.string().trim().min(2).max(100).required(),
-    category: Joi.string().required(),
+
+    category: objectId.required().messages({
+      'string.hex': 'Category must be a valid ObjectId',
+      'string.length': 'Category must be a valid ObjectId',
+      'any.required': 'Category is required',
+    }),
+
     description: Joi.string().trim().min(10).max(500).required(),
     price: Joi.number().positive().required(),
     discountPrice: Joi.number()
@@ -45,7 +52,12 @@ const updateMenuSchema = {
 
   body: Joi.object({
     name: Joi.string().trim().min(2).max(100).optional(),
-    category: Joi.string().optional(),
+
+    category: objectId.optional().messages({
+      'string.hex': 'Category must be a valid ObjectId',
+      'string.length': 'Category must be a valid ObjectId',
+    }),
+
     description: Joi.string().trim().min(10).max(500).optional(),
     price: Joi.number().positive().optional(),
     discountPrice: Joi.number()

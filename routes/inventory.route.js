@@ -34,7 +34,7 @@ inventoryRouter.get(
   getInventoryByIdController,
 );
 
-inventoryRouter.put(
+inventoryRouter.patch(
   '/update/:id',
   tokenVerification,
   uploadInventoryImages.single('image'),

@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 
+import { INVENTORY_BASE_UNITS } from '../utils/constants.js';
+
 import { paginate } from './plugin/paginate.plugin.js';
 
 const inventorySchema = new mongoose.Schema(
@@ -28,7 +30,7 @@ const inventorySchema = new mongoose.Schema(
     },
     unit: {
       type: String,
-      enum: ['ml', 'L', 'g', 'kg', 'pcs', 'packets', 'box', 'dozen'],
+      enum: INVENTORY_BASE_UNITS,
       required: true,
     },
     currentStock: {

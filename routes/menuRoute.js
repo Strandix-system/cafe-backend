@@ -5,6 +5,7 @@ import { allowRoles } from '../middleware/permission.js';
 import { uploadMenu } from '../middleware/upload.js';
 import { validate } from '../middleware/validate.js';
 import { menuController } from '../src/admin/menu/contoller.js';
+import { STAFF_ROLE } from '../utils/constants.js';
 import { menuSchema, updateMenuSchema } from '../validations/menuValidation.js';
 
 const router = express.Router();
@@ -28,7 +29,7 @@ router.patch(
 router.get(
   '/my-menus',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', ...Object.values(STAFF_ROLE)),
   menuController.getMenusByAdmin,
 );
 router.get(

@@ -63,6 +63,7 @@ const createOfflineOrderSchema = {
 
 const getOrdersSchema = {
   query: Joi.object({
+    staffId: objectId.optional(),
     search: Joi.string().trim().optional(),
     isCompleted: Joi.boolean().optional(),
     tableNumber: Joi.number(),

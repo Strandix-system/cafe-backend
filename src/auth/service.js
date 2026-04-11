@@ -1,11 +1,11 @@
 import bcrypt from 'bcryptjs';
-import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 
+import { ensureSubscriptionActive } from '../../middleware/checkSubscription.js';
+import { Staff } from '../../model/staff.js';
 import User from '../../model/user.js';
 import { ApiError } from '../../utils/apiError.js';
 import { sendResetEmail } from '../../utils/email.js';
-dotenv.config();
 
 const authService = {
   register: async (data) => {
@@ -32,40 +32,112 @@ const authService = {
   },
 
   login: async (data) => {
-    const { email, phoneNumber, password } = data;
+    const { email, phoneNumber, password, adminId } = data;
 
     if ((!email && !phoneNumber) || !password) {
       throw new ApiError(400, 'Email or phoneNumber and password are required');
     }
-    const user = await User.findOne({
+    const query = {
       $or: [
         email ? { email } : null,
         phoneNumber ? { phoneNumber } : null,
       ].filter(Boolean),
-    }).select('+password');
+    };
+    const user = await User.findOne(query).select('+password');
 
-    if (!user) {
+    if (user) {
+      if (!user.isActive) {
+        throw new ApiError(403, 'Your account is inactive.');
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        throw new ApiError(401, 'Invalid credentials');
+      }
+
+      const token = jwt.sign(
+        { id: user._id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' },
+      );
+      return {
+        token,
+        role: user.role,
+      };
+    }
+    const staffQuery = adminId ? { ...query, adminId } : query;
+
+    const staffMatches = await Staff.find(staffQuery)
+      .select('+password')
+      .limit(2);
+
+    if (!staffMatches.length) {
       throw new ApiError(401, 'Invalid credentials');
     }
-    if (!user.isActive) {
+
+    if (!adminId && staffMatches.length > 1) {
       throw new ApiError(
-        403,
-        'Your account is inactive. Please contact admin.',
+        400,
+        'Multiple staff accounts found. Please provide adminId',
       );
     }
-    const isMatch = await bcrypt.compare(password, user.password);
+
+    const staff = staffMatches[0];
+
+    if (!staff.isActive) {
+      throw new ApiError(
+        403,
+        'Your staff account is inactive. Please contact admin.',
+      );
+    }
+
+    const isMatch = await bcrypt.compare(password, staff.password);
     if (!isMatch) {
       throw new ApiError(401, 'Invalid credentials');
     }
 
+    const ownerAdmin = await User.findById(staff.adminId).select(
+      'isActive createdAt',
+    );
+
+    if (!ownerAdmin) {
+      throw new ApiError(401, 'Admin not found');
+    }
+
+    if (!ownerAdmin.isActive) {
+      throw new ApiError(
+        403,
+        'Admin account is inactive. Please contact admin.',
+      );
+    }
+
+    await ensureSubscriptionActive({
+      userId: ownerAdmin._id,
+      createdAt: ownerAdmin.createdAt,
+      subscriptionExpiredMessage:
+        'Admin subscription expired. Please ask admin to renew.',
+      trialExpiredMessage:
+        'Admin trial expired. Please ask admin to subscribe.',
+    });
+
+    staff.lastLoginAt = new Date();
+    await staff.save();
+
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      {
+        id: staff._id,
+        role: staff.role,
+        adminId: staff.adminId,
+      },
       process.env.JWT_SECRET,
       { expiresIn: '7d' },
     );
+
     return {
       token,
-      role: user.role,
+      role: staff.role,
+      adminId: staff.adminId,
+      type: 'staff',
     };
   },
 

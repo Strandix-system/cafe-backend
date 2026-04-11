@@ -2,6 +2,7 @@ import Customer from '../../../model/customer.js';
 import demoRequest from '../../../model/demoRequest.js';
 import Order from '../../../model/order.js';
 import { OrderItem } from '../../../model/orderItem.js';
+import { Staff } from '../../../model/staff.js';
 import User from '../../../model/user.js';
 import { ApiError } from '../../../utils/apiError.js';
 import {
@@ -74,6 +75,7 @@ export const dashboardService = {
 
     const [
       totalCustomer,
+      totalStaff,
       totalOrder,
       totalIncomeAgg,
 
@@ -82,6 +84,7 @@ export const dashboardService = {
       todayIncomeAgg,
     ] = await Promise.all([
       Customer.countDocuments({ adminId }),
+      Staff.countDocuments({ adminId }),
       Order.countDocuments({
         adminId,
         isCompleted: true,
@@ -133,6 +136,7 @@ export const dashboardService = {
 
     return {
       totalCustomer,
+      totalStaff,
       totalOrder,
       totalIncome: totalIncomeAgg[0]?.total || 0,
       todayCustomer: todayCustomerAgg.length,

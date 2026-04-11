@@ -1,10 +1,11 @@
 import express from 'express';
 
 import { tokenVerification } from '../middleware/auth.js';
-import { allowRoles } from '../middleware/permission.js';
+import { allowRoles, allowStaffTypes } from '../middleware/permission.js';
 import { validate } from '../middleware/validate.js';
 import { orderController } from '../src/admin/order/controller.js';
 import { orderItemController } from '../src/admin/orderItem/orderItem.controller.js';
+import { STAFF_ROLE } from '../utils/constants.js';
 import {
   createOrderSchema,
   createOfflineOrderSchema,
@@ -35,7 +36,8 @@ router.post(
 router.post(
   '/offline/create',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', ...Object.values(STAFF_ROLE)),
+  allowStaffTypes(STAFF_ROLE.WAITER),
   validate(createOfflineOrderSchema),
   orderController.createOfflineOrder,
 );
@@ -50,7 +52,7 @@ router.get(
   '/get-all',
   validate(getOrdersSchema),
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', ...Object.values(STAFF_ROLE)),
   orderController.getOrders,
 );
 
@@ -58,14 +60,14 @@ router.patch(
   '/status',
   validate(updateIsCompletedSchema),
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', STAFF_ROLE.WAITER),
   orderController.updateIsCompletedStatus,
 );
 
 router.get(
   '/items/:orderId',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', ...Object.values(STAFF_ROLE)),
   validate(getItemsSchema),
   orderItemController.getItems,
 );
@@ -73,7 +75,7 @@ router.get(
 router.patch(
   '/item-status',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', ...Object.values(STAFF_ROLE)),
   validate(updateItemStatusSchema),
   orderItemController.updateItemStatus,
 );
@@ -81,7 +83,7 @@ router.patch(
 router.patch(
   '/item-quantity',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', STAFF_ROLE.WAITER),
   validate(updateQuantitySchema),
   orderItemController.updateQuantity,
 );
@@ -95,7 +97,7 @@ router.patch(
 router.delete(
   '/item/:orderItemId',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', STAFF_ROLE.WAITER),
   validate(deleteItemSchema),
   orderItemController.deleteItem,
 );
@@ -112,10 +114,18 @@ router.get(
   orderController.getMyOrders,
 );
 
+router.get(
+  '/my-created',
+  validate(getOrdersSchema),
+  tokenVerification,
+  allowRoles('admin', ...Object.values(STAFF_ROLE)),
+  orderController.getMyCreatedOrdersStats,
+);
+
 router.patch(
   '/payment-status',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', STAFF_ROLE.WAITER),
   validate(updatePaymentStatusSchema),
   orderController.updatePaymentStatus,
 );
@@ -123,7 +133,7 @@ router.patch(
 router.patch(
   '/change-table',
   tokenVerification,
-  allowRoles('admin', 'customer'),
+  allowRoles('admin', 'customer', STAFF_ROLE.WAITER),
   validate(changeTableSchema),
   orderController.changeTable,
 );
@@ -137,7 +147,7 @@ router.patch(
 router.get(
   '/bill/:id',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'superadmin', ...Object.values(STAFF_ROLE)),
   validate(getBillSchema),
   orderController.getBillDetails,
 );
@@ -153,14 +163,14 @@ router.delete(
 router.get(
   '/admin/:orderId',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', ...Object.values(STAFF_ROLE)),
   orderController.getOrderById,
 );
 
 router.get(
   '/table-status',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', ...Object.values(STAFF_ROLE)),
   orderController.getTableStatusOverview,
 );
 

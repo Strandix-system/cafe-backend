@@ -3,6 +3,7 @@ import Menu from '../../../model/menu.js';
 import { ApiError } from '../../../utils/apiError.js';
 import { STAFF_ROLE } from '../../../utils/constants.js';
 import { CATEGORY_TYPES } from '../../../utils/constants.js';
+import { hasValidStaffRole } from '../../../utils/utils.js';
 export const categoryService = {
   createCategory: async (user, data) => {
     if (!user) {
@@ -88,7 +89,7 @@ export const categoryService = {
       return requestedAdminId;
     }
 
-    if (user.role.includes(STAFF_ROLE)) {
+    if (hasValidStaffRole(user.role)) {
       if (!user.adminId) {
         throw new ApiError(400, 'adminId not found for staff user');
       }

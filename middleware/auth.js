@@ -4,6 +4,7 @@ import { Staff } from '../model/staff.js';
 import User from '../model/user.js';
 import { ApiError } from '../utils/apiError.js';
 import { STAFF_ROLE } from '../utils/constants.js';
+import { hasValidStaffRole } from '../utils/utils.js';
 
 import { blockExpiredSubscription } from './checkSubscription.js';
 
@@ -41,7 +42,7 @@ export const tokenVerification = async (req, res, next, isPublic = false) => {
       ? { id: req.body.adminId ?? req.params.adminId }
       : jwt.verify(token, process.env.JWT_SECRET);
 
-    if (decoded?.role.includes(STAFF_ROLE)) {
+    if (hasValidStaffRole(decoded?.role)) {
       const staff = await Staff.findById(decoded.id);
       if (!staff) {
         return next(new ApiError(401, 'User not found'));

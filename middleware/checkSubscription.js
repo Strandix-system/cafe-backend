@@ -2,6 +2,7 @@ import { Transaction } from '../model/transaction.js';
 import User from '../model/user.js';
 import { ApiError } from '../utils/apiError.js';
 import { STAFF_ROLE } from '../utils/constants.js';
+import { hasValidStaffRole } from '../utils/utils.js';
 
 export const ensureSubscriptionActive = async ({
   userId,
@@ -65,11 +66,11 @@ const checkSubscription = async (req, res, next) => {
       return next();
     }
 
-    if (req.user.role !== 'admin' && !req.user.role.includes(STAFF_ROLE)) {
+    if (req.user.role !== 'admin' && !hasValidStaffRole(req.user.role)) {
       return next();
     }
 
-    const userId = req.user.role.includes(STAFF_ROLE)
+    const userId = hasValidStaffRole(req.user.role)
       ? req.user.adminId
       : req.user._id;
     const today = new Date();
@@ -161,11 +162,11 @@ const blockExpiredSubscription = async (req, res, next) => {
       return next();
     }
 
-    if (req.user.role !== 'admin' && !req.user.role.includes(STAFF_ROLE)) {
+    if (req.user.role !== 'admin' && !hasValidStaffRole(req.user.role)) {
       return next();
     }
 
-    const userId = req.user.role.includes(STAFF_ROLE)
+    const userId = hasValidStaffRole(req.user.role)
       ? req.user.adminId
       : req.user._id;
 

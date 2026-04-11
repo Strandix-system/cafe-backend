@@ -3,11 +3,12 @@ import { ApiError } from '../../../utils/apiError.js';
 import { STAFF_ROLE } from '../../../utils/constants.js';
 import { pick } from '../../../utils/pick.js';
 import { sendSuccessResponse } from '../../../utils/response.js';
+import { hasValidStaffRole } from '../../../utils/utils.js';
 
 import { orderService } from './service.js';
 
 const getEffectiveAdminId = (user) =>
-  user?.role.includes(STAFF_ROLE) ? user.adminId : user?._id;
+  hasValidStaffRole(user.role) ? user.adminId : user?._id;
 
 const handleChangeTable = async (req, res, serviceFn) => {
   const { orderId, newTableNumber, qrId } = req.body;
@@ -64,7 +65,7 @@ export const orderController = {
     let staffId = null;
     let adminId = null;
 
-    if (role.includes(STAFF_ROLE)) {
+    if (hasValidStaffRole(role)) {
       staffId = req.user._id;
       adminId = req.user.adminId;
     } else if (role === 'admin') {

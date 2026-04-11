@@ -1,5 +1,6 @@
 import { ApiError } from '../utils/apiError.js';
 import { STAFF_ROLE } from '../utils/constants.js';
+import { hasValidStaffRole } from '../utils/utils.js';
 
 export const allowRoles = (...roles) => {
   return (req, res, next) => {
@@ -25,7 +26,7 @@ export const allowStaffTypes = (...staffTypes) => {
       throw new ApiError(401, 'Unauthorized');
     }
 
-    if (!req.user.role.includes(STAFF_ROLE)) {
+    if (!hasValidStaffRole(req.user.role)) {
       return next();
     }
 

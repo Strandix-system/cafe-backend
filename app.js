@@ -25,11 +25,16 @@ const swaggerSpec = (
 app.set('trust proxy', 1);
 
 app.use((req, res, next) => {
-  if (
-    req.headers['x-forwarded-proto'] &&
-    req.headers['x-forwarded-proto'] !== 'https'
-  ) {
-    return res.redirect(`https://${req.headers.host}${req.url}`);
+  const proto = req.headers['x-forwarded-proto'];
+  const host = req.headers.host;
+
+  if (host.includes('elasticbeanstalk.com')) {
+    return next();
+  }
+
+  // Redirect only custom domains to HTTPS
+  if (proto && proto !== 'https') {
+    return res.redirect(`https://${host}${req.url}`);
   }
 
   next();

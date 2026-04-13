@@ -1,7 +1,9 @@
 import { Category } from '../../../model/category.js';
 import Menu from '../../../model/menu.js';
 import { ApiError } from '../../../utils/apiError.js';
+import { STAFF_ROLE } from '../../../utils/constants.js';
 import { CATEGORY_TYPES } from '../../../utils/constants.js';
+import { hasValidStaffRole } from '../../../utils/utils.js';
 export const categoryService = {
   createCategory: async (user, data) => {
     if (!user) {
@@ -70,8 +72,8 @@ export const categoryService = {
     const usedCategoryIds = await Menu.distinct('category', { adminId });
 
     const categories = await Category.find({
+      _id: { $in: usedCategoryIds },
       type: CATEGORY_TYPES.MENU,
-      name: { $in: usedCategoryIds },
     })
       .select('_id name')
       .sort({ name: 1 });
@@ -85,6 +87,13 @@ export const categoryService = {
         throw new ApiError(400, 'adminId is required for superadmin');
       }
       return requestedAdminId;
+    }
+
+    if (hasValidStaffRole(user.role)) {
+      if (!user.adminId) {
+        throw new ApiError(400, 'adminId not found for staff user');
+      }
+      return user.adminId;
     }
 
     return user._id;

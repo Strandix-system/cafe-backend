@@ -8,6 +8,11 @@ export const ROLES = {
   SUPERADMIN: 'superadmin',
 };
 
+export const STAFF_ROLE = Object.freeze({
+  WAITER: 'waiter',
+  KITCHEN_STAFF: 'kitchen_staff',
+});
+
 export const RECIPIENT_TYPES = {
   ADMIN: 'admin',
   CUSTOMER: 'customer',

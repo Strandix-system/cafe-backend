@@ -33,7 +33,7 @@ export const menuController = {
     sendSuccessResponse(res, 200, 'menu fetched successfully', result);
   },
   getMenusByAdmin: async (req, res) => {
-    const adminId = req.user._id;
+    const adminId = req.effectiveAdminId ?? req.user?._id;
     const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
     const filter = pick(req.query, [
       'adminId',

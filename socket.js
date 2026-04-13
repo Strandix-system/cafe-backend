@@ -1,4 +1,8 @@
 import { Server } from 'socket.io';
+
+import { Staff } from './model/staff.js';
+import { STAFF_ROLE } from './utils/constants.js';
+import { hasValidStaffRole } from './utils/utils.js';
 let io;
 
 const socketRooms = {
@@ -40,9 +44,7 @@ const initSocket = (server) => {
     console.log('Socket connected:', socket.id);
 
     socket.on('join-admin', (adminId) => {
-      if (!adminId) {
-        return;
-      }
+      if (!adminId) return;
 
       joinRooms(socket, [
         adminId,
@@ -53,9 +55,7 @@ const initSocket = (server) => {
     });
 
     socket.on('join-superadmin', (userId) => {
-      if (!userId) {
-        return;
-      }
+      if (!userId) return;
 
       joinRooms(socket, [
         userId,
@@ -65,10 +65,8 @@ const initSocket = (server) => {
       console.log('Superadmin joined:', userId);
     });
 
-    socket.on('join-user', ({ userId, role } = {}) => {
-      if (!userId) {
-        return;
-      }
+    socket.on('join-user', async ({ userId, role, adminId } = {}) => {
+      if (!userId) return;
 
       const rooms = [userId, socketRooms.user(userId)];
 
@@ -80,14 +78,34 @@ const initSocket = (server) => {
         rooms.push(socketRooms.role('superadmin'));
       }
 
+      if (hasValidStaffRole(role) && adminId) {
+        rooms.push(
+          adminId,
+          socketRooms.user(adminId),
+          socketRooms.admin(adminId),
+        );
+      }
+
+      if (hasValidStaffRole(role) && !adminId) {
+        try {
+          const staff = await Staff.findById(userId).select('adminId');
+          const resolvedAdminId = staff?.adminId?.toString();
+          if (resolvedAdminId) {
+            rooms.push(
+              resolvedAdminId,
+              socketRooms.user(resolvedAdminId),
+              socketRooms.admin(resolvedAdminId),
+            );
+          }
+        } catch (_error) {}
+      }
+
       joinRooms(socket, rooms);
       console.log('User joined:', userId);
     });
 
     socket.on('join-customer', (customerId) => {
-      if (!customerId) {
-        return;
-      }
+      if (!customerId) return;
 
       joinRooms(socket, [
         `customer-${customerId}`,

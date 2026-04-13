@@ -8,6 +8,7 @@ import {
   NOTIFICATION_TYPES,
   ORDER_STATUS,
   RECIPIENT_TYPES,
+  STAFF_ROLE,
 } from '../../../utils/constants.js';
 import { buildAggregatedItems } from '../../../utils/utils.js';
 import { notificationService } from '../../notification/notification.service.js';
@@ -105,6 +106,8 @@ export const orderItemService = {
       .populate('menuId')
       .populate('customerId', 'name phoneNumber');
 
+    const orderWithItems = await buildOrderWithItems(orderItem.orderId);
+
     try {
       const io = getIO();
       io.to(adminId.toString()).emit('orderItemStatusUpdate', {
@@ -112,6 +115,14 @@ export const orderItemService = {
         orderItem: updatedItem,
         status,
       });
+
+      if (orderWithItems) {
+        io.to(adminId.toString()).emit('order:updated', {
+          orderId: orderItem.orderId,
+          order: orderWithItems,
+        });
+      }
+
       if (orderItem.customerId) {
         io.to(`customer-${orderItem.customerId.toString()}`).emit(
           'orderItemStatusUpdate',
@@ -121,6 +132,16 @@ export const orderItemService = {
             status,
           },
         );
+
+        if (orderWithItems) {
+          io.to(`customer-${orderItem.customerId.toString()}`).emit(
+            'order:updated',
+            {
+              orderId: orderItem.orderId,
+              order: orderWithItems,
+            },
+          );
+        }
       }
     } catch (socketError) {
       console.error('Socket emission error:', socketError);
@@ -154,13 +175,19 @@ export const orderItemService = {
     }
 
     const role = user?.role ?? 'customer';
+    const isBackoffice = role === 'admin' || role === STAFF_ROLE.WAITER;
+    const effectiveAdminId =
+      role === STAFF_ROLE.WAITER ? user?.adminId : user?._id;
 
     const order = await Order.findById(orderItem.orderId).select('adminId');
     if (!order) {
       throw new ApiError(404, 'Order not found');
     }
-    if (role === 'admin') {
-      if (order.adminId.toString() !== user?._id?.toString()) {
+    if (isBackoffice) {
+      if (
+        !effectiveAdminId ||
+        order.adminId.toString() !== effectiveAdminId?.toString()
+      ) {
         throw new ApiError(403, 'Unauthorized to edit this order');
       }
       if (
@@ -255,8 +282,15 @@ export const orderItemService = {
     }
 
     const role = user?.role ?? 'customer';
-    if (role === 'admin') {
-      if (order.adminId.toString() !== user?._id?.toString()) {
+    const isBackoffice = role === 'admin' || role === STAFF_ROLE.WAITER;
+    const effectiveAdminId =
+      role === STAFF_ROLE.WAITER ? user?.adminId : user?._id;
+
+    if (isBackoffice) {
+      if (
+        !effectiveAdminId ||
+        order.adminId.toString() !== effectiveAdminId?.toString()
+      ) {
         throw new ApiError(403, 'Unauthorized to delete this order item');
       }
       if (order.isCompleted) {
@@ -303,11 +337,22 @@ export const orderItemService = {
 
     try {
       const io = getIO();
+
+      const updatedOrder = autoDeletedOrder
+        ? null
+        : await buildOrderWithItems(orderItem.orderId);
+
       if (order.adminId) {
         io.to(order.adminId.toString()).emit('orderItemDeleted', {
           orderId: orderItem.orderId,
           orderItem: populatedItem ?? orderItem,
         });
+        if (updatedOrder) {
+          io.to(order.adminId.toString()).emit('order:updated', {
+            orderId: orderItem.orderId,
+            order: updatedOrder,
+          });
+        }
       }
       if (orderItem.customerId) {
         io.to(`customer-${orderItem.customerId.toString()}`).emit(
@@ -317,6 +362,15 @@ export const orderItemService = {
             orderItem: populatedItem ?? orderItem,
           },
         );
+        if (updatedOrder) {
+          io.to(`customer-${orderItem.customerId.toString()}`).emit(
+            'order:updated',
+            {
+              orderId: orderItem.orderId,
+              order: updatedOrder,
+            },
+          );
+        }
       }
       if (autoDeletedOrder) {
         if (order.adminId) {

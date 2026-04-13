@@ -1,5 +1,15 @@
 import Joi from 'joi';
 
+import { INVENTORY_BASE_UNITS } from '../utils/constants.js';
+
+const ingredientSchema = Joi.object({
+  inventoryItemId: Joi.string().hex().length(24).required(),
+  name: Joi.string().trim().min(2).max(100).lowercase().required(),
+  quantity: Joi.number().positive().required(),
+  unit: Joi.string()
+    .valid(...INVENTORY_BASE_UNITS)
+    .required(),
+});
 const objectId = Joi.string().hex().length(24);
 
 const menuSchema = {
@@ -26,14 +36,24 @@ const menuSchema = {
     isPopular: Joi.boolean(),
     isActive: Joi.boolean(),
     inStock: Joi.boolean(),
+
+    ingredients: Joi.array().items(ingredientSchema).optional(),
+    preparationInstructions: Joi.array()
+      .items(Joi.string().trim().max(300))
+      .optional(),
+    servingSize: Joi.number().positive().optional(),
+    preparationTime: Joi.number().positive().optional(),
+    note: Joi.string().trim().max(500).optional(),
   }),
 };
+
 const updateMenuSchema = {
   params: Joi.object({
-    menuId: Joi.string().hex().length(24).required(), // Validates MongoDB ObjectId
+    menuId: Joi.string().hex().length(24).required(),
   }),
+
   body: Joi.object({
-    name: Joi.string().trim().min(2).max(100).optional(),
+    name: Joi.string().trim().min(2).max(100).lowercase().optional(),
 
     category: objectId.optional().messages({
       'string.hex': 'Category must be a valid ObjectId',
@@ -55,6 +75,14 @@ const updateMenuSchema = {
     isPopular: Joi.boolean(),
     isActive: Joi.boolean(),
     inStock: Joi.boolean(),
+
+    ingredients: Joi.array().items(ingredientSchema).optional(),
+    preparationInstructions: Joi.array()
+      .items(Joi.string().trim().max(300))
+      .optional(),
+    note: Joi.string().trim().max(500).optional(),
+    servingSize: Joi.number().positive().optional(),
+    preparationTime: Joi.number().positive().optional(),
   }).min(1),
 };
 

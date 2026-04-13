@@ -16,6 +16,7 @@ import {
 import { ORDER_TYPES, STAFF_ROLE } from '../../../utils/constants.js';
 import { getCurrentUtcDayRange } from '../../../utils/dateRange.js';
 import { resolveAdminGst, calculateTotalsByGst } from '../../../utils/gst.js';
+import { deductInventoryForOrder } from '../../../utils/inventory.helper.js';
 import {
   buildAggregatedItems,
   attachOrderItems,
@@ -362,6 +363,7 @@ export const orderService = {
     };
 
     if (qr.occupied && latestActiveOrder) {
+      await deductInventoryForOrder(finalItems);
       await createOrderItems(latestActiveOrder._id, finalItems);
 
       latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
@@ -377,6 +379,7 @@ export const orderService = {
       latestActiveOrder.totalAmount = Math.round(updatedTotals.finalTotal);
       order = await latestActiveOrder.save();
     } else if (latestActiveOrder) {
+      await deductInventoryForOrder(finalItems);
       await createOrderItems(latestActiveOrder._id, finalItems);
 
       latestActiveOrder.subTotal = (latestActiveOrder.subTotal ?? 0) + subTotal;
@@ -415,6 +418,8 @@ export const orderService = {
         taxableAmount: Math.round(taxableAmount),
         orderNumber,
       });
+
+      await deductInventoryForOrder(finalItems);
       await createOrderItems(order._id, finalItems);
 
       qr.occupied = true;
@@ -584,6 +589,7 @@ export const orderService = {
         orderType,
       });
 
+      await deductInventoryForOrder(finalItems);
       await createOrderItems(order._id, finalItems, orderType);
 
       const io = getIO();
@@ -637,7 +643,7 @@ export const orderService = {
           'This active order was created by customer; admin cannot add items via offline flow',
         );
       }
-
+      await deductInventoryForOrder(finalItems);
       await createOrderItems(
         latestActiveOrder._id,
         finalItems,
@@ -680,6 +686,7 @@ export const orderService = {
         orderNumber,
         orderType,
       });
+      await deductInventoryForOrder(finalItems);
       await createOrderItems(order._id, finalItems, orderType);
 
       qr.occupied = true;

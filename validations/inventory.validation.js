@@ -12,7 +12,7 @@ const objectId = (value, helpers) => {
 
 const createInventoryValidation = {
   body: Joi.object({
-    name: Joi.string().trim().required(),
+    name: Joi.string().trim().min(2).max(100).lowercase().required(),
 
     image: Joi.any(),
 
@@ -34,7 +34,7 @@ const updateInventoryValidation = {
   }),
 
   body: Joi.object({
-    name: Joi.string().trim().min(2).max(100).optional(),
+    name: Joi.string().trim().min(2).max(100).lowercase().optional(),
 
     category: Joi.string().custom(objectId).optional(),
 
@@ -48,7 +48,7 @@ const updateInventoryValidation = {
 
     minStockLevel: Joi.number().min(0).optional(),
 
-    isActive: Joi.boolean().optional(),
+    isActive: Joi.boolean().truthy('true').falsy('false').optional(),
   }),
 };
 

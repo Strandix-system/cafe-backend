@@ -20,6 +20,8 @@ const createInventory = async (body = {}) => {
   const { adminId, name, image, category, unit, currentStock, minStockLevel } =
     body;
 
+  const normalizedName = name.trim().toLowerCase();
+
   if (!adminId) {
     throw new ApiError(400, 'adminId is required');
   }
@@ -35,7 +37,7 @@ const createInventory = async (body = {}) => {
 
   const existingItem = await Inventory.findOne({
     adminId,
-    name: name.trim(),
+    name: normalizedName,
     isActive: true,
   });
 
@@ -49,7 +51,7 @@ const createInventory = async (body = {}) => {
 
   const inventory = await Inventory.create({
     adminId,
-    name: name.trim(),
+    name: normalizedName,
     image: image ?? null,
     category,
     unit: baseUnitMap[unit],
@@ -172,10 +174,11 @@ const updateInventory = async ({ inventoryId, adminId, body }) => {
   }
 
   if (name) {
+    const normalizedName = name.trim().toLowerCase();
     const existingItem = await Inventory.findOne({
       _id: { $ne: inventoryId },
       adminId,
-      name: name.trim(),
+      name: normalizedName,
       isActive: true,
     });
 
@@ -183,7 +186,7 @@ const updateInventory = async ({ inventoryId, adminId, body }) => {
       throw new ApiError(400, 'Inventory item name already exists');
     }
 
-    inventory.name = name.trim();
+    inventory.name = normalizedName;
   }
 
   if (category) {

@@ -75,10 +75,25 @@ const uploadInventoryImages = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 });
 
+const uploadStaffImages = multer({
+  storage: multerS3({
+    ...commonOptions,
+    key: (req, file, cb) => {
+      let folder = 'staff/misc';
+
+      if (file.fieldname === 'profileImage') folder = 'staff/profile';
+
+      cb(null, `${folder}/${Date.now()}-${file.originalname}`);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
+
 export {
   uploadMenu,
   uploadAdminImages,
   uploadLayoutImages,
   uploadQueryImage,
   uploadInventoryImages,
+  uploadStaffImages,
 };

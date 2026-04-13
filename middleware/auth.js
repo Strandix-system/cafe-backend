@@ -1,7 +1,9 @@
 import jwt from 'jsonwebtoken';
 
+import { Staff } from '../model/staff.js';
 import User from '../model/user.js';
 import { ApiError } from '../utils/apiError.js';
+import { hasValidStaffRole } from '../utils/utils.js';
 
 import { blockExpiredSubscription } from './checkSubscription.js';
 
@@ -38,6 +40,39 @@ export const tokenVerification = async (req, res, next, isPublic = false) => {
     const decoded = isPublic
       ? { id: req.body.adminId ?? req.params.adminId }
       : jwt.verify(token, process.env.JWT_SECRET);
+
+    if (hasValidStaffRole(decoded?.role)) {
+      const staff = await Staff.findById(decoded.id);
+      if (!staff) {
+        return next(new ApiError(401, 'User not found'));
+      }
+      if (!staff.isActive) {
+        return res.status(403).json({
+          message: 'Your staff account is inactive. Please contact admin.',
+        });
+      }
+
+      const ownerAdmin = await User.findById(staff.adminId);
+      if (!ownerAdmin) {
+        return next(new ApiError(401, 'User not found'));
+      }
+      if (!ownerAdmin.isActive) {
+        return res.status(403).json({
+          message: 'Your account is inactive. Please purchase subscription',
+        });
+      }
+
+      req.user = staff;
+      req.ownerAdmin = ownerAdmin;
+      req.effectiveAdminId = ownerAdmin._id;
+
+      if (!subscriptionAllowedRoutes.includes(req.path)) {
+        return blockExpiredSubscription(req, res, next);
+      }
+
+      return next();
+    }
+
     const user = await User.findById(decoded.id);
 
     if (!user) {
@@ -50,6 +85,9 @@ export const tokenVerification = async (req, res, next, isPublic = false) => {
     }
 
     req.user = user;
+    req.ownerAdmin = user;
+    req.effectiveAdminId = user._id;
+
     if (
       user.role !== 'superadmin' &&
       !subscriptionAllowedRoutes.includes(req.path)

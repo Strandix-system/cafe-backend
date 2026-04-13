@@ -17,6 +17,7 @@ const registerValidator = {
 const loginValidator = {
   body: Joi.object()
     .keys({
+      adminId: Joi.string().hex().length(24),
       email: Joi.string().email().min(5).max(2000).trim(),
       phoneNumber: phoneRule,
       password: Joi.string().min(6).max(30).required(),

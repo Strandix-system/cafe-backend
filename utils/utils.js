@@ -1,6 +1,9 @@
 import crypto from 'crypto';
 
 import Order from '../model/order.js';
+import { OrderItem } from '../model/orderItem.js';
+
+import { STAFF_ROLE } from './constants.js';
 
 export const generateTicketId = () =>
   `TKT-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
@@ -86,4 +89,40 @@ export const generateOrderNumber = async (adminId) => {
   }
 
   return String(nextSequence).padStart(4, '0');
+};
+
+export const attachOrderItems = async (orders) => {
+  if (!orders || !orders.length) return [];
+  const orderIds = orders.map((o) => o._id);
+  const items = await OrderItem.find({ orderId: { $in: orderIds } })
+    .populate('menuId')
+    .populate('customerId', 'name email phoneNumber');
+
+  const grouped = new Map();
+  for (const item of items) {
+    const id = item.orderId.toString();
+    if (!grouped.has(id)) grouped.set(id, []);
+    grouped.get(id).push(item);
+  }
+
+  return orders.map((order) => ({
+    order,
+    orderItems: grouped.get(order._id.toString()) ?? [],
+  }));
+};
+
+/**
+ *
+ * @param {*} role
+ * @returns
+ * @description Checks if the provided role (string or array) includes any valid staff role defined in STAFF_ROLE constants. This is used to determine if a user has staff permissions based on their role(s).
+ */
+export const hasValidStaffRole = (role) => {
+  const allowedRoles = Object.values(STAFF_ROLE);
+
+  if (Array.isArray(role)) {
+    return role.some((r) => allowedRoles.includes(r));
+  }
+
+  return allowedRoles.includes(role);
 };

@@ -13,9 +13,9 @@ const swaggerAutogenRunner = swaggerAutogen({
 const doc = {
   openapi: '3.0.0',
   info: {
-    title: 'Cafe Backend API',
+    title: 'Aeternis Backend API',
     version: '1.0.0',
-    description: 'API documentation for cafe SaaS backend',
+    description: 'API documentation for Aeternis SaaS backend',
   },
   servers: [
     {

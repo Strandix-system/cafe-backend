@@ -57,7 +57,7 @@ const updateInventoryController = async (req, res) => {
     adminId: req.user.adminId ?? req.user._id,
     body: {
       ...req.body,
-      image: req.file?.location,
+      ...(req.file && { image: req.file.location }),
     },
   });
 

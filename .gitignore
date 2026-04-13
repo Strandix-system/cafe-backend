@@ -1,3 +1,4 @@
 node_modules
 .env
 package-Lock.json
+docs/swagger-output.json

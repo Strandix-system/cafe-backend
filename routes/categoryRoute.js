@@ -11,8 +11,6 @@ import {
 } from '../validations/categoryValidation.js';
 
 const router = express.Router();
-
-// Only admin / superadmin
 router.post(
   '/create',
   tokenVerification,
@@ -20,8 +18,8 @@ router.post(
   validate(createCategorySchema),
   categoryController.createCategory,
 );
-
 router.get('/', tokenVerification, categoryController.getAllCategories);
+
 router.get(
   '/categories',
   tokenVerification,

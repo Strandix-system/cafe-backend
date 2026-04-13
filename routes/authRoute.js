@@ -23,7 +23,9 @@ router.post(
 );
 
 router.post('/forgot-password', controller.forgotPassword);
+
 router.post('/reset-password/:token', controller.resetPassword);
+
 router.get(
   '/me',
   tokenVerification,
@@ -31,6 +33,7 @@ router.get(
   checkSubscription,
   controller.me,
 );
+
 router.post(
   '/change-password',
   tokenVerification,

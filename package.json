@@ -6,7 +6,10 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "swagger:gen": "node ./docs/swagger-autogen.js",
+    "prestart": "npm run swagger:gen",
     "start": "node server.js",
+    "predev": "npm run swagger:gen",
     "dev": "nodemon server.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -44,7 +47,9 @@
     "nodemailer": "^8.0.4",
     "qrcode": "^1.5.4",
     "razorpay": "^2.9.6",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "swagger-autogen": "^2.23.7",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

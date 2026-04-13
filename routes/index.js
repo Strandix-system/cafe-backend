@@ -17,70 +17,20 @@ import { signUpRoutes } from './signUp.js';
 import stateRoute from './stateRoute.js';
 const router = express.Router();
 
-const defaultRoutes = [
-  {
-    path: '/auth',
-    route: authRoute,
-  },
-  {
-    path: '/admin',
-    route: adminUserRoute,
-  },
-  {
-    path: '/get-states',
-    route: stateRoute,
-  },
-  {
-    path: '/profile',
-    route: profileRoute,
-  },
-  {
-    path: '/menu',
-    route: menuRoutes,
-  },
-  {
-    path: '/layout',
-    route: layoutRoute,
-  },
-  {
-    path: '/customer',
-    route: customerRoute,
-  },
-  {
-    path: '/category',
-    route: categoryRoutes,
-  },
-  {
-    path: '/qr',
-    route: qrRoute,
-  },
-  {
-    path: '/order',
-    route: orderRoute,
-  },
-  {
-    path: '/signup',
-    route: signUpRoutes,
-  },
-  {
-    path: '/demo',
-    route: demoRoute,
-  },
-  {
-    path: '/issue-reported',
-    route: issueReportedRoute,
-  },
-  {
-    path: '/portfolio',
-    route: portfolioRoute,
-  },
-  {
-    path: '/notification',
-    route: notificationRoute,
-  },
-];
+router.use('/auth', authRoute);
+router.use('/admin', adminUserRoute);
+router.use('/get-states', stateRoute);
+router.use('/profile', profileRoute);
+router.use('/menu', menuRoutes);
+router.use('/layout', layoutRoute);
+router.use('/customer', customerRoute);
+router.use('/category', categoryRoutes);
+router.use('/qr', qrRoute);
+router.use('/order', orderRoute);
+router.use('/signup', signUpRoutes);
+router.use('/demo', demoRoute);
+router.use('/issue-reported', issueReportedRoute);
+router.use('/portfolio', portfolioRoute);
+router.use('/notification', notificationRoute);
 
-defaultRoutes.forEach((route) => {
-  router.use(route.path, route.route);
-});
 export default router;

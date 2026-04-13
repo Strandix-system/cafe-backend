@@ -1,7 +1,15 @@
 export const swaggerTags = [
   {
+    name: 'Health',
+    description: 'Health check APIs',
+  },
+  {
     name: 'Auth',
     description: 'Authentication APIs',
+  },
+  {
+    name: 'Admin',
+    description: 'Admin management APIs',
   },
   {
     name: 'Category',
@@ -12,8 +20,16 @@ export const swaggerTags = [
     description: 'Customer management APIs',
   },
   {
+    name: 'Layout',
+    description: 'Layout APIs',
+  },
+  {
     name: 'Menu',
     description: 'Menu management APIs',
+  },
+  {
+    name: 'QR',
+    description: 'QR APIs',
   },
   {
     name: 'Order',
@@ -42,5 +58,33 @@ export const swaggerTags = [
   {
     name: 'Table',
     description: 'Table APIs',
+  },
+  {
+    name: 'Signup',
+    description: 'Signup APIs',
+  },
+  {
+    name: 'Demo',
+    description: 'Demo APIs',
+  },
+  {
+    name: 'Issue Reported',
+    description: 'Issue reporting APIs',
+  },
+  {
+    name: 'Portfolio',
+    description: 'Portfolio APIs',
+  },
+  {
+    name: 'Notification',
+    description: 'Notification APIs',
+  },
+  {
+    name: 'States',
+    description: 'State APIs',
+  },
+  {
+    name: 'Webhook',
+    description: 'Webhook APIs',
   },
 ];

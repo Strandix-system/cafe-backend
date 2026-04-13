@@ -7,7 +7,7 @@ import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 
 import connectDB from './database/dbConnect.js';
-import swaggerSpec from './docs/swagger.js';
+import { getSwaggerUiOptions } from './docs/swagger-ui.options.js';
 import { errorHandler, notFoundError } from './middleware/errorHandler.js';
 import routes from './routes/index.js';
 import { webhookRoutes } from './routes/webhookRoute.js';
@@ -15,6 +15,12 @@ import { webhookRoutes } from './routes/webhookRoute.js';
 env.config();
 
 const app = express();
+
+const swaggerSpec = (
+  await import('./docs/swagger-output.json', {
+    with: { type: 'json' },
+  })
+).default;
 
 app.set('trust proxy', 1);
 
@@ -61,13 +67,7 @@ app.use(compression());
 app.use(
   '/api-docs',
   swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, {
-    explorer: true,
-    customSiteTitle: "Aeternis API's Docs",
-    swaggerOptions: {
-      persistAuthorization: true,
-    },
-  }),
+  swaggerUi.setup(swaggerSpec, getSwaggerUiOptions()),
 );
 
 app.get('/', (req, res) => {

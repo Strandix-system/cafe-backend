@@ -134,3 +134,67 @@ export const deductInventoryForOrder = async (orderItems) => {
     }
   }
 };
+
+export const restoreInventoryForOrder = async (orderItems) => {
+  for (const item of orderItems) {
+    const recipe = await Recipe.findOne({
+      menuId: item.menuId,
+      isActive: true,
+    });
+
+    if (!recipe) {
+      continue;
+    }
+
+    for (const ingredient of recipe.ingredients) {
+      const inventory = await Inventory.findById(ingredient.inventoryItemId);
+
+      if (!inventory) {
+        continue;
+      }
+
+      const ingredientQuantityInBaseUnit = convertToBaseUnit(
+        ingredient.quantity,
+        ingredient.unit,
+      );
+
+      const requiredQuantity =
+        ingredientQuantityInBaseUnit * item.quantity +
+        ((ingredientQuantityInBaseUnit * (ingredient.wastagePercent || 0)) /
+          100) *
+          item.quantity;
+
+      inventory.currentStock += requiredQuantity;
+
+      await inventory.save();
+
+      await updateMenusUsingInventory(inventory._id);
+    }
+  }
+};
+
+export const handleQuantityInventoryUpdate = async ({
+  existingQuantity,
+  newQuantity,
+  menuId,
+}) => {
+  const quantityDifference = newQuantity - existingQuantity;
+
+  if (quantityDifference > 0) {
+    await deductInventoryForOrder([
+      {
+        menuId,
+        quantity: quantityDifference,
+      },
+    ]);
+  }
+
+  if (quantityDifference < 0) {
+    await restoreInventoryForOrder([
+      {
+        menuId,
+        quantity: Math.abs(quantityDifference),
+      },
+    ]);
+  }
+};

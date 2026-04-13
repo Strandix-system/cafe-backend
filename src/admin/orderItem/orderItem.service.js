@@ -10,6 +10,7 @@ import {
   RECIPIENT_TYPES,
   STAFF_ROLE,
 } from '../../../utils/constants.js';
+import { handleQuantityInventoryUpdate } from '../../../utils/inventory.helper.js';
 import { buildAggregatedItems } from '../../../utils/utils.js';
 import { notificationService } from '../../notification/notification.service.js';
 import { emitTableStatusOverview } from '../order/service.js';
@@ -207,6 +208,12 @@ export const orderItemService = {
         throw new ApiError(400, 'Only pending items can be edited');
       }
     }
+
+    await handleQuantityInventoryUpdate({
+      existingQuantity: orderItem.quantity,
+      newQuantity: quantity,
+      menuId: orderItem.menuId,
+    });
 
     orderItem.quantity = quantity;
     await orderItem.save();

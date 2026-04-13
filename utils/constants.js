@@ -56,3 +56,13 @@ export const CATEGORY_TYPES = {
   MENU: 'menu',
   INVENTORY: 'inventory',
 };
+
+export const STOCK_TYPES = {
+  IN_STOCK: 'in_stock',
+  LOW_STOCK: 'low_stock',
+  OUT_OF_STOCK: 'out_of_stock',
+};
+
+export const INVENTORY_BASE_UNITS = ['ml', 'g', 'pcs'];
+
+export const PURCHASE_UNIT_ENUM = ['ml', 'l', 'g', 'kg', 'pcs', 'dozen'];

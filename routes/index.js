@@ -5,6 +5,7 @@ import authRoute from './authRoute.js';
 import { categoryRoutes } from './categoryRoute.js';
 import customerRoute from './customerRoute.js';
 import demoRoute from './demoRoute.js';
+import { inventoryRouter } from './inventory.route.js';
 import { issueReportedRoute } from './issueReported.route.js';
 import layoutRoute from './layoutRoute.js';
 import { menuRoutes } from './menuRoute.js';
@@ -32,5 +33,6 @@ router.use('/demo', demoRoute);
 router.use('/issue-reported', issueReportedRoute);
 router.use('/portfolio', portfolioRoute);
 router.use('/notification', notificationRoute);
+router.use('/inventory', inventoryRouter);
 
 export default router;

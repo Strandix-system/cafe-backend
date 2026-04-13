@@ -94,6 +94,24 @@ const getInventoryList = async (query = {}) => {
     filter.category = category;
   }
 
+  if (stockStatus === STOCK_TYPES.OUT_OF_STOCK) {
+    filter.currentStock = { $lte: 0 };
+  }
+
+  if (stockStatus === STOCK_TYPES.IN_STOCK) {
+    filter.currentStock = { $gt: 0 };
+  }
+
+  if (stockStatus === STOCK_TYPES.LOW_STOCK) {
+    filter.$expr = {
+      $and: [
+        { $gt: ['$minStockLevel', 0] },
+        { $gt: ['$currentStock', 0] },
+        { $lte: ['$currentStock', '$minStockLevel'] },
+      ],
+    };
+  }
+
   const options = {
     page: Number(page),
     limit: Number(limit),
@@ -103,30 +121,6 @@ const getInventoryList = async (query = {}) => {
   };
 
   const inventoryList = await Inventory.paginate(filter, options);
-
-  if (stockStatus) {
-    inventoryList.results = inventoryList.results.filter((item) => {
-      if (stockStatus === STOCK_TYPES.OUT_OF_STOCK) {
-        return item.currentStock <= 0;
-      }
-
-      if (stockStatus === STOCK_TYPES.LOW_STOCK) {
-        return item.currentStock > 0 && item.currentStock <= item.minStockLevel;
-      }
-
-      if (stockStatus === STOCK_TYPES.IN_STOCK) {
-        return item.currentStock > item.minStockLevel;
-      }
-
-      return true;
-    });
-  }
-
-  if (lowStock === 'true') {
-    inventoryList.results = inventoryList.results.filter(
-      (item) => item.currentStock <= item.minStockLevel,
-    );
-  }
 
   return inventoryList;
 };

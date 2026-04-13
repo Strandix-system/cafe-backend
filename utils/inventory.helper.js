@@ -7,7 +7,7 @@ import { Recipe } from '../model/recipe.model.js';
 import { ApiError } from './apiError.js';
 import { STOCK_TYPES } from './constants.js';
 
-export const convertToBaseUnit = (qty, unit) => {
+const convertToBaseUnit = (qty, unit) => {
   switch (unit) {
     case 'ml':
       return qty;
@@ -32,7 +32,7 @@ export const convertToBaseUnit = (qty, unit) => {
   }
 };
 
-export const updateMenuStockStatus = async (menuId) => {
+const updateMenuStockStatus = async (menuId) => {
   const recipe = await Recipe.findOne({
     menuId,
     isActive: true,
@@ -75,7 +75,7 @@ export const updateMenuStockStatus = async (menuId) => {
   });
 };
 
-export const updateMenusUsingInventory = async (inventoryItemId) => {
+const updateMenusUsingInventory = async (inventoryItemId) => {
   const inventoryObjectId =
     typeof inventoryItemId === 'string'
       ? new mongoose.Types.ObjectId(inventoryItemId)
@@ -99,7 +99,7 @@ export const updateMenusUsingInventory = async (inventoryItemId) => {
   }
 };
 
-export const deductInventoryForOrder = async (orderItems) => {
+const deductInventoryForOrder = async (orderItems) => {
   for (const item of orderItems) {
     const recipe = await Recipe.findOne({
       menuId: item.menuId,
@@ -135,7 +135,7 @@ export const deductInventoryForOrder = async (orderItems) => {
   }
 };
 
-export const restoreInventoryForOrder = async (orderItems) => {
+const restoreInventoryForOrder = async (orderItems) => {
   for (const item of orderItems) {
     const recipe = await Recipe.findOne({
       menuId: item.menuId,
@@ -173,7 +173,7 @@ export const restoreInventoryForOrder = async (orderItems) => {
   }
 };
 
-export const handleQuantityInventoryUpdate = async ({
+const handleQuantityInventoryUpdate = async ({
   existingQuantity,
   newQuantity,
   menuId,
@@ -197,4 +197,13 @@ export const handleQuantityInventoryUpdate = async ({
       },
     ]);
   }
+};
+
+export {
+  convertToBaseUnit,
+  updateMenuStockStatus,
+  updateMenusUsingInventory,
+  deductInventoryForOrder,
+  restoreInventoryForOrder,
+  handleQuantityInventoryUpdate,
 };

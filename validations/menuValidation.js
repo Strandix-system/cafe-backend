@@ -4,7 +4,7 @@ import { INVENTORY_BASE_UNITS } from '../utils/constants.js';
 
 const ingredientSchema = Joi.object({
   inventoryItemId: Joi.string().hex().length(24).required(),
-  name: Joi.string().trim().min(2).max(100).required(),
+  name: Joi.string().trim().min(2).max(100).lowercase().required(),
   quantity: Joi.number().positive().required(),
   unit: Joi.string()
     .valid(...INVENTORY_BASE_UNITS)
@@ -53,7 +53,7 @@ const updateMenuSchema = {
   }),
 
   body: Joi.object({
-    name: Joi.string().trim().min(2).max(100).optional(),
+    name: Joi.string().trim().min(2).max(100).lowercase().optional(),
 
     category: objectId.optional().messages({
       'string.hex': 'Category must be a valid ObjectId',

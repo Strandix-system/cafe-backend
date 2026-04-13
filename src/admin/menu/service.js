@@ -38,15 +38,31 @@ export const menuService = {
     if (!file) {
       throw new ApiError(400, 'Image is required');
     }
+
+    const normalizedName = body.name.trim().toLowerCase();
+
     const categoryExists = await Category.findOne({
       _id: body.category,
       type: CATEGORY_TYPES.MENU,
     });
+
     if (!categoryExists) {
       throw new ApiError(404, 'Category not found');
     }
+
+    const existingMenu = await Menu.findOne({
+      adminId,
+      name: normalizedName,
+      isActive: true,
+    });
+
+    if (existingMenu) {
+      throw new ApiError(400, 'Menu already exists');
+    }
+
     const menu = await Menu.create({
       ...body,
+      name: normalizedName,
       adminId,
       category: categoryExists._id,
       image: file.location,
@@ -80,6 +96,23 @@ export const menuService = {
 
     if (!menu) {
       throw new ApiError(404, 'Menu not found');
+    }
+
+    if (body.name) {
+      const normalizedName = body.name.trim().toLowerCase();
+
+      const existingMenu = await Menu.findOne({
+        _id: { $ne: menuId },
+        adminId: menu.adminId,
+        name: normalizedName,
+        isActive: true,
+      });
+
+      if (existingMenu) {
+        throw new ApiError(400, 'Menu already exists');
+      }
+
+      body.name = normalizedName;
     }
 
     if (body.category) {

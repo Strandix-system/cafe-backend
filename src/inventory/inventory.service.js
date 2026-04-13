@@ -1,13 +1,11 @@
-import mongoose from 'mongoose';
-
 import { Category } from '../../model/category.js';
 import { Inventory } from '../../model/inventory.model.js';
 import { ApiError } from '../../utils/apiError.js';
-import { STOCK_TYPES, PURCHASE_UNIT_ENUM } from '../../utils/constants.js';
-import { updateMenusUsingInventory } from '../../utils/inventory.helper.js';
-import { convertToBaseUnit } from '../../utils/inventory.helper.js';
-
-const { isValidObjectId } = mongoose;
+import { STOCK_TYPES } from '../../utils/constants.js';
+import {
+  convertToBaseUnit,
+  updateMenusUsingInventory,
+} from '../../utils/inventory.helper.js';
 
 const baseUnitMap = {
   ml: 'ml',
@@ -24,25 +22,6 @@ const createInventory = async (body = {}) => {
 
   if (!adminId) {
     throw new ApiError(400, 'adminId is required');
-  }
-
-  if (!isValidObjectId(adminId)) {
-    throw new ApiError(400, 'Invalid adminId');
-  }
-
-  if (!name?.trim()) {
-    throw new ApiError(400, 'Item name is required');
-  }
-
-  if (!isValidObjectId(category)) {
-    throw new ApiError(400, 'Invalid categoryId');
-  }
-
-  if (!PURCHASE_UNIT_ENUM.includes(unit)) {
-    throw new ApiError(
-      400,
-      `Invalid unit. Allowed units are: ${PURCHASE_UNIT_ENUM.join(', ')}`,
-    );
   }
 
   const categoryDoc = await Category.findOne({
@@ -97,10 +76,6 @@ const getInventoryList = async (query = {}) => {
     throw new ApiError(400, 'adminId is required');
   }
 
-  if (!isValidObjectId(adminId)) {
-    throw new ApiError(400, 'Invalid adminId');
-  }
-
   const filter = {
     adminId,
     isActive: isActive !== undefined ? isActive === 'true' : true,
@@ -114,10 +89,6 @@ const getInventoryList = async (query = {}) => {
   }
 
   if (category) {
-    if (!isValidObjectId(category)) {
-      throw new ApiError(400, 'Invalid categoryId');
-    }
-
     filter.category = category;
   }
 
@@ -163,12 +134,8 @@ const getInventoryById = async ({ inventoryId, adminId }) => {
     throw new ApiError(400, 'inventoryId is required');
   }
 
-  if (!isValidObjectId(inventoryId)) {
-    throw new ApiError(400, 'Invalid inventoryId');
-  }
-
-  if (!isValidObjectId(adminId)) {
-    throw new ApiError(400, 'Invalid adminId');
+  if (!adminId) {
+    throw new ApiError(400, 'adminId is required');
   }
 
   const inventory = await Inventory.findOne({
@@ -187,12 +154,8 @@ const updateInventory = async ({ inventoryId, adminId, body }) => {
   const { name, image, category, unit, currentStock, minStockLevel, isActive } =
     body;
 
-  if (!isValidObjectId(inventoryId)) {
-    throw new ApiError(400, 'Invalid inventoryId');
-  }
-
-  if (!isValidObjectId(adminId)) {
-    throw new ApiError(400, 'Invalid adminId');
+  if (!adminId) {
+    throw new ApiError(400, 'adminId is required');
   }
 
   const inventory = await Inventory.findOne({
@@ -207,6 +170,7 @@ const updateInventory = async ({ inventoryId, adminId, body }) => {
   if (image !== undefined) {
     inventory.image = image ?? null;
   }
+
   if (name) {
     const existingItem = await Inventory.findOne({
       _id: { $ne: inventoryId },
@@ -223,10 +187,6 @@ const updateInventory = async ({ inventoryId, adminId, body }) => {
   }
 
   if (category) {
-    if (!isValidObjectId(category)) {
-      throw new ApiError(400, 'Invalid categoryId');
-    }
-
     const categoryDoc = await Category.findOne({
       _id: category,
       $or: [{ adminId }, { adminId: null }, { adminId: { $exists: false } }],
@@ -240,13 +200,6 @@ const updateInventory = async ({ inventoryId, adminId, body }) => {
   }
 
   if (unit) {
-    if (!PURCHASE_UNIT_ENUM.includes(unit)) {
-      throw new ApiError(
-        400,
-        `Invalid unit. Allowed units are: ${PURCHASE_UNIT_ENUM.join(', ')}`,
-      );
-    }
-
     inventory.unit = baseUnitMap[unit];
   }
 

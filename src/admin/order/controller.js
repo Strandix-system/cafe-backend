@@ -1,6 +1,5 @@
 import { Staff } from '../../../model/staff.js';
 import { ApiError } from '../../../utils/apiError.js';
-import { STAFF_ROLE } from '../../../utils/constants.js';
 import { pick } from '../../../utils/pick.js';
 import { sendSuccessResponse } from '../../../utils/response.js';
 import { hasValidStaffRole } from '../../../utils/utils.js';

@@ -1,7 +1,6 @@
 import { Category } from '../../../model/category.js';
 import Menu from '../../../model/menu.js';
 import { ApiError } from '../../../utils/apiError.js';
-import { STAFF_ROLE } from '../../../utils/constants.js';
 import { CATEGORY_TYPES } from '../../../utils/constants.js';
 import { hasValidStaffRole } from '../../../utils/utils.js';
 export const categoryService = {

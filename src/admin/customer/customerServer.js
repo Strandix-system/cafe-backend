@@ -51,7 +51,10 @@ const customerService = {
     return newCustomer.toObject();
   },
   getCustomers: async (filter, options, user) => {
-    let adminId = user.role === 'admin' ? user._id : filter.adminId;
+    let adminId =
+      user.role === 'admin' || user.role === 'outlet_manager'
+        ? user._id
+        : filter.adminId;
 
     if (user.role === 'superadmin' && !filter.adminId) {
       throw new ApiError(400, 'adminId is required to view customers');

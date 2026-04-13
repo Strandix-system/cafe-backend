@@ -3,12 +3,17 @@ import express from 'express';
 import { tokenVerification } from '../../middleware/auth.js';
 import { allowRoles } from '../../middleware/permission.js';
 import {
+  blockOutletManager,
+  requireAdminOnly,
+} from '../../middleware/roles.js';
+import {
   uploadAdminImages,
   uploadStaffImages,
 } from '../../middleware/upload.js';
 import { validate } from '../../middleware/validate.js';
 import controller from '../../src/admin/controller.js';
 import { dashboardController } from '../../src/admin/Dashboard/controller.js';
+import { outletController } from '../../src/admin/outlet/controller.js';
 import { staffController } from '../../src/admin/staff/controller.js';
 import visitController from '../../src/admin/visit/controller.js';
 import { portfolioController } from '../../src/portfolio/controller.js';
@@ -30,6 +35,12 @@ import {
   dashboardTopCafesValidator,
   dashboardTopCustomersValidator,
 } from '../../validations/dashboard.validation.js';
+import {
+  createOutletManagerValidator,
+  deleteOutletManagerValidator,
+  listOutletsValidator,
+  updateOutletManagerValidator,
+} from '../../validations/outlet.validation.js';
 import { updateFeedbackValidator } from '../../validations/portfolio.validation.js';
 import {
   createStaffSchema,
@@ -55,7 +66,7 @@ router.post(
 router.patch(
   '/update/:id',
   tokenVerification,
-  allowRoles('superadmin', 'admin'),
+  allowRoles('superadmin', 'admin', 'outlet_manager'),
   uploadAdminImages.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'profileImage', maxCount: 1 },
@@ -102,10 +113,49 @@ router.patch(
   allowRoles('superadmin'),
   controller.updateAdminStatus,
 );
+
+// Outlet management (admin-only)
+router.post(
+  '/create-outlets',
+  tokenVerification,
+  blockOutletManager,
+  requireAdminOnly,
+  parseJSONFields(['outletAddress']),
+  validate(createOutletManagerValidator),
+  outletController.createOutletManager,
+);
+
+router.get(
+  '/outlets',
+  tokenVerification,
+  blockOutletManager,
+  requireAdminOnly,
+  validate(listOutletsValidator),
+  outletController.listOutlets,
+);
+
+router.patch(
+  '/outlets/:outletId',
+  tokenVerification,
+  blockOutletManager,
+  requireAdminOnly,
+  parseJSONFields(['outletAddress']),
+  validate(updateOutletManagerValidator),
+  outletController.updateOutletManager,
+);
+
+router.delete(
+  '/outlets/:outletId',
+  tokenVerification,
+  blockOutletManager,
+  requireAdminOnly,
+  validate(deleteOutletManagerValidator),
+  outletController.deleteOutletManager,
+);
 router.get(
   '/dashboard/stats',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'outlet_manager', 'superadmin'),
   validate(dashboardStatsValidator),
   dashboardController.getStats,
 );
@@ -113,7 +163,7 @@ router.get(
 router.get(
   '/dashboard/sales',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'outlet_manager', 'superadmin'),
   validate(dashboardSalesValidator),
   dashboardController.getSalesChart,
 );
@@ -121,7 +171,7 @@ router.get(
 router.get(
   '/dashboard/items-performance',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'outlet_manager', 'superadmin'),
   validate(dashboardItemPerformanceValidator),
   dashboardController.getItemPerformance,
 );
@@ -129,7 +179,7 @@ router.get(
 router.get(
   '/dashboard/peak-time',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'outlet_manager', 'superadmin'),
   validate(dashboardPeakTimeValidator),
   dashboardController.getPeakTime,
 );
@@ -137,14 +187,14 @@ router.get(
 router.get(
   '/dashboard/tables',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'outlet_manager', 'superadmin'),
   validate(dashboardTablePerformanceValidator),
   dashboardController.getTablePerformance,
 );
 router.get(
   '/dashboard/top-customers',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'outlet_manager', 'superadmin'),
   validate(dashboardTopCustomersValidator),
   dashboardController.getTopCustomers,
 );
@@ -181,21 +231,21 @@ router.get(
 router.get(
   '/get-feedback',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'outlet_manager'),
   portfolioController.getCustomerFeedbacks,
 );
 
 router.delete(
   '/delete-feedback/:id',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'outlet_manager'),
   portfolioController.deleteCustomerFeedback,
 );
 
 router.patch(
   '/feedback-selection/:feedbackId',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'outlet_manager'),
   validate(updateFeedbackValidator),
   portfolioController.updateFeedback,
 );
@@ -203,7 +253,7 @@ router.patch(
 router.post(
   '/staff-create',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'outlet_manager'),
   uploadStaffImages.single('profileImage'),
   validate(createStaffSchema),
   staffController.createStaff,
@@ -214,8 +264,11 @@ router.get(
   tokenVerification,
   allowRoles('admin', 'superadmin'),
   (req, _res, next) => {
-    if (req.user?.role === 'admin') {
-      req.query.adminId = req.user._id?.toString();
+    if (['admin', 'outlet_manager'].includes(req.user?.role)) {
+      req.query.adminId =
+        req.user.role === 'admin'
+          ? req.user._id?.toString()
+          : req.user.parentAdminId?.toString();
     }
     next();
   },
@@ -226,7 +279,7 @@ router.get(
 router.patch(
   '/staff-update/:id',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'outlet_manager'),
   uploadStaffImages.single('profileImage'),
   validate(updateStaffSchema),
   staffController.updateStaff,

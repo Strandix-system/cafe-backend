@@ -18,7 +18,7 @@ const router = express.Router();
 router.get(
   '/all',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'outlet_manager', 'superadmin'),
   validate(getNotificationsValidator),
   notificationController.getNotifications,
 );
@@ -26,7 +26,7 @@ router.get(
 router.patch(
   '/read/:id',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'outlet_manager', 'superadmin'),
   validate(markSingleReadValidator),
   notificationController.markSingleRead,
 );
@@ -34,7 +34,7 @@ router.patch(
 router.delete(
   '/delete/:id',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'outlet_manager', 'superadmin'),
   validate(deleteNotificationValidator),
   notificationController.deleteNotification,
 );
@@ -42,7 +42,7 @@ router.delete(
 router.patch(
   '/read-all',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'outlet_manager', 'superadmin'),
   validate(markAllReadValidator),
   notificationController.markAllRead,
 );

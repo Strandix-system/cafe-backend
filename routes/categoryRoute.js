@@ -16,7 +16,7 @@ const router = express.Router();
 router.post(
   '/create',
   tokenVerification,
-  allowRoles('superadmin', 'admin'),
+  allowRoles('superadmin', 'admin', 'outlet_manager'),
   validate(createCategorySchema),
   categoryController.createCategory,
 );
@@ -25,7 +25,7 @@ router.get('/', tokenVerification, categoryController.getAllCategories);
 router.get(
   '/categories',
   tokenVerification,
-  allowRoles('superadmin', 'admin'),
+  allowRoles('superadmin', 'admin', 'outlet_manager'),
   categoryController.getCategoriesForDropdown,
 );
 router.patch(
@@ -50,7 +50,7 @@ router.get(
 router.get(
   '/admin-category',
   tokenVerification,
-  allowRoles('admin', ...Object.values(STAFF_ROLE)),
+  allowRoles('admin', 'outlet_manager', ...Object.values(STAFF_ROLE)),
   categoryController.getUsedCategoriesForDropdown,
 );
 

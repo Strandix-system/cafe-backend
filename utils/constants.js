@@ -6,6 +6,7 @@ export const ORDER_STATUS = Object.freeze({
 export const ROLES = {
   ADMIN: 'admin',
   SUPERADMIN: 'superadmin',
+  OUTLET_MANAGER: 'outlet_manager',
 };
 
 export const STAFF_ROLE = Object.freeze({

@@ -17,7 +17,7 @@ export const dashboardService = {
     requestedAdminId,
     { requireForSuperadmin = false } = {},
   ) => {
-    if (user.role === 'admin') {
+    if (user.role === 'admin' || user.role === 'outlet_manager') {
       return user._id;
     }
 

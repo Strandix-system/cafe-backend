@@ -34,7 +34,7 @@ export const signUpController = {
     const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
     let userId = null;
 
-    if (req.user.role === 'admin') {
+    if (req.user.role === 'admin' || req.user.role === 'outlet_manager') {
       filter.user = req.user._id;
       userId = req.user._id;
     }

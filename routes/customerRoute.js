@@ -9,7 +9,7 @@ router.post('/create', customerController.createCustomer);
 router.get(
   '/get-all',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'outlet_manager', 'superadmin'),
   customerController.getCustomers,
 );
 router.get('/:id', customerController.getCustomerById);

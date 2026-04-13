@@ -1,7 +1,6 @@
 import { Server } from 'socket.io';
 
 import { Staff } from './model/staff.js';
-import { STAFF_ROLE } from './utils/constants.js';
 import { hasValidStaffRole } from './utils/utils.js';
 let io;
 

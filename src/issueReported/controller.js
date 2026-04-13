@@ -19,7 +19,7 @@ export const issueController = {
   getTickets: async (req, res) => {
     const filter = pick(req.query, ['search', 'status', 'ticketId', 'adminId']);
     const options = pick(req.query, ['page', 'limit', 'sortBy', 'populate']);
-    if (req.user.role === 'admin') {
+    if (req.user.role === 'admin' || req.user.role === 'outlet_manager') {
       filter.adminId = req.user._id;
     }
     const data = await issueService.getTickets(filter, options);

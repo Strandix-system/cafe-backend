@@ -13,7 +13,7 @@ const router = express.Router();
 router.post(
   '/create',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'outlet_manager', 'superadmin'),
   uploadMenu.single('image'),
   validate(menuSchema),
   menuController.createMenu,
@@ -21,7 +21,7 @@ router.post(
 router.patch(
   '/update/:menuId',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'outlet_manager'),
   uploadMenu.single('image'),
   validate(updateMenuSchema),
   menuController.updateMenu,
@@ -29,19 +29,19 @@ router.patch(
 router.get(
   '/all-menu',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'outlet_manager', 'superadmin'),
   menuController.getAllMenus,
 );
 router.get(
   '/my-menus', // Descriptive path
   tokenVerification,
-  allowRoles('admin', ...Object.values(STAFF_ROLE)),
+  allowRoles('admin', 'outlet_manager', ...Object.values(STAFF_ROLE)),
   menuController.getMenusByAdmin,
 );
 router.get(
   '/get-by-id/:menuId',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'outlet_manager'),
   menuController.getMenuById,
 );
 // 🌍 PUBLIC MENU FOR PORTFOLIO

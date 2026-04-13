@@ -1,7 +1,6 @@
 import { Transaction } from '../model/transaction.js';
 import User from '../model/user.js';
 import { ApiError } from '../utils/apiError.js';
-import { STAFF_ROLE } from '../utils/constants.js';
 import { hasValidStaffRole } from '../utils/utils.js';
 
 export const ensureSubscriptionActive = async ({
@@ -66,7 +65,11 @@ const checkSubscription = async (req, res, next) => {
       return next();
     }
 
-    if (req.user.role !== 'admin' && !hasValidStaffRole(req.user.role)) {
+    if (
+      req.user.role !== 'admin' &&
+      req.user.role !== 'outlet_manager' &&
+      !hasValidStaffRole(req.user.role)
+    ) {
       return next();
     }
 
@@ -162,7 +165,11 @@ const blockExpiredSubscription = async (req, res, next) => {
       return next();
     }
 
-    if (req.user.role !== 'admin' && !hasValidStaffRole(req.user.role)) {
+    if (
+      req.user.role !== 'admin' &&
+      req.user.role !== 'outlet_manager' &&
+      !hasValidStaffRole(req.user.role)
+    ) {
       return next();
     }
 

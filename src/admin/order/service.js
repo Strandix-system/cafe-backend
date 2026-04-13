@@ -144,7 +144,7 @@ const buildTableStatusOverview = async (adminId) => {
   });
 };
 
-const emitTableStatusOverview = async (adminId, overview) => {
+export const emitTableStatusOverview = async (adminId, overview) => {
   const id = adminId?.toString();
   if (!id) {
     return;
@@ -493,9 +493,10 @@ export const orderService = {
 
     const orderBy = user?.role === STAFF_ROLE.WAITER ? user?._id : adminId;
 
-    const admin = await User.findOne({ _id: adminId, role: 'admin' }).select(
-      'gst.gstNumber gst.gstPercentage gst.gstType',
-    );
+    const admin = await User.findOne({
+      _id: adminId,
+      role: ['admin', 'outlet_manager'],
+    }).select('gst.gstNumber gst.gstPercentage gst.gstType');
     if (!admin) {
       throw new ApiError(404, 'Admin not found');
     }
@@ -1365,7 +1366,7 @@ See you again!
     };
   },
   changeTable: async (orderId, newTableNumber, user) => {
-    const isAdmin = user?.role === 'admin';
+    const isAdmin = user?.role === 'admin' || user?.role === 'outlet_manager';
     const isStaff = user?.role === STAFF_ROLE.WAITER;
 
     if (!isAdmin && !isStaff) {
@@ -1386,9 +1387,8 @@ See you again!
   },
   getStaffCreatedOrdersStats: async (staffId, adminId, filter, options) => {
     if (!staffId || !adminId) {
-      throw new ApiError(401, 'Unauthorized');
+      throw new ApiError(400, 'staffId and adminId are required');
     }
-
     const baseQuery = {
       adminId,
       orderBy: staffId,
@@ -1513,5 +1513,3 @@ See you again!
     return overview;
   },
 };
-
-export { emitTableStatusOverview };

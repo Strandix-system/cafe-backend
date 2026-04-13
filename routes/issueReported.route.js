@@ -16,7 +16,7 @@ export const issueReportedRoute = express.Router();
 issueReportedRoute.post(
   '/raise',
   tokenVerification,
-  allowRoles('admin'),
+  allowRoles('admin', 'outlet_manager'),
   uploadQueryImage.array('images', 3),
   validate(raiseIssueValidator),
   issueController.raiseTicket,
@@ -24,7 +24,7 @@ issueReportedRoute.post(
 issueReportedRoute.get(
   '/get-tickets',
   tokenVerification,
-  allowRoles('admin', 'superadmin'),
+  allowRoles('admin', 'outlet_manager', 'superadmin'),
   validate(getIssueTicketsValidator),
   issueController.getTickets,
 );

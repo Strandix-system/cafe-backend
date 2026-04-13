@@ -60,7 +60,7 @@ const cafeLayoutController = {
     if (filter.defaultLayout) {
       filter.defaultLayout = filter.defaultLayout === 'true';
     }
-    if (req.user.role === 'admin') {
+    if (req.user.role === 'admin' || req.user.role === 'outlet_manager') {
       filter.adminId = req.user._id;
     }
     const result = await layoutService.getCafeLayoutByAdmin(filter, options);

@@ -73,10 +73,34 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['superadmin', 'admin'],
+      enum: ['superadmin', 'admin', 'outlet_manager'],
       default: 'admin',
       required: true,
     },
+    parentAdminId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: function () {
+        return this.role === 'outlet_manager' ? null : undefined;
+      },
+    },
+
+    outletName: {
+      type: String,
+      trim: true,
+      default: function () {
+        return this.role === 'outlet_manager' ? null : undefined;
+      },
+    },
+
+    outletCode: {
+      type: String,
+      trim: true,
+      default: function () {
+        return this.role === 'outlet_manager' ? null : undefined;
+      },
+    },
+
     hours: {
       weekdays: { type: String, default: null },
       weekends: { type: String, default: null },

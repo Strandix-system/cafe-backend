@@ -27,14 +27,25 @@ router.post('/reset-password/:token', controller.resetPassword);
 router.get(
   '/me',
   tokenVerification,
-  allowRoles('admin', 'superadmin', ...Object.values(STAFF_ROLE)),
+  allowRoles(
+    'admin',
+    'superadmin',
+    'outlet_manager',
+    ...Object.values(STAFF_ROLE),
+  ),
+  allowRoles('admin', 'outlet_manager', 'superadmin', 'staff'),
   checkSubscription,
   controller.me,
 );
 router.post(
   '/change-password',
   tokenVerification,
-  allowRoles('admin', 'superadmin', ...Object.values(STAFF_ROLE)),
+  allowRoles(
+    'admin',
+    'superadmin',
+    'outlet_manager',
+    ...Object.values(STAFF_ROLE),
+  ),
   controller.changePassword,
 );
 
